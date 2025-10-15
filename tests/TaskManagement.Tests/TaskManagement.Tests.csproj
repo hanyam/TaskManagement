@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <IsPackable>false</IsPackable>
+        <IsTestProject>true</IsTestProject>
+        <ProjectGuid>{D4E5F6G7-H8I9-0123-DEFG-456789012345}</ProjectGuid>
+        <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+        <AssemblyTitle>TaskManagement.Tests</AssemblyTitle>
+        <AssemblyDescription>Unit and Integration Tests for TaskManagement</AssemblyDescription>
+        <AssemblyName>TaskManagement.Tests</AssemblyName>
+        <RootNamespace>TaskManagement.Tests</RootNamespace>
+        <EnableDefaultCompileItems>true</EnableDefaultCompileItems>
+        <EnableDefaultEmbeddedResourceItems>true</EnableDefaultEmbeddedResourceItems>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\TaskManagement.Api\TaskManagement.Api.csproj"/>
+        <ProjectReference Include="..\..\src\TaskManagement.Application\TaskManagement.Application.csproj"/>
+        <ProjectReference Include="..\..\src\TaskManagement.Domain\TaskManagement.Domain.csproj"/>
+        <ProjectReference Include="..\..\src\TaskManagement.Infrastructure\TaskManagement.Infrastructure.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.0" />
+    </ItemGroup>
+
+</Project>

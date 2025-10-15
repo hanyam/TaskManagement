@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <ProjectGuid>{C3D4E5F6-G7H8-9012-CDEF-345678901234}</ProjectGuid>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\TaskManagement.Domain\TaskManagement.Domain.csproj"/>
+        <ProjectReference Include="..\TaskManagement.Infrastructure\TaskManagement.Infrastructure.csproj"/>
+    </ItemGroup>
+
+</Project>
