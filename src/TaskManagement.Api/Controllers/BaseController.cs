@@ -11,11 +11,13 @@ namespace TaskManagement.Api.Controllers;
 [Route("api/[controller]")]
 public abstract class BaseController : ControllerBase
 {
-    protected readonly IMediator _mediator;
+    protected readonly ICommandMediator _commandMediator;
+    protected readonly IRequestMediator _requestMediator;
 
-    protected BaseController(IMediator mediator)
+    protected BaseController(ICommandMediator commandMediator, IRequestMediator requestMediator)
     {
-        _mediator = mediator;
+        _commandMediator = commandMediator;
+        _requestMediator = requestMediator;
     }
 
     /// <summary>

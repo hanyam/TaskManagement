@@ -1,6 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using TaskManagement.Application.Common.Behaviors;
 using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Application.Infrastructure.Data.Repositories;
 using TaskManagement.Application.Tasks.Commands.CreateTask;
@@ -8,11 +7,14 @@ using TaskManagement.Domain.DTOs;
 using TaskManagement.Infrastructure.Data;
 using TaskManagement.Tests.Unit.TestHelpers;
 using FluentValidation;
+using TaskManagement.Application.Tasks.Queries.GetTaskById;
+using TaskManagement.Application.Tasks.Queries.GetTasks;
 
 namespace TaskManagement.Tests.Unit.TestHelpers;
 
 /// <summary>
 /// Real service locator implementation for testing that provides actual services instead of mocks.
+/// Pipeline behaviors are now handled internally by PipelineMediator.
 /// </summary>
 public class TestServiceLocator : IServiceLocator
 {
@@ -43,7 +45,7 @@ public class TestServiceLocator : IServiceLocator
     public object GetRequiredService(Type serviceType)
     {
         // Handle specific types that need custom resolution
-        if (serviceType == typeof(IRequestHandler<CreateTaskCommand, TaskDto>))
+        if (serviceType == typeof(ICommandHandler<CreateTaskCommand, TaskDto>))
         {
             var taskCommandRepository = new TaskEfCommandRepository(_context);
             var userEfRepository = new UserEfQueryRepository(_context);
@@ -65,17 +67,7 @@ public class TestServiceLocator : IServiceLocator
             return new GetTaskByIdQueryHandler(taskRepository);
         }
 
-        if (serviceType.IsGenericType && serviceType.GetGenericTypeDefinition() == typeof(IPipelineBehavior<,>))
-        {
-            var genericArgs = serviceType.GetGenericArguments();
-            var requestType = genericArgs[0];
-            var responseType = genericArgs[1];
-
-            if (requestType == typeof(CreateTaskCommand) && responseType == typeof(TaskDto))
-            {
-                return GetCreateTaskPipelineBehaviors();
-            }
-        }
+        // Pipeline behaviors are now handled internally by PipelineMediator
 
         if (serviceType.IsGenericType && serviceType.GetGenericTypeDefinition() == typeof(IValidator<>))
         {
@@ -91,18 +83,7 @@ public class TestServiceLocator : IServiceLocator
 
     public IEnumerable<object> GetServices(Type serviceType)
     {
-        // Handle pipeline behaviors
-        if (serviceType.IsGenericType && serviceType.GetGenericTypeDefinition() == typeof(IPipelineBehavior<,>))
-        {
-            var genericArgs = serviceType.GetGenericArguments();
-            var requestType = genericArgs[0];
-            var responseType = genericArgs[1];
-
-            if (requestType == typeof(CreateTaskCommand) && responseType == typeof(TaskDto))
-            {
-                return GetCreateTaskPipelineBehaviors();
-            }
-        }
+        // Pipeline behaviors are now handled internally by PipelineMediator
 
         // Handle validators
         if (serviceType.IsGenericType && serviceType.GetGenericTypeDefinition() == typeof(IValidator<>))
@@ -115,21 +96,5 @@ public class TestServiceLocator : IServiceLocator
         }
 
         return _serviceProvider.GetServices(serviceType).Where(s => s != null)!;
-    }
-
-    private List<object> GetCreateTaskPipelineBehaviors()
-    {
-        var loggerFactory = _serviceProvider.GetRequiredService<ILoggerFactory>();
-        
-        return new List<object>
-        {
-            new ValidationBehavior<CreateTaskCommand, TaskDto>(
-                new List<IValidator<CreateTaskCommand>> { new CreateTaskCommandValidator() },
-                loggerFactory.CreateLogger<ValidationBehavior<CreateTaskCommand, TaskDto>>()),
-            new LoggingBehavior<CreateTaskCommand, TaskDto>(
-                loggerFactory.CreateLogger<LoggingBehavior<CreateTaskCommand, TaskDto>>()),
-            new ExceptionHandlingBehavior<CreateTaskCommand, TaskDto>(
-                loggerFactory.CreateLogger<ExceptionHandlingBehavior<CreateTaskCommand, TaskDto>>())
-        };
     }
 }

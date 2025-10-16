@@ -8,6 +8,7 @@ using TaskManagement.Domain.Entities;
 using TaskManagement.Tests.Unit.TestHelpers;
 using Xunit;
 using Task = System.Threading.Tasks.Task;
+using TaskStatus = TaskManagement.Domain.Entities.TaskStatus;
 
 namespace TaskManagement.Tests.Unit.Application.Tasks.Queries;
 

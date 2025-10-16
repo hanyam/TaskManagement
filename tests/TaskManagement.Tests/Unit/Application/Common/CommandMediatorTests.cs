@@ -13,15 +13,15 @@ using Task = System.Threading.Tasks.Task;
 namespace TaskManagement.Tests.Unit.Application.Common;
 
 /// <summary>
-/// Tests for PipelineMediator to verify pipeline behaviors are applied correctly using real services.
+/// Tests for CommandMediator to verify command handling with pipeline behaviors.
 /// </summary>
-public class PipelineMediatorTests : InMemoryDatabaseTestBase
+public class CommandMediatorTests : InMemoryDatabaseTestBase
 {
-    private readonly PipelineMediator _mediator;
+    private readonly CommandMediator _commandMediator;
     private readonly TestServiceLocator _serviceLocator;
-    private readonly ILogger<PipelineMediator> _logger;
+    private readonly ILogger<CommandMediator> _logger;
 
-    public PipelineMediatorTests()
+    public CommandMediatorTests()
     {
         // Create a real service provider with logging
         var services = new ServiceCollection();
@@ -33,10 +33,10 @@ public class PipelineMediatorTests : InMemoryDatabaseTestBase
         
         // Create real logger
         var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
-        _logger = loggerFactory.CreateLogger<PipelineMediator>();
+        _logger = loggerFactory.CreateLogger<CommandMediator>();
         
-        // Create real mediator with real services
-        _mediator = new PipelineMediator(_serviceLocator, _logger);
+        // Create real command mediator with real services
+        _commandMediator = new CommandMediator(_serviceLocator, _logger);
     }
 
     [Fact]
@@ -55,7 +55,7 @@ public class PipelineMediatorTests : InMemoryDatabaseTestBase
         };
 
         // Act
-        var result = await _mediator.Send(command);
+        var result = await _commandMediator.Send(command);
 
         // Assert
         result.Should().NotBeNull();
@@ -76,32 +76,15 @@ public class PipelineMediatorTests : InMemoryDatabaseTestBase
             Priority = TaskPriority.High,
             DueDate = DateTime.UtcNow.AddDays(-1), // Invalid: past date
             AssignedUserId = testUser.Id,
-            CreatedBy = "" // Invalid: empty created by
+            CreatedBy = "test@example.com"
         };
 
         // Act
-        var result = await _mediator.Send(command);
+        var result = await _commandMediator.Send(command);
 
         // Assert
         result.Should().NotBeNull();
         result.IsSuccess.Should().BeFalse();
-        
-        // Debug: Let's see what we actually get
-        Console.WriteLine($"Result IsSuccess: {result.IsSuccess}");
-        Console.WriteLine($"Result Errors Count: {result.Errors?.Count ?? 0}");
-        
-        if (result.Errors != null && result.Errors.Any())
-        {
-            foreach (var error in result.Errors)
-            {
-                Console.WriteLine($"Error: Code={error.Code}, Message={error.Message}, Field={error.Field}");
-            }
-        }
-        else
-        {
-            Console.WriteLine("No errors found in result.Errors");
-        }
-        
         result.Errors.Should().NotBeEmpty();
         result.Errors.Should().HaveCount(2); // Expecting 2 validation errors (Title and DueDate)
         
@@ -126,7 +109,7 @@ public class PipelineMediatorTests : InMemoryDatabaseTestBase
         };
 
         // Act
-        var result = await _mediator.Send(command);
+        var result = await _commandMediator.Send(command);
 
         // Assert
         result.Should().NotBeNull();

@@ -12,7 +12,7 @@ namespace TaskManagement.Application.Tasks.Commands.CreateTask;
 /// <summary>
 ///     Handler for creating a new task using EF Core for commands and Dapper for queries.
 /// </summary>
-public class CreateTaskCommandHandler : IRequestHandler<CreateTaskCommand, TaskDto>
+public class CreateTaskCommandHandler : ICommandHandler<CreateTaskCommand, TaskDto>
 {
     private readonly ApplicationDbContext _context;
     private readonly TaskEfCommandRepository _taskCommandRepository;

@@ -12,7 +12,8 @@ namespace TaskManagement.Api.Controllers;
 [Route("api/[controller]")]
 public class AuthenticationController : BaseController
 {
-    public AuthenticationController(IMediator mediator) : base(mediator)
+    public AuthenticationController(ICommandMediator commandMediator, IRequestMediator requestMediator) 
+        : base(commandMediator, requestMediator)
     {
     }
 
@@ -30,7 +31,7 @@ public class AuthenticationController : BaseController
             AzureAdToken = request.AzureAdToken
         };
 
-        var result = await _mediator.Send(command);
+        var result = await _commandMediator.Send(command);
         return HandleResult(result);
     }
 }

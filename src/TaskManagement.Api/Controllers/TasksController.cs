@@ -18,7 +18,8 @@ namespace TaskManagement.Api.Controllers;
 [Authorize]
 public class TasksController : BaseController
 {
-    public TasksController(IMediator mediator) : base(mediator)
+    public TasksController(ICommandMediator commandMediator, IRequestMediator requestMediator) 
+        : base(commandMediator, requestMediator)
     {
     }
 
@@ -31,7 +32,7 @@ public class TasksController : BaseController
     public async Task<IActionResult> GetTaskById(Guid id)
     {
         var query = new GetTaskByIdQuery { Id = id };
-        var result = await _mediator.Send(query);
+        var result = await _requestMediator.Send(query);
         return HandleResult(result);
     }
 
@@ -67,7 +68,7 @@ public class TasksController : BaseController
             PageSize = pageSize
         };
 
-        var result = await _mediator.Send(query);
+        var result = await _requestMediator.Send(query);
         return HandleResult(result);
     }
 
@@ -89,7 +90,7 @@ public class TasksController : BaseController
             CreatedBy = User.Identity?.Name ?? "system"
         };
 
-        var result = await _mediator.Send(command);
+        var result = await _commandMediator.Send(command);
         return HandleResult(result, 201);
     }
 }

@@ -10,7 +10,9 @@ using TaskManagement.Domain.Common;
 using TaskManagement.Tests.Unit.TestHelpers;
 using Xunit;
 using Task = System.Threading.Tasks.Task;
-using TaskStatus = Microsoft.Graph.TaskStatus;
+using TaskStatus = TaskManagement.Domain.Entities.TaskStatus;
+
+//using TaskStatus = Microsoft.Graph.TaskStatus;
 
 namespace TaskManagement.Tests.Unit.Application.Tasks.Commands.CreateTask;
 

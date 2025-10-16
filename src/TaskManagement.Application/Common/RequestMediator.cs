@@ -1,29 +1,26 @@
 using FluentValidation;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using TaskManagement.Application.Common.Interfaces;
-using TaskManagement.Application.Common.Behaviors;
 using TaskManagement.Domain.Common;
 
 namespace TaskManagement.Application.Common;
 
 /// <summary>
-///     Pipeline-based mediator implementation that handles requests with pipeline behaviors.
+/// Request mediator implementation that handles requests (queries) with pipeline behaviors.
 /// </summary>
-public class PipelineMediator : IMediator
+public class RequestMediator : IRequestMediator
 {
-    private readonly ILogger<PipelineMediator> _logger;
+    private readonly ILogger<RequestMediator> _logger;
     private readonly IServiceLocator _serviceLocator;
 
-    public PipelineMediator(IServiceLocator serviceLocator, ILogger<PipelineMediator> logger)
+    public RequestMediator(IServiceLocator serviceLocator, ILogger<RequestMediator> logger)
     {
         _serviceLocator = serviceLocator;
         _logger = logger;
     }
 
     /// <inheritdoc />
-    public async Task<Result<TResponse>> Send<TResponse>(IRequest<TResponse> request,
-        CancellationToken cancellationToken = default)
+    public async Task<Result<TResponse>> Send<TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -42,8 +39,7 @@ public class PipelineMediator : IMediator
             if (result.IsSuccess)
                 _logger.LogInformation("Request of type {RequestType} processed successfully", request.GetType().Name);
             else
-                _logger.LogWarning("Request of type {RequestType} failed: {Error}", request.GetType().Name,
-                    result.Error);
+                _logger.LogWarning("Request of type {RequestType} failed: {Error}", request.GetType().Name, result.Error);
 
             return result;
         }
@@ -74,8 +70,7 @@ public class PipelineMediator : IMediator
             if (result.IsSuccess)
                 _logger.LogInformation("Request of type {RequestType} processed successfully", request.GetType().Name);
             else
-                _logger.LogWarning("Request of type {RequestType} failed: {Error}", request.GetType().Name,
-                    result.Error);
+                _logger.LogWarning("Request of type {RequestType} failed: {Error}", request.GetType().Name, result.Error);
 
             return result;
         }
@@ -101,7 +96,7 @@ public class PipelineMediator : IMediator
             return await task;
         };
 
-        // Build pipeline with built-in behaviors: Logging -> Validation -> Command Handler
+        // Build pipeline with built-in behaviors: Logging -> Validation -> Request Handler
         var pipeline = handlerFunc;
 
         // 1. Add Exception Handling (outermost)
@@ -131,7 +126,7 @@ public class PipelineMediator : IMediator
             return await task;
         };
 
-        // Build pipeline with built-in behaviors: Logging -> Validation -> Command Handler
+        // Build pipeline with built-in behaviors: Logging -> Validation -> Request Handler
         var pipeline = handlerFunc;
 
         // 1. Add Exception Handling (outermost)
@@ -271,5 +266,4 @@ public class PipelineMediator : IMediator
             }
         };
     }
-
 }

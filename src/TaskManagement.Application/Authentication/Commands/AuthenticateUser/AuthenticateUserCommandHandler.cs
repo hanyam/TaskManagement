@@ -14,7 +14,7 @@ namespace TaskManagement.Application.Authentication.Commands.AuthenticateUser;
 /// <summary>
 ///     Handler for authenticating a user with Azure AD token using EF Core for commands and Dapper for queries.
 /// </summary>
-public class AuthenticateUserCommandHandler : IRequestHandler<AuthenticateUserCommand, AuthenticationResponse>
+public class AuthenticateUserCommandHandler : ICommandHandler<AuthenticateUserCommand, AuthenticationResponse>
 {
     private readonly IAuthenticationService _authenticationService;
     private readonly ApplicationDbContext _context;

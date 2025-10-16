@@ -1,9 +1,12 @@
+
+using Microsoft.Extensions.Configuration;
 using TaskManagement.Application.Infrastructure.Data.Repositories;
 using TaskManagement.Domain.DTOs;
 using TaskManagement.Domain.Entities;
 using TaskManagement.Infrastructure.Data;
 using DomainTask = TaskManagement.Domain.Entities.Task;
 using DomainTaskStatus = TaskManagement.Domain.Entities.TaskStatus;
+using System.Linq;
 
 namespace TaskManagement.Tests.Unit.TestHelpers;
 
@@ -11,16 +14,22 @@ namespace TaskManagement.Tests.Unit.TestHelpers;
 /// Wrapper that implements the same interface as TaskDapperRepository but uses EF Core internally.
 /// This allows the original query handlers to work with EF Core in tests.
 /// </summary>
-public class TaskDapperRepositoryWrapper
+public class TaskDapperRepositoryWrapper : TaskDapperRepository
 {
     private readonly TaskEfQueryRepository _efRepository;
 
     public TaskDapperRepositoryWrapper(TaskEfQueryRepository efRepository)
+        : base(new Microsoft.Extensions.Configuration.ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["ConnectionStrings:DefaultConnection"] = "Server=localhost;Database=TestDb;Trusted_Connection=true;"
+            })
+            .Build()) // Dummy config with connection string
     {
         _efRepository = efRepository;
     }
 
-    public async Task<TaskDto?> GetTaskWithUserAsync(Guid id, CancellationToken cancellationToken = default)
+    public new async Task<TaskDto?> GetTaskWithUserAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var task = await _efRepository.GetByIdAsync(id, cancellationToken);
         if (task == null) return null;
@@ -37,12 +46,11 @@ public class TaskDapperRepositoryWrapper
             AssignedUserEmail = task.AssignedUser?.Email,
             CreatedBy = task.CreatedBy,
             CreatedAt = task.CreatedAt,
-            LastModifiedBy = task.LastModifiedBy,
-            LastModifiedAt = task.LastModifiedAt
+            
         };
     }
 
-    public async Task<(IEnumerable<TaskDto> Tasks, int TotalCount)> GetTasksWithPaginationAsync(
+    public new async Task<(IEnumerable<TaskDto> Tasks, int TotalCount)> GetTasksWithPaginationAsync(
         DomainTaskStatus? status,
         TaskPriority? priority,
         Guid? assignedUserId,
@@ -69,8 +77,6 @@ public class TaskDapperRepositoryWrapper
             AssignedUserEmail = t.AssignedUser?.Email,
             CreatedBy = t.CreatedBy,
             CreatedAt = t.CreatedAt,
-            LastModifiedBy = t.LastModifiedBy,
-            LastModifiedAt = t.LastModifiedAt
         });
         
         // Apply filters

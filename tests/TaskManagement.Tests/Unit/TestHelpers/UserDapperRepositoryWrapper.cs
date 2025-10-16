@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using TaskManagement.Application.Infrastructure.Data.Repositories;
 using TaskManagement.Domain.Entities;
 using TaskManagement.Infrastructure.Data;
@@ -12,8 +13,13 @@ public class UserDapperRepositoryWrapper : UserDapperRepository
 {
     private readonly UserEfQueryRepository _efRepository;
 
-    public UserDapperRepositoryWrapper(UserEfQueryRepository efRepository) 
-        : base(Microsoft.Extensions.Configuration.ConfigurationManager.CreateBuilder().Build()) // Dummy config
+    public UserDapperRepositoryWrapper(UserEfQueryRepository efRepository)
+        : base(new Microsoft.Extensions.Configuration.ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["ConnectionStrings:DefaultConnection"] = "Server=localhost;Database=TestDb;Trusted_Connection=true;"
+            })
+            .Build()) // Dummy config with connection string
     {
         _efRepository = efRepository;
     }

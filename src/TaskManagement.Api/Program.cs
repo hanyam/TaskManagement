@@ -60,16 +60,18 @@ builder.Services.AddScoped<UserEfCommandRepository>();
 // Register authentication service
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 
-// Configure Custom Mediator
+// Configure Custom Mediators
 builder.Services.AddScoped<IServiceLocator, ServiceLocator>();
-builder.Services.AddScoped<IMediator, PipelineMediator>();
+builder.Services.AddScoped<ICommandMediator, CommandMediator>();
+builder.Services.AddScoped<IRequestMediator, RequestMediator>();
 
-// Register all request handlers
-builder.Services.AddScoped<IRequestHandler<CreateTaskCommand, TaskDto>, CreateTaskCommandHandler>();
+// Register command handlers
+builder.Services.AddScoped<ICommandHandler<CreateTaskCommand, TaskDto>, CreateTaskCommandHandler>();
+builder.Services.AddScoped<ICommandHandler<AuthenticateUserCommand, AuthenticationResponse>, AuthenticateUserCommandHandler>();
+
+// Register request handlers (queries)
 builder.Services.AddScoped<IRequestHandler<GetTaskByIdQuery, TaskDto>, GetTaskByIdQueryHandler>();
 builder.Services.AddScoped<IRequestHandler<GetTasksQuery, GetTasksResponse>, GetTasksQueryHandler>();
-builder.Services
-    .AddScoped<IRequestHandler<AuthenticateUserCommand, AuthenticationResponse>, AuthenticateUserCommandHandler>();
 
 // Add pipeline behaviors
 builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
