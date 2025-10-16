@@ -46,6 +46,12 @@ public class AuthenticateUserCommandHandler : IRequestHandler<AuthenticateUserCo
             errors.Add(validationResult.Error ?? AuthenticationErrors.InvalidAzureAdToken);
         }
 
+        // If there are any validation errors, return them all
+        if (errors.Any())
+        {
+            return Result<AuthenticationResponse>.Failure(errors);
+        }
+
         var claimsPrincipal = validationResult.Value!;
         var email = claimsPrincipal.FindFirst(ClaimTypes.Email)?.Value ??
                     claimsPrincipal.FindFirst("email")?.Value;
@@ -53,11 +59,6 @@ public class AuthenticateUserCommandHandler : IRequestHandler<AuthenticateUserCo
         if (string.IsNullOrEmpty(email))
         {
             errors.Add(AuthenticationErrors.EmailClaimMissing);
-        }
-
-        // If there are any validation errors, return them all
-        if (errors.Any())
-        {
             return Result<AuthenticationResponse>.Failure(errors);
         }
 

@@ -11,6 +11,7 @@ using TaskManagement.Domain.Entities;
 using TaskManagement.Domain.Errors.Authentication;
 using TaskManagement.Domain.Interfaces;
 using TaskManagement.Infrastructure.Data;
+using TaskManagement.Tests.TestHelpers;
 using Xunit;
 using DomainTask = TaskManagement.Domain.Entities.Task;
 using SystemTask = System.Threading.Tasks.Task;
@@ -43,7 +44,7 @@ public class AuthenticateUserCommandHandlerTests
             .Build();
         
         _mockUserQueryRepository = new Mock<UserDapperRepository>(configuration);
-        _mockContext = new Mock<ApplicationDbContext>(new DbContextOptions<ApplicationDbContext>());
+        _mockContext = DbContextTestHelper.CreateMockDbContext();
         _mockUserCommandRepository = new Mock<UserEfCommandRepository>(_mockContext.Object);
         _handler = new AuthenticateUserCommandHandler(
             _mockAuthenticationService.Object,
@@ -171,7 +172,8 @@ public class AuthenticateUserCommandHandlerTests
         result.IsSuccess.Should().BeFalse();
         result.IsFailure.Should().BeTrue();
         result.Errors.Should().HaveCount(1);
-        result.Errors[0].Should().Be(AuthenticationErrors.InvalidAzureAdToken);
+        result.Errors[0].Code.Should().Be(AuthenticationErrors.InvalidAzureAdToken.Code);
+        result.Errors[0].Message.Should().Be(AuthenticationErrors.InvalidAzureAdToken.Message);
     }
 
     [Fact]
@@ -201,7 +203,8 @@ public class AuthenticateUserCommandHandlerTests
         result.IsSuccess.Should().BeFalse();
         result.IsFailure.Should().BeTrue();
         result.Errors.Should().HaveCount(1);
-        result.Errors[0].Should().Be(AuthenticationErrors.EmailClaimMissing);
+        result.Errors[0].Code.Should().Be(AuthenticationErrors.EmailClaimMissing.Code);
+        result.Errors[0].Message.Should().Be(AuthenticationErrors.EmailClaimMissing.Message);
     }
 
     [Fact]
@@ -245,7 +248,8 @@ public class AuthenticateUserCommandHandlerTests
         result.IsSuccess.Should().BeFalse();
         result.IsFailure.Should().BeTrue();
         result.Errors.Should().HaveCount(1);
-        result.Errors[0].Should().Be(AuthenticationErrors.JwtTokenGenerationFailed);
+        result.Errors[0].Code.Should().Be(AuthenticationErrors.JwtTokenGenerationFailed.Code);
+        result.Errors[0].Message.Should().Be(AuthenticationErrors.JwtTokenGenerationFailed.Message);
     }
 
     [Fact]

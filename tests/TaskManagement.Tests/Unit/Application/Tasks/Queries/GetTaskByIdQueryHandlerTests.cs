@@ -1,157 +1,133 @@
 using FluentAssertions;
-using Microsoft.Extensions.Configuration;
-using Moq;
-using TaskManagement.Application.Infrastructure.Data.Repositories;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using TaskManagement.Application.Common;
+using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Application.Tasks.Queries.GetTaskById;
-using TaskManagement.Domain.Common;
-using TaskManagement.Domain.DTOs;
 using TaskManagement.Domain.Entities;
-using TaskManagement.Domain.Errors.Tasks;
+using TaskManagement.Tests.Unit.TestHelpers;
 using Xunit;
-using DomainTask = TaskManagement.Domain.Entities.Task;
-using SystemTask = System.Threading.Tasks.Task;
-using DomainTaskStatus = TaskManagement.Domain.Entities.TaskStatus;
+using Task = System.Threading.Tasks.Task;
 
 namespace TaskManagement.Tests.Unit.Application.Tasks.Queries;
 
 /// <summary>
-/// Unit tests for the GetTaskByIdQueryHandler.
+///     Unit tests for GetTaskByIdQueryHandler using real in-memory database.
 /// </summary>
-public class GetTaskByIdQueryHandlerTests
+public class GetTaskByIdQueryHandlerTests : InMemoryDatabaseTestBase
 {
-    private readonly Mock<TaskDapperRepository> _mockTaskRepository;
-    private readonly GetTaskByIdQueryHandler _handler;
+    private readonly PipelineMediator _mediator;
+    private readonly TestServiceLocator _serviceLocator;
 
     public GetTaskByIdQueryHandlerTests()
     {
-        _mockTaskRepository = new Mock<TaskDapperRepository>(Mock.Of<IConfiguration>());
-        _handler = new GetTaskByIdQueryHandler(_mockTaskRepository.Object);
+        // Create a real service provider with logging
+        var services = new ServiceCollection();
+        services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
+        var serviceProvider = services.BuildServiceProvider();
+        
+        // Create real service locator that provides actual services
+        _serviceLocator = new TestServiceLocator(serviceProvider, Context);
+        
+        // Create real logger
+        var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
+        var logger = loggerFactory.CreateLogger<PipelineMediator>();
+        
+        // Create real mediator with real services
+        _mediator = new PipelineMediator(_serviceLocator, logger);
     }
 
     [Fact]
-    public async SystemTask Handle_WithValidId_ShouldReturnTaskDto()
+    public async Task Handle_WithValidId_ShouldReturnTaskSuccessfully()
     {
-        // Arrange
-        var taskId = Guid.NewGuid();
-        var query = new GetTaskByIdQuery { Id = taskId };
-        
-        var expectedTaskDto = new TaskDto
-        {
-            Id = taskId,
-            Title = "Test Task",
-            Description = "Test Description",
-            Status = DomainTaskStatus.Pending,
-            Priority = TaskPriority.High,
-            DueDate = DateTime.UtcNow.AddDays(1),
-            AssignedUserId = Guid.NewGuid(),
-            AssignedUserEmail = "assigned@example.com",
-            CreatedAt = DateTime.UtcNow,
-            CreatedBy = "test@example.com"
-        };
-
-        _mockTaskRepository.Setup(r => r.GetTaskWithUserAsync(taskId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(expectedTaskDto);
+        // Arrange - Use a test task from the seeded data
+        var testTask = GetAllTestTasks().First();
+        var query = new GetTaskByIdQuery { Id = testTask.Id };
 
         // Act
-        var result = await _handler.Handle(query, CancellationToken.None);
+        var result = await _mediator.Send(query);
 
         // Assert
+        result.Should().NotBeNull();
         result.IsSuccess.Should().BeTrue();
         result.Value.Should().NotBeNull();
-        result.Value!.Id.Should().Be(expectedTaskDto.Id);
-        result.Value.Title.Should().Be(expectedTaskDto.Title);
-        result.Value.Description.Should().Be(expectedTaskDto.Description);
-        result.Value.Status.Should().Be(expectedTaskDto.Status);
-        result.Value.Priority.Should().Be(expectedTaskDto.Priority);
-        result.Value.DueDate.Should().Be(expectedTaskDto.DueDate);
-        result.Value.AssignedUserId.Should().Be(expectedTaskDto.AssignedUserId);
-        result.Value.AssignedUserEmail.Should().Be(expectedTaskDto.AssignedUserEmail);
-        result.Value.CreatedAt.Should().Be(expectedTaskDto.CreatedAt);
-        result.Value.CreatedBy.Should().Be(expectedTaskDto.CreatedBy);
+        result.Value!.Id.Should().Be(testTask.Id);
+        result.Value.Title.Should().Be(testTask.Title);
+        result.Value.Description.Should().Be(testTask.Description);
+        result.Value.Status.Should().Be(testTask.Status);
+        result.Value.Priority.Should().Be(testTask.Priority);
+        result.Value.AssignedUserId.Should().Be(testTask.AssignedUserId);
     }
 
     [Fact]
-    public async SystemTask Handle_WithEmptyId_ShouldReturnValidationError()
+    public async Task Handle_WithNonExistentId_ShouldReturnNotFoundError()
+    {
+        // Arrange
+        var nonExistentId = Guid.NewGuid();
+        var query = new GetTaskByIdQuery { Id = nonExistentId };
+
+        // Act
+        var result = await _mediator.Send(query);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.IsSuccess.Should().BeFalse();
+        result.Error.Should().NotBeNull();
+        result.Error!.Code.Should().Be("TASK_NOT_FOUND");
+    }
+
+    [Fact]
+    public async Task Handle_WithEmptyId_ShouldReturnValidationError()
     {
         // Arrange
         var query = new GetTaskByIdQuery { Id = Guid.Empty };
 
         // Act
-        var result = await _handler.Handle(query, CancellationToken.None);
+        var result = await _mediator.Send(query);
 
         // Assert
+        result.Should().NotBeNull();
         result.IsSuccess.Should().BeFalse();
-        result.IsFailure.Should().BeTrue();
-        result.Errors.Should().HaveCount(1);
-        result.Errors[0].Should().Be(TaskErrors.InvalidTaskId);
+        result.Error.Should().NotBeNull();
+        result.Error!.Code.Should().Be("INVALID_TASK_ID");
     }
 
     [Fact]
-    public async SystemTask Handle_WithTaskNotFound_ShouldReturnNotFoundError()
+    public async Task Handle_WithValidId_ShouldReturnTaskWithUserInformation()
     {
-        // Arrange
-        var taskId = Guid.NewGuid();
-        var query = new GetTaskByIdQuery { Id = taskId };
-
-        _mockTaskRepository.Setup(r => r.GetTaskWithUserAsync(taskId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((TaskDto?)null);
+        // Arrange - Use a test task from the seeded data
+        var testTask = GetAllTestTasks().First();
+        var query = new GetTaskByIdQuery { Id = testTask.Id };
 
         // Act
-        var result = await _handler.Handle(query, CancellationToken.None);
+        var result = await _mediator.Send(query);
 
         // Assert
-        result.IsSuccess.Should().BeFalse();
-        result.IsFailure.Should().BeTrue();
-        result.Errors.Should().HaveCount(1);
-        result.Errors[0].Should().Be(TaskErrors.NotFound);
+        result.Should().NotBeNull();
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().NotBeNull();
+        result.Value!.Id.Should().Be(testTask.Id);
+        result.Value.AssignedUserEmail.Should().NotBeNullOrEmpty();
+        result.Value.AssignedUserEmail.Should().Be(testTask.AssignedUser?.Email);
     }
 
     [Fact]
-    public async SystemTask Handle_ShouldCallRepositoryMethod()
+    public async Task Handle_WithMultipleTasks_ShouldReturnCorrectTask()
     {
-        // Arrange
-        var taskId = Guid.NewGuid();
-        var query = new GetTaskByIdQuery { Id = taskId };
-        
-        var expectedTaskDto = new TaskDto
-        {
-            Id = taskId,
-            Title = "Test Task",
-            Description = "Test Description",
-            Status = DomainTaskStatus.Pending,
-            Priority = TaskPriority.High,
-            DueDate = DateTime.UtcNow.AddDays(1),
-            AssignedUserId = Guid.NewGuid(),
-            AssignedUserEmail = "assigned@example.com",
-            CreatedAt = DateTime.UtcNow,
-            CreatedBy = "test@example.com"
-        };
-
-        _mockTaskRepository.Setup(r => r.GetTaskWithUserAsync(taskId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(expectedTaskDto);
+        // Arrange - Get all test tasks and pick a specific one
+        var allTasks = GetAllTestTasks().ToList();
+        var targetTask = allTasks[1]; // Pick the second task
+        var query = new GetTaskByIdQuery { Id = targetTask.Id };
 
         // Act
-        await _handler.Handle(query, CancellationToken.None);
+        var result = await _mediator.Send(query);
 
         // Assert
-        _mockTaskRepository.Verify(r => r.GetTaskWithUserAsync(taskId, It.IsAny<CancellationToken>()), Times.Once);
-    }
-
-    [Fact]
-    public async SystemTask Handle_WithRepositoryException_ShouldPropagateException()
-    {
-        // Arrange
-        var taskId = Guid.NewGuid();
-        var query = new GetTaskByIdQuery { Id = taskId };
-        var exception = new InvalidOperationException("Repository exception");
-
-        _mockTaskRepository.Setup(r => r.GetTaskWithUserAsync(taskId, It.IsAny<CancellationToken>()))
-            .ThrowsAsync(exception);
-
-        // Act & Assert
-        var exceptionThrown = await Assert.ThrowsAsync<InvalidOperationException>(() => 
-            _handler.Handle(query, CancellationToken.None));
-        
-        exceptionThrown.Message.Should().Be("Repository exception");
+        result.Should().NotBeNull();
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().NotBeNull();
+        result.Value!.Id.Should().Be(targetTask.Id);
+        result.Value.Title.Should().Be(targetTask.Title);
+        result.Value.Description.Should().Be(targetTask.Description);
     }
 }

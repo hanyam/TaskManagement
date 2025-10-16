@@ -61,7 +61,8 @@ builder.Services.AddScoped<UserEfCommandRepository>();
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 
 // Configure Custom Mediator
-builder.Services.AddScoped<IMediator, Mediator>();
+builder.Services.AddScoped<IServiceLocator, ServiceLocator>();
+builder.Services.AddScoped<IMediator, PipelineMediator>();
 
 // Register all request handlers
 builder.Services.AddScoped<IRequestHandler<CreateTaskCommand, TaskDto>, CreateTaskCommandHandler>();
@@ -177,11 +178,14 @@ app.MapControllers();
 // Add health check endpoint
 app.MapHealthChecks("/health");
 
-// Ensure database is created
-using (var scope = app.Services.CreateScope())
+// Ensure database is created (skip in test environment)
+if (!app.Environment.IsEnvironment("Testing"))
 {
-    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    context.Database.EnsureCreated();
+    using (var scope = app.Services.CreateScope())
+    {
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        context.Database.EnsureCreated();
+    }
 }
 
 try

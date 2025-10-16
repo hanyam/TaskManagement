@@ -11,11 +11,11 @@ namespace TaskManagement.Application.Common;
 public class Mediator : IMediator
 {
     private readonly ILogger<Mediator> _logger;
-    private readonly IServiceProvider _serviceProvider;
+    private readonly IServiceLocator _serviceLocator;
 
-    public Mediator(IServiceProvider serviceProvider, ILogger<Mediator> logger)
+    public Mediator(IServiceLocator serviceLocator, ILogger<Mediator> logger)
     {
-        _serviceProvider = serviceProvider;
+        _serviceLocator = serviceLocator;
         _logger = logger;
     }
 
@@ -27,11 +27,14 @@ public class Mediator : IMediator
         {
             _logger.LogInformation("Processing request of type {RequestType}", request.GetType().Name);
 
-            var handler = _serviceProvider.GetRequiredService<IRequestHandler<IRequest<TResponse>, TResponse>>();
+            // Get the handler type dynamically
+            var handlerType = typeof(IRequestHandler<,>).MakeGenericType(request.GetType(), typeof(TResponse));
+            var handler = _serviceLocator.GetRequiredService(handlerType);
 
-            // For now, just call the handler directly without pipeline behaviors
-            // TODO: Implement pipeline behaviors later
-            var result = await handler.Handle((IRequest<TResponse>)request, cancellationToken);
+            // Use reflection to call the Handle method
+            var handleMethod = handlerType.GetMethod("Handle");
+            var task = (Task<Result<TResponse>>)handleMethod!.Invoke(handler, new object[] { request, cancellationToken })!;
+            var result = await task;
 
             if (result.IsSuccess)
                 _logger.LogInformation("Request of type {RequestType} processed successfully", request.GetType().Name);
@@ -55,11 +58,14 @@ public class Mediator : IMediator
         {
             _logger.LogInformation("Processing request of type {RequestType}", request.GetType().Name);
 
-            var handler = _serviceProvider.GetRequiredService<IRequestHandler<IRequest>>();
+            // Get the handler type dynamically
+            var handlerType = typeof(IRequestHandler<>).MakeGenericType(request.GetType());
+            var handler = _serviceLocator.GetRequiredService(handlerType);
 
-            // For now, just call the handler directly without pipeline behaviors
-            // TODO: Implement pipeline behaviors later
-            var result = await handler.Handle(request, cancellationToken);
+            // Use reflection to call the Handle method
+            var handleMethod = handlerType.GetMethod("Handle");
+            var task = (Task<Result>)handleMethod!.Invoke(handler, new object[] { request, cancellationToken })!;
+            var result = await task;
 
             if (result.IsSuccess)
                 _logger.LogInformation("Request of type {RequestType} processed successfully", request.GetType().Name);

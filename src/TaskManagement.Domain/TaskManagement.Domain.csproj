@@ -4,4 +4,11 @@
         <ProjectGuid>{E5F6G7H8-I9J0-1234-EFGH-567890123456}</ProjectGuid>
     </PropertyGroup>
 
+    <ItemGroup>
+      <PackageReference Update="coverlet.collector" Version="6.0.4">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+    </ItemGroup>
+
 </Project>

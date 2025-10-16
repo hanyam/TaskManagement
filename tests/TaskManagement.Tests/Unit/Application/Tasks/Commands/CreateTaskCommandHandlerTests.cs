@@ -10,6 +10,7 @@ using TaskManagement.Domain.Entities;
 using TaskManagement.Domain.Errors.Tasks;
 using TaskManagement.Domain.Errors.Users;
 using TaskManagement.Infrastructure.Data;
+using TaskManagement.Tests.TestHelpers;
 using Xunit;
 using DomainTask = TaskManagement.Domain.Entities.Task;
 using SystemTask = System.Threading.Tasks.Task;
@@ -30,7 +31,7 @@ public class CreateTaskCommandHandlerTests
     {
         _mockTaskCommandRepository = new Mock<TaskEfCommandRepository>(Mock.Of<ApplicationDbContext>());
         _mockUserQueryRepository = new Mock<UserDapperRepository>(Mock.Of<IConfiguration>());
-        _mockContext = new Mock<ApplicationDbContext>(new DbContextOptions<ApplicationDbContext>());
+        _mockContext = DbContextTestHelper.CreateMockDbContext();
         _handler = new CreateTaskCommandHandler(_mockTaskCommandRepository.Object, _mockUserQueryRepository.Object, _mockContext.Object);
     }
 

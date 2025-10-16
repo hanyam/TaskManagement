@@ -8,4 +8,11 @@
         <ProjectReference Include="..\TaskManagement.Domain\TaskManagement.Domain.csproj"/>
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Update="coverlet.collector" Version="6.0.4">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+    </ItemGroup>
+
 </Project>
