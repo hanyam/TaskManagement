@@ -455,6 +455,7 @@ Comprehensive documentation is available in the `docs/` directory:
 - **[Deployment Guide](docs/DEPLOYMENT.md)** - Deployment instructions
 - **[Business Rules](docs/BUSINESS_RULES.md)** - Business logic documentation
 - **[Error Handling](docs/ERROR_HANDLING.md)** - Error handling guide
+- **[Enterprise Maturity Assessment](docs/ENTERPRISE_MATURITY_ASSESSMENT.md)** - Enterprise readiness and gap analysis
 
 ## 🆘 Support
 

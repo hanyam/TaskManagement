@@ -28,6 +28,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{7879002A-3
 		docs\ERROR_HANDLING.md = docs\ERROR_HANDLING.md
 		docs\SECURITY.md = docs\SECURITY.md
 		docs\TESTING.md = docs\TESTING.md
+		docs\ENTERPRISE_MATURITY_ASSESSMENT.md = docs\ENTERPRISE_MATURITY_ASSESSMENT.md
 	EndProjectSection
 EndProject
 Global
