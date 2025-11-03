@@ -1,6 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using TaskManagement.Infrastructure.Data;
 using TaskManagement.Domain.Entities;
+using TaskAssignment = TaskManagement.Domain.Entities.TaskAssignment;
+using TaskProgressHistory = TaskManagement.Domain.Entities.TaskProgressHistory;
+using DeadlineExtensionRequest = TaskManagement.Domain.Entities.DeadlineExtensionRequest;
 
 namespace TaskManagement.Tests.Unit.TestHelpers;
 
@@ -65,21 +68,27 @@ public abstract class InMemoryDatabaseTestBase : IDisposable
                 "Write comprehensive documentation for the new API endpoints",
                 TaskPriority.High,
                 DateTime.UtcNow.AddDays(7),
-                userIds[0] // John Doe
+                userIds[0], // John Doe
+                TaskType.WithProgress,
+                userIds[0] // Created by John Doe
             ),
             new TaskManagement.Domain.Entities.Task(
                 "Review code changes",
                 "Review the latest pull requests and provide feedback",
                 TaskPriority.Medium,
                 DateTime.UtcNow.AddDays(3),
-                userIds[1] // Jane Smith
+                userIds[1], // Jane Smith
+                TaskType.Simple,
+                userIds[0] // Created by John Doe
             ),
             new TaskManagement.Domain.Entities.Task(
                 "Update dependencies",
                 "Update all project dependencies to latest versions",
                 TaskPriority.Low,
                 DateTime.UtcNow.AddDays(14),
-                userIds[2] // Bob Wilson
+                userIds[2], // Bob Wilson
+                TaskType.WithDueDate,
+                userIds[1] // Created by Jane Smith
             )
         };
 
@@ -162,16 +171,77 @@ public abstract class InMemoryDatabaseTestBase : IDisposable
     /// </summary>
     protected TaskManagement.Domain.Entities.Task CreateTestTask(
         string title, 
-        string description, 
+        string? description, 
         TaskPriority priority, 
         DateTime? dueDate, 
-        Guid assignedUserId)
+        Guid assignedUserId,
+        TaskType type = TaskType.Simple,
+        Guid? createdById = null)
     {
-        var task = new TaskManagement.Domain.Entities.Task(title, description, priority, dueDate, assignedUserId);
+        var creatorId = createdById ?? assignedUserId;
+        var task = new TaskManagement.Domain.Entities.Task(title, description, priority, dueDate, assignedUserId, type, creatorId);
+        task.SetCreatedBy("test@example.com");
         Context.Tasks.Add(task);
         Context.SaveChanges();
         TestTaskIds.Add(task.Id);
         return task;
+    }
+
+    /// <summary>
+    /// Creates a task assignment for testing.
+    /// </summary>
+    protected TaskAssignment CreateTestAssignment(Guid taskId, Guid userId, bool isPrimary = false)
+    {
+        var assignment = new TaskAssignment(taskId, userId, isPrimary);
+        assignment.SetCreatedBy("test@example.com");
+        Context.Set<TaskAssignment>().Add(assignment);
+        Context.SaveChanges();
+        return assignment;
+    }
+
+    /// <summary>
+    /// Creates task progress history entry for testing.
+    /// </summary>
+    protected TaskProgressHistory CreateTestProgressHistory(Guid taskId, Guid updatedById, int progressPercentage, string? notes = null)
+    {
+        var progressHistory = new TaskProgressHistory(taskId, updatedById, progressPercentage, notes);
+        progressHistory.SetCreatedBy("test@example.com");
+        Context.Set<TaskProgressHistory>().Add(progressHistory);
+        Context.SaveChanges();
+        return progressHistory;
+    }
+
+    /// <summary>
+    /// Creates a deadline extension request for testing.
+    /// </summary>
+    protected DeadlineExtensionRequest CreateTestExtensionRequest(Guid taskId, Guid requestedById, DateTime requestedDueDate, string reason)
+    {
+        var extensionRequest = new DeadlineExtensionRequest(taskId, requestedById, requestedDueDate, reason);
+        extensionRequest.SetCreatedBy("test@example.com");
+        Context.Set<DeadlineExtensionRequest>().Add(extensionRequest);
+        Context.SaveChanges();
+        return extensionRequest;
+    }
+
+    /// <summary>
+    /// Sets the role of a test user.
+    /// </summary>
+    protected void SetUserRole(Guid userId, UserRole role)
+    {
+        var user = GetTestUser(userId);
+        user.UpdateRole(role);
+        Context.SaveChanges();
+    }
+
+    /// <summary>
+    /// Gets a test user and sets their role.
+    /// </summary>
+    protected User GetTestUserWithRole(string email, UserRole role)
+    {
+        var user = GetTestUser(email);
+        user.UpdateRole(role);
+        Context.SaveChanges();
+        return user;
     }
 
     public void Dispose()

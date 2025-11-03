@@ -19,6 +19,9 @@ public class CreateTaskCommandValidator : AbstractValidator<CreateTaskCommand>
         RuleFor(x => x.AssignedUserId)
             .NotEmpty().WithMessage("Assigned user ID is required");
 
+        RuleFor(x => x.CreatedById)
+            .NotEmpty().WithMessage("Created by user ID is required");
+
         RuleFor(x => x.CreatedBy)
             .NotEmpty().WithMessage("Created by is required");
 

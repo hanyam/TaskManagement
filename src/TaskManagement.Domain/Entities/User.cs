@@ -27,6 +27,7 @@ public class User : BaseEntity
     public string AzureAdObjectId { get; private set; } = string.Empty;
     public bool IsActive { get; private set; } = true;
     public DateTime? LastLoginAt { get; private set; }
+    public UserRole Role { get; private set; } = UserRole.Employee;
 
     public void UpdateProfile(string firstName, string lastName)
     {
@@ -49,4 +50,19 @@ public class User : BaseEntity
     {
         IsActive = true;
     }
+
+    public void UpdateRole(UserRole role)
+    {
+        Role = role;
+    }
+}
+
+/// <summary>
+///     Represents the role of a user in the system.
+/// </summary>
+public enum UserRole
+{
+    Employee = 0,
+    Manager = 1,
+    Admin = 2
 }

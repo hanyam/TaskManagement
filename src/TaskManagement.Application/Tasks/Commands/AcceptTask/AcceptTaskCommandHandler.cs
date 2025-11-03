@@ -1,24 +1,25 @@
+using Microsoft.EntityFrameworkCore;
 using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Application.Infrastructure.Data.Repositories;
 using TaskManagement.Domain.Common;
 using TaskManagement.Domain.DTOs;
+using TaskManagement.Domain.Entities;
 using TaskManagement.Domain.Errors.Tasks;
-using TaskManagement.Domain.Errors.Users;
 using TaskManagement.Infrastructure.Data;
 using Task = TaskManagement.Domain.Entities.Task;
 
-namespace TaskManagement.Application.Tasks.Commands.CreateTask;
+namespace TaskManagement.Application.Tasks.Commands.AcceptTask;
 
 /// <summary>
-///     Handler for creating a new task using EF Core for commands and Dapper for queries.
+///     Handler for accepting an assigned task (employee).
 /// </summary>
-public class CreateTaskCommandHandler : ICommandHandler<CreateTaskCommand, TaskDto>
+public class AcceptTaskCommandHandler : ICommandHandler<AcceptTaskCommand, TaskDto>
 {
     private readonly ApplicationDbContext _context;
     private readonly TaskEfCommandRepository _taskCommandRepository;
     private readonly UserDapperRepository _userQueryRepository;
 
-    public CreateTaskCommandHandler(
+    public AcceptTaskCommandHandler(
         TaskEfCommandRepository taskCommandRepository,
         UserDapperRepository userQueryRepository,
         ApplicationDbContext context)
@@ -28,51 +29,50 @@ public class CreateTaskCommandHandler : ICommandHandler<CreateTaskCommand, TaskD
         _context = context;
     }
 
-    public async Task<Result<TaskDto>> Handle(CreateTaskCommand request, CancellationToken cancellationToken)
+    public async Task<Result<TaskDto>> Handle(AcceptTaskCommand request, CancellationToken cancellationToken)
     {
         var errors = new List<Error>();
 
-        // Validate that the assigned user exists using Dapper (fast query)
-        var assignedUser = await _userQueryRepository.GetByIdAsync(request.AssignedUserId, cancellationToken);
-        if (assignedUser == null)
+        // Validate task exists
+        var task = await _context.Set<Task>().FindAsync(new object[] { request.TaskId }, cancellationToken);
+        if (task == null)
         {
-            errors.Add(TaskErrors.AssignedUserNotFound);
-        }
-
-        // Additional validations can be added here
-        if (string.IsNullOrWhiteSpace(request.Title))
-        {
-            errors.Add(TaskErrors.TitleRequired);
-        }
-
-        if (request.DueDate < DateTime.UtcNow)
-        {
-            errors.Add(TaskErrors.DueDateInPast);
-        }
-
-        // If there are any validation errors, return them all
-        if (errors.Any())
-        {
+            errors.Add(TaskErrors.NotFoundById(request.TaskId));
             return Result<TaskDto>.Failure(errors);
         }
 
-        // Create the task
-        var task = new Task(
-            request.Title,
-            request.Description,
-            request.Priority,
-            request.DueDate,
-            request.AssignedUserId,
-            request.Type,
-            request.CreatedById);
+        // Validate user is assigned to the task
+        var assignments = await _context.Set<TaskAssignment>()
+            .Where(ta => ta.TaskId == request.TaskId)
+            .ToListAsync(cancellationToken);
+        
+        var isAssigned = task.AssignedUserId == request.AcceptedById ||
+                        assignments.Any(a => a.UserId == request.AcceptedById);
 
-        task.SetCreatedBy(request.CreatedBy);
+        if (!isAssigned)
+        {
+            errors.Add(Error.Forbidden("User is not assigned to this task"));
+            return Result<TaskDto>.Failure(errors);
+        }
 
-        // Add to repository using EF Core (for change tracking and complex operations)
-        await _taskCommandRepository.AddAsync(task, cancellationToken);
+        // Accept task
+        try
+        {
+            task.Accept();
+            task.SetUpdatedBy(request.AcceptedById.ToString());
+        }
+        catch (Exception ex)
+        {
+            errors.Add(Error.Validation(ex.Message, "Status"));
+            return Result<TaskDto>.Failure(errors);
+        }
+
+        await _taskCommandRepository.UpdateAsync(task, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
 
-        // Return the created task as DTO
+        // Get assigned user for DTO
+        var assignedUser = await _userQueryRepository.GetByIdAsync(task.AssignedUserId, cancellationToken);
+
         return new TaskDto
         {
             Id = task.Id,
@@ -84,7 +84,7 @@ public class CreateTaskCommandHandler : ICommandHandler<CreateTaskCommand, TaskD
             OriginalDueDate = task.OriginalDueDate,
             ExtendedDueDate = task.ExtendedDueDate,
             AssignedUserId = task.AssignedUserId,
-            AssignedUserEmail = assignedUser!.Email,
+            AssignedUserEmail = assignedUser?.Email,
             Type = task.Type,
             ReminderLevel = task.ReminderLevel,
             ProgressPercentage = task.ProgressPercentage,
@@ -94,3 +94,4 @@ public class CreateTaskCommandHandler : ICommandHandler<CreateTaskCommand, TaskD
         };
     }
 }
+

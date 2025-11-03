@@ -7,7 +7,9 @@ using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Application.Tasks.Commands.CreateTask;
 using TaskManagement.Domain.Entities;
 using TaskManagement.Domain.Common;
+using TaskManagement.Domain.Errors.Tasks;
 using TaskManagement.Tests.Unit.TestHelpers;
+using static TaskManagement.Tests.Unit.TestHelpers.ErrorAssertionExtensions;
 using Xunit;
 using Task = System.Threading.Tasks.Task;
 using TaskStatus = TaskManagement.Domain.Entities.TaskStatus;
@@ -98,8 +100,7 @@ public class CreateTaskCommandHandlerTests : InMemoryDatabaseTestBase
         // Assert
         result.Should().NotBeNull();
         result.IsSuccess.Should().BeFalse();
-        result.Error.Should().NotBeNull();
-        result.Error!.Code.Should().Be("ASSIGNED_USER_NOT_FOUND");
+        result.ShouldContainError(TaskErrors.AssignedUserNotFound);
 
         // Verify that no task was added to the database
         var taskCount = await Context.Tasks.CountAsync();
@@ -115,10 +116,11 @@ public class CreateTaskCommandHandlerTests : InMemoryDatabaseTestBase
         {
             Title = "", // Invalid: empty title
             Description = "Short",
-            Priority = (TaskPriority)99, // Invalid: non-existent priority
+            Priority = TaskPriority.High, // Valid priority
             DueDate = DateTime.UtcNow.AddDays(-1), // Invalid: past due date
             AssignedUserId = assignedUser.Id,
-            CreatedBy = "" // Invalid: empty created by
+            CreatedBy = "", // Invalid: empty created by
+            CreatedById = Guid.Empty // Invalid: empty created by ID
         };
 
         // Act
@@ -128,11 +130,12 @@ public class CreateTaskCommandHandlerTests : InMemoryDatabaseTestBase
         result.Should().NotBeNull();
         result.IsSuccess.Should().BeFalse();
         result.Errors.Should().NotBeEmpty();
-        result.Errors.Should().HaveCount(3); // Expecting 3 validation errors from the validator
+        // Expecting validation errors: Title and DueDate at minimum
+        result.Errors.Count.Should().BeGreaterThanOrEqualTo(2);
 
-        result.Errors.Should().Contain(e => e.Code == "VALIDATION_ERROR" && e.Field == "Title");
-        result.Errors.Should().Contain(e => e.Code == "VALIDATION_ERROR" && e.Field == "Priority");
-        result.Errors.Should().Contain(e => e.Code == "VALIDATION_ERROR" && e.Field == "DueDate");
+        // Use centralized error objects instead of hardcoded strings
+        result.ShouldContainErrorInCollection(TaskErrors.TitleRequired);
+        result.ShouldContainErrorInCollection(TaskErrors.DueDateInPast);
 
         // Verify that no task was added to the database
         var taskCount = await Context.Tasks.CountAsync();

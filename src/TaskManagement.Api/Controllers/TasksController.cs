@@ -1,9 +1,21 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using TaskManagement.Application.Common.Interfaces;
+using TaskManagement.Application.Tasks.Commands.AcceptTask;
+using TaskManagement.Application.Tasks.Commands.AcceptTaskProgress;
+using TaskManagement.Application.Tasks.Commands.ApproveExtensionRequest;
+using TaskManagement.Application.Tasks.Commands.AssignTask;
+using TaskManagement.Application.Tasks.Commands.MarkTaskCompleted;
+using TaskManagement.Application.Tasks.Commands.ReassignTask;
+using TaskManagement.Application.Tasks.Commands.RejectTask;
+using TaskManagement.Application.Tasks.Commands.RequestDeadlineExtension;
+using TaskManagement.Application.Tasks.Commands.RequestMoreInfo;
+using TaskManagement.Application.Tasks.Commands.UpdateTaskProgress;
 using TaskManagement.Application.Tasks.Commands.CreateTask;
 using TaskManagement.Application.Tasks.Queries.GetTaskById;
 using TaskManagement.Application.Tasks.Queries.GetTasks;
+using TaskManagement.Domain.Common;
 using TaskManagement.Domain.DTOs;
 using TaskManagement.Domain.Entities;
 using TaskStatus = TaskManagement.Domain.Entities.TaskStatus;
@@ -80,6 +92,13 @@ public class TasksController : BaseController
     [HttpPost]
     public async Task<IActionResult> CreateTask([FromBody] CreateTaskRequest request)
     {
+        // Get user ID from claims (should be set during authentication)
+        var userIdClaim = User.FindFirst("user_id")?.Value;
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+        {
+            return BadRequest(ApiResponse<object>.ErrorResponse("User ID not found in token", HttpContext.TraceIdentifier));
+        }
+
         var command = new CreateTaskCommand
         {
             Title = request.Title,
@@ -87,10 +106,282 @@ public class TasksController : BaseController
             Priority = request.Priority,
             DueDate = request.DueDate,
             AssignedUserId = request.AssignedUserId,
+            Type = request.Type,
+            CreatedById = userId,
             CreatedBy = User.Identity?.Name ?? "system"
         };
 
         var result = await _commandMediator.Send(command);
         return HandleResult(result, 201);
+    }
+
+    /// <summary>
+    ///     Assigns a task to one or multiple users (manager only).
+    /// </summary>
+    /// <param name="id">The task ID.</param>
+    /// <param name="request">The assignment request.</param>
+    /// <returns>Updated task information.</returns>
+    [HttpPost("{id}/assign")]
+    [Authorize(Roles = "Manager")]
+    public async Task<IActionResult> AssignTask(Guid id, [FromBody] AssignTaskRequest request)
+    {
+        var userIdClaim = User.FindFirst("user_id")?.Value;
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+        {
+            return BadRequest(ApiResponse<object>.ErrorResponse("User ID not found in token", HttpContext.TraceIdentifier));
+        }
+
+        var command = new AssignTaskCommand
+        {
+            TaskId = id,
+            UserIds = request.UserIds,
+            AssignedById = userId
+        };
+
+        var result = await _commandMediator.Send(command);
+        return HandleResult(result);
+    }
+
+    /// <summary>
+    ///     Updates task progress (employee).
+    /// </summary>
+    /// <param name="id">The task ID.</param>
+    /// <param name="request">The progress update request.</param>
+    /// <returns>Progress update information.</returns>
+    [HttpPost("{id}/progress")]
+    [Authorize(Roles = "Employee,Manager")]
+    public async Task<IActionResult> UpdateTaskProgress(Guid id, [FromBody] UpdateTaskProgressRequest request)
+    {
+        var userIdClaim = User.FindFirst("user_id")?.Value;
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+        {
+            return BadRequest(ApiResponse<object>.ErrorResponse("User ID not found in token", HttpContext.TraceIdentifier));
+        }
+
+        var command = new UpdateTaskProgressCommand
+        {
+            TaskId = id,
+            ProgressPercentage = request.ProgressPercentage,
+            Notes = request.Notes,
+            UpdatedById = userId
+        };
+
+        var result = await _commandMediator.Send(command);
+        return HandleResult(result);
+    }
+
+    /// <summary>
+    ///     Accepts a task progress update (manager).
+    /// </summary>
+    /// <param name="id">The task ID.</param>
+    /// <param name="request">The progress acceptance request.</param>
+    /// <returns>Success response.</returns>
+    [HttpPost("{id}/progress/accept")]
+    [Authorize(Roles = "Manager")]
+    public async Task<IActionResult> AcceptTaskProgress(Guid id, [FromBody] AcceptTaskProgressRequest request)
+    {
+        var userIdClaim = User.FindFirst("user_id")?.Value;
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+        {
+            return BadRequest(ApiResponse<object>.ErrorResponse("User ID not found in token", HttpContext.TraceIdentifier));
+        }
+
+        var command = new AcceptTaskProgressCommand
+        {
+            TaskId = id,
+            ProgressHistoryId = request.ProgressHistoryId,
+            AcceptedById = userId
+        };
+
+        var result = await _commandMediator.Send(command);
+        return HandleResult(result);
+    }
+
+    /// <summary>
+    ///     Accepts an assigned task (employee).
+    /// </summary>
+    /// <param name="id">The task ID.</param>
+    /// <returns>Updated task information.</returns>
+    [HttpPost("{id}/accept")]
+    [Authorize(Roles = "Employee,Manager")]
+    public async Task<IActionResult> AcceptTask(Guid id)
+    {
+        var userIdClaim = User.FindFirst("user_id")?.Value;
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+        {
+            return BadRequest(ApiResponse<object>.ErrorResponse("User ID not found in token", HttpContext.TraceIdentifier));
+        }
+
+        var command = new AcceptTaskCommand
+        {
+            TaskId = id,
+            AcceptedById = userId
+        };
+
+        var result = await _commandMediator.Send(command);
+        return HandleResult(result);
+    }
+
+    /// <summary>
+    ///     Rejects an assigned task (employee).
+    /// </summary>
+    /// <param name="id">The task ID.</param>
+    /// <param name="request">The rejection request.</param>
+    /// <returns>Updated task information.</returns>
+    [HttpPost("{id}/reject")]
+    [Authorize(Roles = "Employee,Manager")]
+    public async Task<IActionResult> RejectTask(Guid id, [FromBody] RejectTaskRequest? request = null)
+    {
+        var userIdClaim = User.FindFirst("user_id")?.Value;
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+        {
+            return BadRequest(ApiResponse<object>.ErrorResponse("User ID not found in token", HttpContext.TraceIdentifier));
+        }
+
+        var command = new RejectTaskCommand
+        {
+            TaskId = id,
+            Reason = request?.Reason,
+            RejectedById = userId
+        };
+
+        var result = await _commandMediator.Send(command);
+        return HandleResult(result);
+    }
+
+    /// <summary>
+    ///     Requests more information on a task (employee).
+    /// </summary>
+    /// <param name="id">The task ID.</param>
+    /// <param name="request">The information request.</param>
+    /// <returns>Updated task information.</returns>
+    [HttpPost("{id}/request-info")]
+    [Authorize(Roles = "Employee,Manager")]
+    public async Task<IActionResult> RequestMoreInfo(Guid id, [FromBody] RequestMoreInfoRequest request)
+    {
+        var userIdClaim = User.FindFirst("user_id")?.Value;
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+        {
+            return BadRequest(ApiResponse<object>.ErrorResponse("User ID not found in token", HttpContext.TraceIdentifier));
+        }
+
+        var command = new RequestMoreInfoCommand
+        {
+            TaskId = id,
+            RequestMessage = request.RequestMessage,
+            RequestedById = userId
+        };
+
+        var result = await _commandMediator.Send(command);
+        return HandleResult(result);
+    }
+
+    /// <summary>
+    ///     Reassigns a task to different user(s) (manager).
+    /// </summary>
+    /// <param name="id">The task ID.</param>
+    /// <param name="request">The reassignment request.</param>
+    /// <returns>Updated task information.</returns>
+    [HttpPut("{id}/reassign")]
+    [Authorize(Roles = "Manager")]
+    public async Task<IActionResult> ReassignTask(Guid id, [FromBody] ReassignTaskRequest request)
+    {
+        var userIdClaim = User.FindFirst("user_id")?.Value;
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+        {
+            return BadRequest(ApiResponse<object>.ErrorResponse("User ID not found in token", HttpContext.TraceIdentifier));
+        }
+
+        var command = new ReassignTaskCommand
+        {
+            TaskId = id,
+            NewUserIds = request.NewUserIds,
+            ReassignedById = userId
+        };
+
+        var result = await _commandMediator.Send(command);
+        return HandleResult(result);
+    }
+
+    /// <summary>
+    ///     Requests a deadline extension (employee).
+    /// </summary>
+    /// <param name="id">The task ID.</param>
+    /// <param name="request">The extension request.</param>
+    /// <returns>Extension request information.</returns>
+    [HttpPost("{id}/extension-request")]
+    [Authorize(Roles = "Employee,Manager")]
+    public async Task<IActionResult> RequestDeadlineExtension(Guid id, [FromBody] RequestDeadlineExtensionRequest request)
+    {
+        var userIdClaim = User.FindFirst("user_id")?.Value;
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+        {
+            return BadRequest(ApiResponse<object>.ErrorResponse("User ID not found in token", HttpContext.TraceIdentifier));
+        }
+
+        var command = new RequestDeadlineExtensionCommand
+        {
+            TaskId = id,
+            RequestedDueDate = request.RequestedDueDate,
+            Reason = request.Reason,
+            RequestedById = userId
+        };
+
+        var result = await _commandMediator.Send(command);
+        return HandleResult(result);
+    }
+
+    /// <summary>
+    ///     Approves a deadline extension request (manager).
+    /// </summary>
+    /// <param name="id">The task ID.</param>
+    /// <param name="requestId">The extension request ID.</param>
+    /// <param name="request">The approval request.</param>
+    /// <returns>Success response.</returns>
+    [HttpPost("{id}/extension-request/{requestId}/approve")]
+    [Authorize(Roles = "Manager")]
+    public async Task<IActionResult> ApproveExtensionRequest(Guid id, Guid requestId, [FromBody] ApproveExtensionRequestRequest? request = null)
+    {
+        var userIdClaim = User.FindFirst("user_id")?.Value;
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+        {
+            return BadRequest(ApiResponse<object>.ErrorResponse("User ID not found in token", HttpContext.TraceIdentifier));
+        }
+
+        var command = new ApproveExtensionRequestCommand
+        {
+            TaskId = id,
+            ExtensionRequestId = requestId,
+            ApprovedById = userId,
+            ReviewNotes = request?.ReviewNotes
+        };
+
+        var result = await _commandMediator.Send(command);
+        return HandleResult(result);
+    }
+
+    /// <summary>
+    ///     Marks a task as completed (manager).
+    /// </summary>
+    /// <param name="id">The task ID.</param>
+    /// <returns>Updated task information.</returns>
+    [HttpPost("{id}/complete")]
+    [Authorize(Roles = "Manager")]
+    public async Task<IActionResult> MarkTaskCompleted(Guid id)
+    {
+        var userIdClaim = User.FindFirst("user_id")?.Value;
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+        {
+            return BadRequest(ApiResponse<object>.ErrorResponse("User ID not found in token", HttpContext.TraceIdentifier));
+        }
+
+        var command = new MarkTaskCompletedCommand
+        {
+            TaskId = id,
+            CompletedById = userId
+        };
+
+        var result = await _commandMediator.Send(command);
+        return HandleResult(result);
     }
 }
