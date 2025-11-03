@@ -12,9 +12,25 @@ using TaskManagement.Application.Common;
 using TaskManagement.Application.Common.Behaviors;
 using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Application.Infrastructure.Data.Repositories;
+using TaskManagement.Application.Tasks.Commands.AcceptTask;
+using TaskManagement.Application.Tasks.Commands.AcceptTaskProgress;
+using TaskManagement.Application.Tasks.Commands.ApproveExtensionRequest;
+using TaskManagement.Application.Tasks.Commands.AssignTask;
 using TaskManagement.Application.Tasks.Commands.CreateTask;
+using TaskManagement.Application.Tasks.Commands.MarkTaskCompleted;
+using TaskManagement.Application.Tasks.Commands.ReassignTask;
+using TaskManagement.Application.Tasks.Commands.RejectTask;
+using TaskManagement.Application.Tasks.Commands.RequestDeadlineExtension;
+using TaskManagement.Application.Tasks.Commands.RequestMoreInfo;
+using TaskManagement.Application.Tasks.Commands.UpdateTaskProgress;
+using TaskManagement.Application.Tasks.Queries.GetAssignedTasks;
+using TaskManagement.Application.Tasks.Queries.GetDashboardStats;
+using TaskManagement.Application.Tasks.Queries.GetExtensionRequests;
 using TaskManagement.Application.Tasks.Queries.GetTaskById;
+using TaskManagement.Application.Tasks.Queries.GetTaskProgressHistory;
 using TaskManagement.Application.Tasks.Queries.GetTasks;
+using TaskManagement.Application.Tasks.Queries.GetTasksByReminderLevel;
+using TaskManagement.Application.Common.Services;
 using TaskManagement.Domain.DTOs;
 using TaskManagement.Domain.Interfaces;
 using TaskManagement.Domain.Options;
@@ -60,15 +76,33 @@ builder.Services.AddScoped<UserEfCommandRepository>();
 // Register authentication service
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 
-// Configure Custom Mediator
-builder.Services.AddScoped<IMediator, Mediator>();
+// Configure Custom Mediators
+builder.Services.AddScoped<IServiceLocator, ServiceLocator>();
+builder.Services.AddScoped<ICommandMediator, CommandMediator>();
+builder.Services.AddScoped<IRequestMediator, RequestMediator>();
 
-// Register all request handlers
-builder.Services.AddScoped<IRequestHandler<CreateTaskCommand, TaskDto>, CreateTaskCommandHandler>();
+// Register command handlers
+builder.Services.AddScoped<ICommandHandler<CreateTaskCommand, TaskDto>, CreateTaskCommandHandler>();
+builder.Services.AddScoped<ICommandHandler<AuthenticateUserCommand, AuthenticationResponse>, AuthenticateUserCommandHandler>();
+builder.Services.AddScoped<ICommandHandler<AssignTaskCommand, TaskDto>, AssignTaskCommandHandler>();
+builder.Services.AddScoped<ICommandHandler<UpdateTaskProgressCommand, TaskProgressDto>, UpdateTaskProgressCommandHandler>();
+builder.Services.AddScoped<ICommandHandler<AcceptTaskProgressCommand>, AcceptTaskProgressCommandHandler>();
+builder.Services.AddScoped<ICommandHandler<AcceptTaskCommand, TaskDto>, AcceptTaskCommandHandler>();
+builder.Services.AddScoped<ICommandHandler<RejectTaskCommand, TaskDto>, RejectTaskCommandHandler>();
+builder.Services.AddScoped<ICommandHandler<RequestMoreInfoCommand, TaskDto>, RequestMoreInfoCommandHandler>();
+builder.Services.AddScoped<ICommandHandler<ReassignTaskCommand, TaskDto>, ReassignTaskCommandHandler>();
+builder.Services.AddScoped<ICommandHandler<RequestDeadlineExtensionCommand, ExtensionRequestDto>, RequestDeadlineExtensionCommandHandler>();
+builder.Services.AddScoped<ICommandHandler<ApproveExtensionRequestCommand>, ApproveExtensionRequestCommandHandler>();
+builder.Services.AddScoped<ICommandHandler<MarkTaskCompletedCommand, TaskDto>, MarkTaskCompletedCommandHandler>();
+
+// Register request handlers (queries)
 builder.Services.AddScoped<IRequestHandler<GetTaskByIdQuery, TaskDto>, GetTaskByIdQueryHandler>();
 builder.Services.AddScoped<IRequestHandler<GetTasksQuery, GetTasksResponse>, GetTasksQueryHandler>();
-builder.Services
-    .AddScoped<IRequestHandler<AuthenticateUserCommand, AuthenticationResponse>, AuthenticateUserCommandHandler>();
+builder.Services.AddScoped<IRequestHandler<GetDashboardStatsQuery, DashboardStatsDto>, GetDashboardStatsQueryHandler>();
+builder.Services.AddScoped<IRequestHandler<GetTaskProgressHistoryQuery, List<TaskProgressDto>>, GetTaskProgressHistoryQueryHandler>();
+builder.Services.AddScoped<IRequestHandler<GetExtensionRequestsQuery, List<ExtensionRequestDto>>, GetExtensionRequestsQueryHandler>();
+builder.Services.AddScoped<IRequestHandler<GetAssignedTasksQuery, GetTasksResponse>, GetAssignedTasksQueryHandler>();
+builder.Services.AddScoped<IRequestHandler<GetTasksByReminderLevelQuery, GetTasksResponse>, GetTasksByReminderLevelQueryHandler>();
 
 // Add pipeline behaviors
 builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
@@ -77,6 +111,13 @@ builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ExceptionHand
 
 // Add FluentValidation
 builder.Services.AddValidatorsFromAssemblyContaining<AssemblyReference>();
+
+// Configure options
+builder.Services.Configure<ReminderOptions>(builder.Configuration.GetSection(ReminderOptions.SectionName));
+builder.Services.Configure<ExtensionPolicyOptions>(builder.Configuration.GetSection(ExtensionPolicyOptions.SectionName));
+
+// Register business services
+builder.Services.AddScoped<IReminderCalculationService, ReminderCalculationService>();
 
 // Configure JWT Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -177,11 +218,14 @@ app.MapControllers();
 // Add health check endpoint
 app.MapHealthChecks("/health");
 
-// Ensure database is created
-using (var scope = app.Services.CreateScope())
+// Ensure database is created (skip in test environment)
+if (!app.Environment.IsEnvironment("Testing"))
 {
-    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    context.Database.EnsureCreated();
+    using (var scope = app.Services.CreateScope())
+    {
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        context.Database.EnsureCreated();
+    }
 }
 
 try

@@ -16,7 +16,7 @@ public class UserDapperRepository : DapperQueryRepository<User>
     /// <summary>
     ///     Gets a user by email.
     /// </summary>
-    public async Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
+    public virtual async Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
     {
         var sql = "SELECT * FROM Users WHERE Email = @Email";
         using var connection = CreateConnection();

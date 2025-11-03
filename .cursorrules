@@ -1,0 +1,405 @@
+# Task Management API - Technical Standards & Design Patterns
+
+## Project Overview
+This is an enterprise-grade Task Management API built with .NET 8.0 following **Vertical Slice Architecture** combined with **Clean Architecture** principles. The system implements CQRS pattern with a custom mediator, uses Entity Framework Core for commands and Dapper for queries, and includes comprehensive testing with xUnit, FluentAssertions, and Moq.
+
+## Architecture Principles
+
+### 1. Vertical Slice Architecture
+- **Feature Organization**: Features are organized as vertical slices by business capability
+- **Structure**: Each feature slice contains Commands and Queries in the Application layer
+- **Example Structure**:
+  ```
+  Application/
+  └── Tasks/
+      ├── Commands/
+      │   └── CreateTask/
+      │       ├── CreateTaskCommand.cs
+      │       ├── CreateTaskCommandHandler.cs
+      │       └── CreateTaskCommandValidator.cs
+      └── Queries/
+          └── GetTaskById/
+              ├── GetTaskByIdQuery.cs
+              └── GetTaskByIdQueryHandler.cs
+  ```
+- **Benefits**: Feature isolation, easy navigation, independent development, simplified testing
+
+### 2. Clean Architecture Layers
+1. **Domain Layer** (`TaskManagement.Domain`):
+   - Entities (immutable with private setters, validation in constructors)
+   - DTOs (data transfer objects)
+   - Interfaces (domain contracts)
+   - Common patterns (Result, Error, BaseEntity)
+   - Errors (centralized static error definitions)
+   - Value Objects (if any)
+   - NO dependencies on other layers
+
+2. **Application Layer** (`TaskManagement.Application`):
+   - Feature slices (Commands/Queries)
+   - Handlers (business logic orchestration)
+   - Validators (FluentValidation)
+   - Common (Mediator, Interfaces, Behaviors)
+   - Infrastructure/Data (repository abstractions)
+   - Depends ONLY on Domain layer
+
+3. **Infrastructure Layer** (`TaskManagement.Infrastructure`):
+   - Data access (EF Core DbContext, Repositories, UnitOfWork)
+   - External services (Authentication, Email, etc.)
+   - Depends on Application and Domain layers
+
+4. **API Layer** (`TaskManagement.Api`):
+   - Controllers (thin, delegate to mediator)
+   - Middleware (exception handling, logging)
+   - Configuration (Program.cs, appsettings.json)
+   - Depends on Application and Infrastructure layers
+
+### 3. CQRS Pattern (Command Query Responsibility Segregation)
+- **Commands**: Write operations that modify state (return `Result<T>` or `Result`)
+- **Queries**: Read operations that query data (return `Result<T>`)
+- **Separate Repositories**:
+  - **EF Core** for Commands (change tracking, transactions, complex operations)
+  - **Dapper** for Queries (performance, raw SQL, read-only operations)
+- **Handlers**: One handler per command/query (Single Responsibility)
+
+## Design Patterns
+
+### 1. Custom Mediator Pattern
+- **Implementation**: Custom `PipelineMediator` (not MediatR)
+- **Interfaces**: `IRequest<TResponse>`, `IRequest`, `ICommandHandler<TCommand, TResponse>`, `IRequestHandler<TRequest, TResponse>`
+- **Pipeline Behaviors** (executed in order):
+  1. Exception Handling (outermost)
+  2. Validation (middle)
+  3. Logging (innermost)
+- **Service Resolution**: Uses `IServiceLocator` for dependency resolution
+- **Registration**: Handlers must be registered for BOTH `ICommandHandler` and `IRequestHandler` interfaces (PipelineMediator uses IRequestHandler internally)
+
+### 2. Result Pattern
+- **Purpose**: Standardized API responses, no exceptions for business logic
+- **Implementation**: `Result<T>` for operations with return value, `Result` for void operations
+- **Properties**:
+  - `IsSuccess` / `IsFailure`
+  - `Value` (for Result<T>)
+  - `Error` (single error)
+  - `Errors` (collection for validation errors)
+- **Usage**:
+  ```csharp
+  return Result<TaskDto>.Success(taskDto);
+  return Result<TaskDto>.Failure(TaskErrors.NotFound);
+  return Result<TaskDto>.Failure(validationErrors); // List<Error>
+  ```
+
+### 3. Repository Pattern
+- **Command Repository**: `ICommandRepository<T>` → `EfCommandRepository<T>` (EF Core)
+- **Query Repository**: `IQueryRepository<T>` → Dapper-based repositories
+- **Unit of Work**: `IUnitOfWork` → `UnitOfWork` (EF Core transaction management)
+- **Direct Context Access**: Handlers can access `ApplicationDbContext` directly when needed (e.g., `_context.Set<Task>().FindAsync()`)
+
+### 4. Base Entity Pattern
+- **All entities inherit from `BaseEntity`**:
+  - `Id` (Guid, auto-generated)
+  - `CreatedAt` (DateTime.UtcNow in constructor)
+  - `UpdatedAt` (nullable, set via `SetUpdatedBy`)
+  - `CreatedBy` (string, set via `SetCreatedBy`)
+  - `UpdatedBy` (nullable string, set via `SetUpdatedBy`)
+- **Entity Design Rules**:
+  - Private setters for all properties
+  - Public constructors for creation
+  - Public methods for state changes (immutability)
+  - NO redundant properties (e.g., don't duplicate `CreatedAt` as `AssignedAt` in child entities)
+
+### 5. Centralized Error Management
+- **Error Class**: `Error` static factory methods:
+  - `Error.NotFound(message, field?)`
+  - `Error.Validation(message, field?)`
+  - `Error.Conflict(message, field?)`
+  - `Error.Forbidden(message)`
+  - `Error.Internal(message)`
+- **Domain-Specific Errors**: Static classes like `TaskErrors`, `UserErrors` in `Domain/Errors/`
+- **Error Properties**: `Code`, `Message`, `Field`
+- **Usage in Tests**: Use `ErrorAssertionExtensions` helper methods, NEVER hardcode error strings
+
+### 6. FluentValidation
+- **Validator Location**: Co-located with commands in feature slices
+- **Validator Registration**: Registered in DI container via `IServiceLocator`
+- **Validation Pipeline**: Automatically executed by `PipelineMediator` before handler
+- **Error Format**: Validation errors added to `Result.Errors` collection
+
+## Coding Standards
+
+### 1. Naming Conventions
+- **Commands**: `{Feature}Command` (e.g., `CreateTaskCommand`)
+- **Queries**: `{Feature}Query` (e.g., `GetTaskByIdQuery`)
+- **Handlers**: `{Feature}CommandHandler` / `{Feature}QueryHandler`
+- **Validators**: `{Feature}CommandValidator` / `{Feature}QueryValidator`
+- **DTOs**: `{Entity}Dto` (e.g., `TaskDto`)
+- **Errors**: `{Entity}Errors` (static class with static Error properties)
+- **Repositories**: `{Entity}{Purpose}Repository` (e.g., `TaskEfCommandRepository`, `UserDapperRepository`)
+
+### 2. Entity Design
+- **Immutability**: All properties have private setters
+- **Validation**: Validation in constructor and public methods
+- **State Changes**: Only through public methods (no direct property assignment)
+- **Example**:
+  ```csharp
+  public class Task : BaseEntity
+  {
+      public string Title { get; private set; }
+      
+      public Task(string title, ...) 
+      {
+          if (string.IsNullOrWhiteSpace(title))
+              throw new ArgumentException("Title cannot be null or empty");
+          Title = title;
+      }
+      
+      public void UpdateTitle(string title) 
+      {
+          if (string.IsNullOrWhiteSpace(title))
+              throw new ArgumentException("Title cannot be null or empty");
+          Title = title;
+      }
+  }
+  ```
+
+### 3. Handler Patterns
+- **Constructor Injection**: All dependencies injected via constructor
+- **Error Handling**: Use centralized error constants, never hardcode strings
+- **Validation**: Business validation in handler, input validation in FluentValidation
+- **Repository Usage**: Use appropriate repository (EF for commands, Dapper for queries)
+- **Direct Context Access**: Use `_context.Set<T>().FindAsync()` when repository doesn't have method
+- **Transaction Management**: Use `_context.SaveChangesAsync()` after repository operations
+- **Example**:
+  ```csharp
+  public class CreateTaskCommandHandler : ICommandHandler<CreateTaskCommand, TaskDto>
+  {
+      private readonly TaskEfCommandRepository _taskRepository;
+      private readonly ApplicationDbContext _context;
+      
+      public async Task<Result<TaskDto>> Handle(CreateTaskCommand request, CancellationToken cancellationToken)
+      {
+          var errors = new List<Error>();
+          
+          // Validation using centralized errors
+          var user = await _userRepository.GetByIdAsync(request.AssignedUserId, cancellationToken);
+          if (user == null)
+              errors.Add(TaskErrors.AssignedUserNotFound);
+          
+          if (errors.Any())
+              return Result<TaskDto>.Failure(errors);
+          
+          // Business logic
+          var task = new Task(...);
+          await _taskRepository.AddAsync(task, cancellationToken);
+          await _context.SaveChangesAsync(cancellationToken);
+          
+          return Result<TaskDto>.Success(taskDto);
+      }
+  }
+  ```
+
+### 4. Controller Patterns
+- **Thin Controllers**: Controllers delegate to mediator, contain minimal logic
+- **Authorization**: Use `[Authorize]` and role-based attributes
+- **Response Mapping**: Map `Result<T>` to `ApiResponse<T>` via `MapToApiResponse`
+- **Example**:
+  ```csharp
+  [HttpPost]
+  [Authorize(Roles = "Manager,Admin")]
+  public async Task<ActionResult<ApiResponse<TaskDto>>> CreateTask(CreateTaskCommand command)
+  {
+      command.CreatedById = UserId;
+      command.CreatedBy = UserEmail;
+      
+      var result = await _mediator.Send(command);
+      return result.MapToApiResponse();
+  }
+  ```
+
+### 5. Testing Standards
+
+#### Test Structure
+- **Unit Tests**: `tests/TaskManagement.Tests/Unit/`
+  - Handler tests: `Unit/Application/{Feature}/Commands/{Command}/{Command}HandlerTests.cs`
+  - Domain tests: `Unit/Domain/{Entity}Tests.cs`
+  - Validator tests: `Unit/Application/{Feature}/Commands/{Command}ValidatorTests.cs`
+- **Integration Tests**: `tests/TaskManagement.Tests/Integration/Controllers/`
+- **Test Base**: `InMemoryDatabaseTestBase` for in-memory EF Core database
+- **Service Locator**: `TestServiceLocator` for dependency resolution in tests
+
+#### Test Patterns
+- **Arrange-Act-Assert (AAA)** pattern
+- **Error Assertions**: Use `ErrorAssertionExtensions` helper methods:
+  - `result.ShouldContainError(TaskErrors.NotFound)`
+  - `result.ShouldContainValidationError("FieldName")`
+  - `result.GetError()` (checks both `Error` property and `Errors` collection)
+- **Never hardcode error strings** - always use centralized error constants
+- **Test Data**: Use helper methods in `InMemoryDatabaseTestBase`:
+  - `CreateTestTask(...)`
+  - `CreateTestAssignment(...)`
+  - `CreateTestProgressHistory(...)`
+  - `CreateTestExtensionRequest(...)`
+  - `SetUserRole(userId, role)`
+- **Registration**: Handlers must be registered in `TestServiceLocator` for both `ICommandHandler` and `IRequestHandler`
+
+#### Example Test
+```csharp
+public class CreateTaskCommandHandlerTests : InMemoryDatabaseTestBase
+{
+    [Fact]
+    public async Task Handle_WhenUserDoesNotExist_ShouldReturnFailure()
+    {
+        // Arrange
+        var command = new CreateTaskCommand { AssignedUserId = Guid.NewGuid() };
+        
+        // Act
+        var result = await _handler.Handle(command, CancellationToken.None);
+        
+        // Assert
+        result.IsFailure.Should().BeTrue();
+        result.ShouldContainError(TaskErrors.AssignedUserNotFound);
+    }
+}
+```
+
+## Technology Stack
+- **.NET 8.0**
+- **Entity Framework Core** (for commands, change tracking)
+- **Dapper** (for queries, performance)
+- **FluentValidation** (input validation)
+- **Serilog** (structured logging)
+- **xUnit** (testing framework)
+- **FluentAssertions** (test assertions)
+- **Moq** (mocking - use sparingly, prefer in-memory database)
+- **Swagger/OpenAPI** (API documentation)
+
+## Dependency Injection
+
+### Service Registration
+- **Application Services**: Registered in `Program.cs` or via `IServiceLocator`
+- **Handlers**: Registered for both `ICommandHandler` and `IRequestHandler` interfaces
+- **Validators**: Registered as `IValidator<TRequest>`
+- **Repositories**: Registered as interfaces (`ICommandRepository<T>`, `IQueryRepository<T>`)
+- **Mediator**: `PipelineMediator` registered as `IMediator`
+
+### IServiceLocator Pattern
+- **Purpose**: Abstraction for service resolution (allows test substitution)
+- **Implementation**: `ServiceLocator` (production), `TestServiceLocator` (tests)
+- **Usage**: Mediator uses `IServiceLocator` to resolve handlers and behaviors
+
+## API Design
+
+### Response Format
+- **Success**: `ApiResponse<T>` with `Data`, `Success = true`
+- **Failure**: `ApiResponse<T>` with `Error`, `Success = false`, `TraceId`
+- **Validation Errors**: Multiple errors in `Errors` collection
+
+### Status Codes
+- **200 OK**: Successful operation
+- **400 Bad Request**: Validation errors, bad input
+- **401 Unauthorized**: Missing/invalid authentication
+- **403 Forbidden**: Insufficient permissions
+- **404 Not Found**: Resource not found
+- **409 Conflict**: Business rule violation
+- **500 Internal Server Error**: Unexpected errors
+
+### Authorization
+- **Roles**: `Employee`, `Manager`, `Admin`
+- **Attribute-Based**: `[Authorize(Roles = "Manager,Admin")]`
+- **User Context**: Extracted from JWT claims in `BaseController`
+
+## Database Design
+
+### Entity Framework Core
+- **DbContext**: `ApplicationDbContext` in Infrastructure layer
+- **Migrations**: Standard EF Core migrations
+- **In-Memory Testing**: Use `InMemoryDatabaseTestBase` with `DbContextOptionsBuilder.UseInMemoryDatabase`
+
+### Data Access Patterns
+- **Commands**: Use EF Core repositories for write operations
+- **Queries**: Use Dapper repositories for read operations
+- **Transactions**: Use `IUnitOfWork` pattern for multi-operation transactions
+- **Change Tracking**: EF Core handles change tracking for commands
+
+## Error Handling
+
+### Exception Handling Middleware
+- **Global Exception Handler**: `ExceptionHandlingMiddleware`
+- **Logging**: All exceptions logged with context
+- **Mapping**: Exceptions mapped to appropriate `Error` types
+- **Response**: Exceptions converted to `ApiResponse` with trace ID
+
+### Error Categories
+1. **Validation Errors** (`VALIDATION_ERROR`): Input validation failures
+2. **Not Found** (`NOT_FOUND`): Resource doesn't exist
+3. **Conflict** (`CONFLICT`): Business rule violation
+4. **Forbidden** (`FORBIDDEN`): Insufficient permissions
+5. **Internal** (`INTERNAL_ERROR`): Unexpected system errors
+
+## Logging
+
+### Structured Logging
+- **Framework**: Serilog
+- **Context**: Request type, user, trace ID
+- **Levels**: Information (operations), Warning (validation failures), Error (exceptions)
+- **Sinks**: Console, File (with rotation)
+
+## Documentation
+
+### Documentation Files
+- **README.md**: Project overview, setup, API examples
+- **docs/ARCHITECTURE.md**: Detailed architecture documentation
+- **docs/DOMAIN_MODEL.md**: Domain model and entities
+- **docs/API_REFERENCE.md**: Complete API reference
+- **docs/FEATURES.md**: Feature documentation
+- **docs/TESTING.md**: Testing guidelines
+- **docs/ENTERPRISE_MATURITY_ASSESSMENT.md**: Enterprise readiness assessment
+
+## Future Development Guidelines
+
+### Adding New Features
+1. **Create Domain Entity**: Inherit from `BaseEntity`, follow immutability pattern
+2. **Create Commands/Queries**: Follow vertical slice structure
+3. **Create Handlers**: Use Result pattern, centralized errors
+4. **Create Validators**: Use FluentValidation, co-locate with commands
+5. **Create Tests**: Follow existing test patterns, use helper methods
+6. **Register Services**: Register handlers for both interfaces in DI container
+7. **Update Documentation**: Update relevant docs
+
+### Code Review Checklist
+- ✅ Follows Vertical Slice Architecture
+- ✅ Uses Result pattern (no exceptions for business logic)
+- ✅ Uses centralized error constants (no hardcoded strings)
+- ✅ Entity properties have private setters
+- ✅ Handlers registered for both ICommandHandler and IRequestHandler
+- ✅ Tests use ErrorAssertionExtensions
+- ✅ Tests use helper methods from InMemoryDatabaseTestBase
+- ✅ No redundant properties in entities
+- ✅ Proper separation: EF Core for commands, Dapper for queries
+- ✅ Validation in FluentValidation validators, not handlers
+
+### Anti-Patterns to Avoid
+- ❌ Direct property assignment on entities
+- ❌ Hardcoded error strings in handlers or tests
+- ❌ Throwing exceptions for business logic failures
+- ❌ Creating redundant properties that duplicate BaseEntity
+- ❌ Using EF Core for queries (use Dapper instead)
+- ❌ Using Dapper for commands (use EF Core instead)
+- ❌ Forgetting to register handlers for both interfaces
+- ❌ Checking only `result.Error` in tests (must check `Errors` collection too)
+
+## Key Files Reference
+- **Mediator**: `src/TaskManagement.Application/Common/PipelineMediator.cs`
+- **Result Pattern**: `src/TaskManagement.Domain/Common/Result.cs`
+- **Base Entity**: `src/TaskManagement.Domain/Common/BaseEntity.cs`
+- **Error Class**: `src/TaskManagement.Domain/Common/Error.cs`
+- **Task Errors**: `src/TaskManagement.Domain/Errors/Tasks/TaskErrors.cs`
+- **Test Base**: `tests/TaskManagement.Tests/Unit/TestHelpers/InMemoryDatabaseTestBase.cs`
+- **Test Service Locator**: `tests/TaskManagement.Tests/Unit/TestHelpers/TestServiceLocator.cs`
+- **Error Assertions**: `tests/TaskManagement.Tests/Unit/TestHelpers/ErrorAssertionExtensions.cs`
+- **DbContext**: `src/TaskManagement.Infrastructure/Data/ApplicationDbContext.cs`
+
+---
+
+**Last Updated**: Based on project state as of current development session
+**Maintainer**: This file should be updated whenever significant architectural decisions or patterns are introduced
+

@@ -14,7 +14,7 @@ namespace TaskManagement.Application.Authentication.Commands.AuthenticateUser;
 /// <summary>
 ///     Handler for authenticating a user with Azure AD token using EF Core for commands and Dapper for queries.
 /// </summary>
-public class AuthenticateUserCommandHandler : IRequestHandler<AuthenticateUserCommand, AuthenticationResponse>
+public class AuthenticateUserCommandHandler : ICommandHandler<AuthenticateUserCommand, AuthenticationResponse>
 {
     private readonly IAuthenticationService _authenticationService;
     private readonly ApplicationDbContext _context;
@@ -46,6 +46,12 @@ public class AuthenticateUserCommandHandler : IRequestHandler<AuthenticateUserCo
             errors.Add(validationResult.Error ?? AuthenticationErrors.InvalidAzureAdToken);
         }
 
+        // If there are any validation errors, return them all
+        if (errors.Any())
+        {
+            return Result<AuthenticationResponse>.Failure(errors);
+        }
+
         var claimsPrincipal = validationResult.Value!;
         var email = claimsPrincipal.FindFirst(ClaimTypes.Email)?.Value ??
                     claimsPrincipal.FindFirst("email")?.Value;
@@ -53,11 +59,6 @@ public class AuthenticateUserCommandHandler : IRequestHandler<AuthenticateUserCo
         if (string.IsNullOrEmpty(email))
         {
             errors.Add(AuthenticationErrors.EmailClaimMissing);
-        }
-
-        // If there are any validation errors, return them all
-        if (errors.Any())
-        {
             return Result<AuthenticationResponse>.Failure(errors);
         }
 

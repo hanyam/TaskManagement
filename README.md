@@ -13,15 +13,39 @@ This solution follows **Vertical Slice Architecture** combined with **Clean Arch
 
 ## 🚀 Key Features
 
+### Architecture & Design
 - ✅ **Vertical Slice Architecture** - Features organized by business capability
 - ✅ **SOLID Principles** - Clean, maintainable, and extensible code
-- ✅ **Azure AD Authentication** - Secure user authentication
+- ✅ **CQRS Pattern** - Command/Query Responsibility Segregation
+- ✅ **Clean Architecture** - Layered architecture with clear separation
+- ✅ **Custom Mediator** - Lightweight mediator implementation
+- ✅ **Repository Pattern** - EF Core for commands, Dapper for queries
+
+### Authentication & Security
+- ✅ **Azure AD Authentication** - Enterprise authentication
 - ✅ **JWT Token Generation** - Customizable JWT tokens with claims
-- ✅ **Mediator Pattern** - Decoupled request/response handling
+- ✅ **Role-Based Access Control** - Employee, Manager, Admin roles
+- ✅ **Endpoint Authorization** - Attribute-based access control
+
+### Task Management
+- ✅ **Task Types** - Simple, WithDueDate, WithProgress, WithAcceptedProgress
+- ✅ **Task Status Lifecycle** - Created → Assigned → Accepted → Completed
+- ✅ **Multi-User Assignment** - Assign tasks to multiple employees
+- ✅ **Progress Tracking** - Progress updates with acceptance workflow
+- ✅ **Task Review** - Accept, reject, or request more information
+
+### Advanced Features
+- ✅ **Deadline Extensions** - Request and approve deadline extensions
+- ✅ **Reminder System** - Automatic reminder level calculation
+- ✅ **Dashboard Statistics** - Comprehensive task statistics
+- ✅ **Delegation Management** - Task assignment and reassignment
+
+### Code Quality
 - ✅ **Result Pattern** - Standardized API responses
 - ✅ **Global Exception Handling** - Centralized error management
+- ✅ **FluentValidation** - Input validation framework
+- ✅ **Structured Logging** - Serilog with multiple sinks
 - ✅ **Comprehensive Testing** - Unit and integration tests
-- ✅ **Dependency Management** - Centralized package management
 
 ## 📁 Project Structure
 
@@ -174,13 +198,37 @@ Content-Type: application/json
 
 - `POST /api/authentication/authenticate` - Authenticate with Azure AD token
 
+### Dashboard
+
+- `GET /api/dashboard/stats` - Get dashboard statistics for current user
+
 ### Tasks
 
 - `GET /api/tasks` - Get tasks with filtering and pagination
 - `GET /api/tasks/{id}` - Get task by ID
 - `POST /api/tasks` - Create new task
-- `PUT /api/tasks/{id}` - Update task
-- `DELETE /api/tasks/{id}` - Delete task
+
+### Task Delegation
+
+- `POST /api/tasks/{id}/assign` - Assign task to user(s) (Manager)
+- `PUT /api/tasks/{id}/reassign` - Reassign task to different user(s) (Manager)
+
+### Task Progress
+
+- `POST /api/tasks/{id}/progress` - Update task progress (Employee)
+- `POST /api/tasks/{id}/progress/accept` - Accept task progress update (Manager)
+
+### Task Status Management
+
+- `POST /api/tasks/{id}/accept` - Accept assigned task (Employee)
+- `POST /api/tasks/{id}/reject` - Reject assigned task (Employee)
+- `POST /api/tasks/{id}/request-info` - Request more information (Employee)
+- `POST /api/tasks/{id}/complete` - Mark task as completed (Manager)
+
+### Extension Requests
+
+- `POST /api/tasks/{id}/extension-request` - Request deadline extension (Employee)
+- `POST /api/tasks/{id}/extension-request/{requestId}/approve` - Approve extension request (Manager)
 
 ### Sample Task Creation
 
@@ -194,7 +242,36 @@ Content-Type: application/json
   "description": "Write comprehensive documentation for the Task Management API",
   "priority": 2,
   "dueDate": "2024-02-01T00:00:00Z",
-  "assignedUserId": "123e4567-e89b-12d3-a456-426614174000"
+  "assignedUserId": "123e4567-e89b-12d3-a456-426614174000",
+  "type": 2
+}
+```
+
+### Sample Task Assignment
+
+```http
+POST /api/tasks/{id}/assign
+Authorization: Bearer {jwt-token}
+Content-Type: application/json
+
+{
+  "userIds": [
+    "123e4567-e89b-12d3-a456-426614174000",
+    "456e7890-e89b-12d3-a456-426614174001"
+  ]
+}
+```
+
+### Sample Progress Update
+
+```http
+POST /api/tasks/{id}/progress
+Authorization: Bearer {jwt-token}
+Content-Type: application/json
+
+{
+  "progressPercentage": 75,
+  "notes": "Completed authentication setup"
 }
 ```
 
@@ -362,9 +439,28 @@ services.AddScoped<IExternalAuthProvider, GoogleAuthProvider>();
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
+## 📚 Documentation
+
+Comprehensive documentation is available in the `docs/` directory:
+
+- **[Architecture Documentation](docs/ARCHITECTURE.md)** - System architecture and design patterns
+- **[Domain Model](docs/DOMAIN_MODEL.md)** - Entity relationships and business rules
+- **[API Reference](docs/API_REFERENCE.md)** - Complete API endpoint documentation
+- **[Features Documentation](docs/FEATURES.md)** - Detailed feature descriptions
+- **[Developer Guide](docs/DEVELOPER_GUIDE.md)** - Guide for extending the system
+- **[Database Schema](docs/DATABASE_SCHEMA.md)** - Database structure and relationships
+- **[Configuration Guide](docs/CONFIGURATION.md)** - Configuration options and setup
+- **[Security Documentation](docs/SECURITY.md)** - Security and authorization guide
+- **[Testing Documentation](docs/TESTING.md)** - Testing strategy and guidelines
+- **[Deployment Guide](docs/DEPLOYMENT.md)** - Deployment instructions
+- **[Business Rules](docs/BUSINESS_RULES.md)** - Business logic documentation
+- **[Error Handling](docs/ERROR_HANDLING.md)** - Error handling guide
+- **[Enterprise Maturity Assessment](docs/ENTERPRISE_MATURITY_ASSESSMENT.md)** - Enterprise readiness and gap analysis
+
 ## 🆘 Support
 
 For questions and support:
 - Create an issue in the repository
-- Review the documentation
+- Review the comprehensive documentation
 - Check the test examples for implementation patterns
+- See [API Examples](docs/API_EXAMPLES.md) for detailed request/response examples

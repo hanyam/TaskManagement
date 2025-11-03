@@ -12,7 +12,7 @@ namespace TaskManagement.Application.Tasks.Commands.CreateTask;
 /// <summary>
 ///     Handler for creating a new task using EF Core for commands and Dapper for queries.
 /// </summary>
-public class CreateTaskCommandHandler : IRequestHandler<CreateTaskCommand, TaskDto>
+public class CreateTaskCommandHandler : ICommandHandler<CreateTaskCommand, TaskDto>
 {
     private readonly ApplicationDbContext _context;
     private readonly TaskEfCommandRepository _taskCommandRepository;
@@ -62,7 +62,9 @@ public class CreateTaskCommandHandler : IRequestHandler<CreateTaskCommand, TaskD
             request.Description,
             request.Priority,
             request.DueDate,
-            request.AssignedUserId);
+            request.AssignedUserId,
+            request.Type,
+            request.CreatedById);
 
         task.SetCreatedBy(request.CreatedBy);
 
@@ -79,8 +81,14 @@ public class CreateTaskCommandHandler : IRequestHandler<CreateTaskCommand, TaskD
             Status = task.Status,
             Priority = task.Priority,
             DueDate = task.DueDate,
+            OriginalDueDate = task.OriginalDueDate,
+            ExtendedDueDate = task.ExtendedDueDate,
             AssignedUserId = task.AssignedUserId,
             AssignedUserEmail = assignedUser!.Email,
+            Type = task.Type,
+            ReminderLevel = task.ReminderLevel,
+            ProgressPercentage = task.ProgressPercentage,
+            CreatedById = task.CreatedById,
             CreatedAt = task.CreatedAt,
             CreatedBy = task.CreatedBy
         };

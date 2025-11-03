@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using TaskManagement.Infrastructure.Data;
+using System.Linq;
 
 namespace TaskManagement.Tests.Integration;
 
@@ -14,27 +15,6 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        builder.ConfigureServices(services =>
-        {
-            // Remove the existing DbContext registration
-            var descriptor = services.SingleOrDefault(
-                d => d.ServiceType == typeof(DbContextOptions<ApplicationDbContext>));
-            if (descriptor != null)
-                services.Remove(descriptor);
-
-            // Remove any existing DbContext registrations
-            var dbContextDescriptor = services.SingleOrDefault(
-                d => d.ServiceType == typeof(ApplicationDbContext));
-            if (dbContextDescriptor != null)
-                services.Remove(dbContextDescriptor);
-
-            // Add in-memory database for testing
-            services.AddDbContext<ApplicationDbContext>(options =>
-            {
-                options.UseInMemoryDatabase("TestDb");
-            });
-        });
-
         builder.ConfigureAppConfiguration((context, config) =>
         {
             config.AddInMemoryCollection(new Dictionary<string, string?>
@@ -48,6 +28,24 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                 {"AzureAd:ClientId", "test-client-id"},
                 {"AzureAd:ClientSecret", "test-client-secret"},
                 {"AzureAd:TenantId", "test-tenant-id"}
+            });
+        });
+
+        builder.ConfigureServices(services =>
+        {
+            // Remove the existing DbContext registrations
+            var descriptors = services.Where(
+                d => d.ServiceType == typeof(DbContextOptions<ApplicationDbContext>) ||
+                     d.ServiceType == typeof(ApplicationDbContext)).ToList();
+            foreach (var descriptor in descriptors)
+            {
+                services.Remove(descriptor);
+            }
+
+            // Add in-memory database
+            services.AddDbContext<ApplicationDbContext>(options =>
+            {
+                options.UseInMemoryDatabase("TestDatabase");
             });
         });
 
