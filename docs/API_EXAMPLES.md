@@ -185,13 +185,308 @@ GET /api/tasks?assignedUserId=123e4567-e89b-12d3-a456-426614174000
 Authorization: Bearer {jwt-token}
 ```
 
+### 6. Create Task with Type
+
+**Request:**
+```http
+POST /api/tasks
+Authorization: Bearer {jwt-token}
+Content-Type: application/json
+
+{
+  "title": "Complete project documentation",
+  "description": "Write comprehensive documentation",
+  "priority": 2,
+  "dueDate": "2024-02-01T00:00:00Z",
+  "assignedUserId": "123e4567-e89b-12d3-a456-426614174000",
+  "type": 3
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "789e0123-e89b-12d3-a456-426614174005",
+    "title": "Complete project documentation",
+    "type": 3,
+    "status": 0,
+    "progressPercentage": null
+  }
+}
+```
+
+## 📊 Dashboard Examples
+
+### 1. Get Dashboard Statistics
+
+**Request:**
+```http
+GET /api/dashboard/stats
+Authorization: Bearer {jwt-token}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "tasksCreatedByUser": 15,
+    "tasksCompleted": 8,
+    "tasksNearDueDate": 3,
+    "tasksDelayed": 2,
+    "tasksInProgress": 5,
+    "tasksUnderReview": 2,
+    "tasksPendingAcceptance": 1
+  }
+}
+```
+
+## 🎯 Task Delegation Examples
+
+### 1. Assign Task to Multiple Users
+
+**Request:**
+```http
+POST /api/tasks/456e7890-e89b-12d3-a456-426614174001/assign
+Authorization: Bearer {jwt-token}
+Content-Type: application/json
+
+{
+  "userIds": [
+    "123e4567-e89b-12d3-a456-426614174000",
+    "456e7890-e89b-12d3-a456-426614174001"
+  ]
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "456e7890-e89b-12d3-a456-426614174001",
+    "status": 1,
+    "assignments": [
+      {
+        "userId": "123e4567-e89b-12d3-a456-426614174000",
+        "userEmail": "developer1@example.com",
+        "isPrimary": true
+      },
+      {
+        "userId": "456e7890-e89b-12d3-a456-426614174001",
+        "userEmail": "developer2@example.com",
+        "isPrimary": false
+      }
+    ]
+  }
+}
+```
+
+### 2. Reassign Task
+
+**Request:**
+```http
+PUT /api/tasks/456e7890-e89b-12d3-a456-426614174001/reassign
+Authorization: Bearer {jwt-token}
+Content-Type: application/json
+
+{
+  "newUserIds": [
+    "789e0123-e89b-12d3-a456-426614174002"
+  ]
+}
+```
+
+## 📈 Task Progress Examples
+
+### 1. Update Task Progress
+
+**Request:**
+```http
+POST /api/tasks/456e7890-e89b-12d3-a456-426614174001/progress
+Authorization: Bearer {jwt-token}
+Content-Type: application/json
+
+{
+  "progressPercentage": 75,
+  "notes": "Completed authentication setup, working on authorization"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "333e4444-e89b-12d3-a456-426614174007",
+    "taskId": "456e7890-e89b-12d3-a456-426614174001",
+    "progressPercentage": 75,
+    "notes": "Completed authentication setup, working on authorization",
+    "status": 0,
+    "updatedAt": "2024-01-15T10:30:00Z"
+  }
+}
+```
+
+### 2. Accept Task Progress
+
+**Request:**
+```http
+POST /api/tasks/456e7890-e89b-12d3-a456-426614174001/progress/accept
+Authorization: Bearer {jwt-token}
+Content-Type: application/json
+
+{
+  "progressHistoryId": "333e4444-e89b-12d3-a456-426614174007"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": null,
+  "message": "Progress update accepted"
+}
+```
+
+## ✅ Task Status Management Examples
+
+### 1. Accept Assigned Task
+
+**Request:**
+```http
+POST /api/tasks/456e7890-e89b-12d3-a456-426614174001/accept
+Authorization: Bearer {jwt-token}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "456e7890-e89b-12d3-a456-426614174001",
+    "status": 3
+  }
+}
+```
+
+### 2. Reject Assigned Task
+
+**Request:**
+```http
+POST /api/tasks/456e7890-e89b-12d3-a456-426614174001/reject
+Authorization: Bearer {jwt-token}
+Content-Type: application/json
+
+{
+  "reason": "Insufficient information provided"
+}
+```
+
+### 3. Request More Information
+
+**Request:**
+```http
+POST /api/tasks/456e7890-e89b-12d3-a456-426614174001/request-info
+Authorization: Bearer {jwt-token}
+Content-Type: application/json
+
+{
+  "requestMessage": "Need clarification on requirements"
+}
+```
+
+### 4. Mark Task as Completed
+
+**Request:**
+```http
+POST /api/tasks/456e7890-e89b-12d3-a456-426614174001/complete
+Authorization: Bearer {jwt-token}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "456e7890-e89b-12d3-a456-426614174001",
+    "status": 5,
+    "progressPercentage": 100
+  }
+}
+```
+
+## ⏰ Extension Request Examples
+
+### 1. Request Deadline Extension
+
+**Request:**
+```http
+POST /api/tasks/456e7890-e89b-12d3-a456-426614174001/extension-request
+Authorization: Bearer {jwt-token}
+Content-Type: application/json
+
+{
+  "requestedDueDate": "2024-02-15T00:00:00Z",
+  "reason": "Additional requirements discovered, need more time to implement"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "444e5555-e89b-12d3-a456-426614174008",
+    "taskId": "456e7890-e89b-12d3-a456-426614174001",
+    "requestedDueDate": "2024-02-15T00:00:00Z",
+    "reason": "Additional requirements discovered, need more time to implement",
+    "status": 0
+  }
+}
+```
+
+### 2. Approve Extension Request
+
+**Request:**
+```http
+POST /api/tasks/456e7890-e89b-12d3-a456-426614174001/extension-request/444e5555-e89b-12d3-a456-426614174008/approve
+Authorization: Bearer {jwt-token}
+Content-Type: application/json
+
+{
+  "reviewNotes": "Extension approved due to scope change"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": null,
+  "message": "Extension request approved"
+}
+```
+
 ## 🔍 Query Parameters
 
 ### Task Status Values
-- `0` - Pending
-- `1` - InProgress
-- `2` - Completed
-- `3` - Cancelled
+- `0` - Created (Pending - legacy)
+- `1` - Assigned (InProgress - legacy)
+- `2` - UnderReview
+- `3` - Accepted
+- `4` - Rejected
+- `5` - Completed
+- `6` - Cancelled
+
+### Task Type Values
+- `0` - Simple
+- `1` - WithDueDate
+- `2` - WithProgress
+- `3` - WithAcceptedProgress
 
 ### Task Priority Values
 - `0` - Low

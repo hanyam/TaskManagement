@@ -12,6 +12,24 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TaskManagement.Infrastructu
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TaskManagement.Tests", "tests\TaskManagement.Tests\TaskManagement.Tests.csproj", "{00000000-0000-0000-0000-000000000000}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{7879002A-3E88-444D-989D-5B30FA31DDEE}"
+	ProjectSection(SolutionItems) = preProject
+		docs\API_EXAMPLES.md = docs\API_EXAMPLES.md
+		docs\ARCHITECTURE.md = docs\ARCHITECTURE.md
+		docs\DOMAIN_MODEL.md = docs\DOMAIN_MODEL.md
+		docs\EXTENDING_FEATURES.md = docs\EXTENDING_FEATURES.md
+		docs\API_REFERENCE.md = docs\API_REFERENCE.md
+		docs\FEATURES.md = docs\FEATURES.md
+		docs\DATABASE_SCHEMA.md = docs\DATABASE_SCHEMA.md
+		docs\BUSINESS_RULES.md = docs\BUSINESS_RULES.md
+		docs\CONFIGURATION.md = docs\CONFIGURATION.md
+		docs\DEPLOYMENT.md = docs\DEPLOYMENT.md
+		docs\DEVELOPER_GUIDE.md = docs\DEVELOPER_GUIDE.md
+		docs\ERROR_HANDLING.md = docs\ERROR_HANDLING.md
+		docs\SECURITY.md = docs\SECURITY.md
+		docs\TESTING.md = docs\TESTING.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
