@@ -133,7 +133,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated `TaskStatus` enum with new lifecycle states
 - Enhanced `User` entity with role support
 - Updated `TaskDto` with new properties
-- Extended `ApplicationDbContext` with new entities and relationships
+- Extended `TaskManagementDbContext` with new entities and relationships
 
 ### Technical Details
 

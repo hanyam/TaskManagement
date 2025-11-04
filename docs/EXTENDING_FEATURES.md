@@ -312,8 +312,8 @@ public class GetProjectByIdQueryHandler : IQueryHandler<GetProjectByIdQuery, Pro
 Add the new entity to your DbContext:
 
 ```csharp
-// src/TaskManagement.Infrastructure/Data/ApplicationDbContext.cs
-public class ApplicationDbContext : DbContext
+// src/TaskManagement.Infrastructure/Data/TaskManagementDbContext.cs
+public class TaskManagementDbContext : DbContext
 {
     // ... existing code ...
     
@@ -634,11 +634,11 @@ public class ProjectsControllerIntegrationTests : IClassFixture<WebApplicationFa
         {
             builder.ConfigureServices(services =>
             {
-                var descriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<ApplicationDbContext>));
+                var descriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<TaskManagementDbContext>));
                 if (descriptor != null)
                     services.Remove(descriptor);
 
-                services.AddDbContext<ApplicationDbContext>(options =>
+                services.AddDbContext<TaskManagementDbContext>(options =>
                 {
                     options.UseInMemoryDatabase("TestProjectDb");
                 });

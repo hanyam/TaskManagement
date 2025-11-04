@@ -14,14 +14,14 @@ namespace TaskManagement.Application.Tasks.Commands.MarkTaskCompleted;
 /// </summary>
 public class MarkTaskCompletedCommandHandler : ICommandHandler<MarkTaskCompletedCommand, TaskDto>
 {
-    private readonly ApplicationDbContext _context;
+    private readonly TaskManagementDbContext _context;
     private readonly TaskEfCommandRepository _taskCommandRepository;
     private readonly UserDapperRepository _userQueryRepository;
 
     public MarkTaskCompletedCommandHandler(
         TaskEfCommandRepository taskCommandRepository,
         UserDapperRepository userQueryRepository,
-        ApplicationDbContext context)
+        TaskManagementDbContext context)
     {
         _taskCommandRepository = taskCommandRepository;
         _userQueryRepository = userQueryRepository;

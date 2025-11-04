@@ -14,14 +14,14 @@ namespace TaskManagement.Application.Tasks.Commands.UpdateTaskProgress;
 /// </summary>
 public class UpdateTaskProgressCommandHandler : ICommandHandler<UpdateTaskProgressCommand, TaskProgressDto>
 {
-    private readonly ApplicationDbContext _context;
+    private readonly TaskManagementDbContext _context;
     private readonly TaskEfCommandRepository _taskCommandRepository;
     private readonly UserDapperRepository _userQueryRepository;
 
     public UpdateTaskProgressCommandHandler(
         TaskEfCommandRepository taskCommandRepository,
         UserDapperRepository userQueryRepository,
-        ApplicationDbContext context)
+        TaskManagementDbContext context)
     {
         _taskCommandRepository = taskCommandRepository;
         _userQueryRepository = userQueryRepository;

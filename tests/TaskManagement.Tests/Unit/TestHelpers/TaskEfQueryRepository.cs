@@ -14,9 +14,9 @@ namespace TaskManagement.Tests.Unit.TestHelpers;
 /// </summary>
 public class TaskEfQueryRepository : IQueryRepository<DomainTask>
 {
-    private readonly ApplicationDbContext _context;
+    private readonly TaskManagementDbContext _context;
 
-    public TaskEfQueryRepository(ApplicationDbContext context)
+    public TaskEfQueryRepository(TaskManagementDbContext context)
     {
         _context = context;
     }

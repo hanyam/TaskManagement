@@ -14,14 +14,14 @@ namespace TaskManagement.Application.Tasks.Commands.CreateTask;
 /// </summary>
 public class CreateTaskCommandHandler : ICommandHandler<CreateTaskCommand, TaskDto>
 {
-    private readonly ApplicationDbContext _context;
+    private readonly TaskManagementDbContext _context;
     private readonly TaskEfCommandRepository _taskCommandRepository;
     private readonly UserDapperRepository _userQueryRepository;
 
     public CreateTaskCommandHandler(
         TaskEfCommandRepository taskCommandRepository,
         UserDapperRepository userQueryRepository,
-        ApplicationDbContext context)
+        TaskManagementDbContext context)
     {
         _taskCommandRepository = taskCommandRepository;
         _userQueryRepository = userQueryRepository;

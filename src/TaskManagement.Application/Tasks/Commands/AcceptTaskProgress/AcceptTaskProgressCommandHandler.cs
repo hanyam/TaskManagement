@@ -14,12 +14,12 @@ namespace TaskManagement.Application.Tasks.Commands.AcceptTaskProgress;
 /// </summary>
 public class AcceptTaskProgressCommandHandler : ICommandHandler<AcceptTaskProgressCommand>
 {
-    private readonly ApplicationDbContext _context;
+    private readonly TaskManagementDbContext _context;
     private readonly TaskEfCommandRepository _taskCommandRepository;
 
     public AcceptTaskProgressCommandHandler(
         TaskEfCommandRepository taskCommandRepository,
-        ApplicationDbContext context)
+        TaskManagementDbContext context)
     {
         _taskCommandRepository = taskCommandRepository;
         _context = context;

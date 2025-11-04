@@ -15,14 +15,14 @@ namespace TaskManagement.Application.Tasks.Commands.ReassignTask;
 /// </summary>
 public class ReassignTaskCommandHandler : ICommandHandler<ReassignTaskCommand, TaskDto>
 {
-    private readonly ApplicationDbContext _context;
+    private readonly TaskManagementDbContext _context;
     private readonly TaskEfCommandRepository _taskCommandRepository;
     private readonly UserDapperRepository _userQueryRepository;
 
     public ReassignTaskCommandHandler(
         TaskEfCommandRepository taskCommandRepository,
         UserDapperRepository userQueryRepository,
-        ApplicationDbContext context)
+        TaskManagementDbContext context)
     {
         _taskCommandRepository = taskCommandRepository;
         _userQueryRepository = userQueryRepository;

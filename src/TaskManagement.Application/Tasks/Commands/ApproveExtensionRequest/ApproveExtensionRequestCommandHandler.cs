@@ -14,12 +14,12 @@ namespace TaskManagement.Application.Tasks.Commands.ApproveExtensionRequest;
 /// </summary>
 public class ApproveExtensionRequestCommandHandler : ICommandHandler<ApproveExtensionRequestCommand>
 {
-    private readonly ApplicationDbContext _context;
+    private readonly TaskManagementDbContext _context;
     private readonly TaskEfCommandRepository _taskCommandRepository;
 
     public ApproveExtensionRequestCommandHandler(
         TaskEfCommandRepository taskCommandRepository,
-        ApplicationDbContext context)
+        TaskManagementDbContext context)
     {
         _taskCommandRepository = taskCommandRepository;
         _context = context;

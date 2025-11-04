@@ -24,10 +24,11 @@ public class TaskDapperRepository : DapperQueryRepository<Task>
         var sql = @"
             SELECT 
                 T.Id, T.Title, T.Description, T.Status, T.Priority, T.DueDate, 
-                T.AssignedUserId, T.CreatedAt, T.UpdatedAt, T.CreatedBy,
+                T.OriginalDueDate, T.ExtendedDueDate, T.Type, T.ReminderLevel, T.ProgressPercentage,
+                T.AssignedUserId, T.CreatedById, T.CreatedAt, T.UpdatedAt, T.CreatedBy,
                 U.Email AS AssignedUserEmail
-            FROM Tasks AS T
-            LEFT JOIN Users AS U ON T.AssignedUserId = U.Id
+            FROM [Tasks].[Tasks] AS T
+            LEFT JOIN [Tasks].[Users] AS U ON T.AssignedUserId = U.Id
             WHERE T.Id = @TaskId";
 
         using var connection = CreateConnection();
@@ -83,14 +84,14 @@ public class TaskDapperRepository : DapperQueryRepository<Task>
 
         var whereClause = conditions.Any() ? "WHERE " + string.Join(" AND ", conditions) : string.Empty;
 
-        var countSql = $"SELECT COUNT(T.Id) FROM Tasks AS T {whereClause}";
+        var countSql = $"SELECT COUNT(T.Id) FROM [Tasks].[Tasks] AS T {whereClause}";
         var dataSql = $@"
             SELECT 
                 T.Id, T.Title, T.Description, T.Status, T.Priority, T.DueDate, 
                 T.AssignedUserId, T.CreatedAt, T.UpdatedAt, T.CreatedBy,
                 U.Email AS AssignedUserEmail
-            FROM Tasks AS T
-            LEFT JOIN Users AS U ON T.AssignedUserId = U.Id
+            FROM [Tasks].[Tasks] AS T
+            LEFT JOIN [Tasks].[Users] AS U ON T.AssignedUserId = U.Id
             {whereClause}
             ORDER BY T.CreatedAt DESC
             OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY";

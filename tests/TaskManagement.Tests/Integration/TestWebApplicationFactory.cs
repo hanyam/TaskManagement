@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using TaskManagement.Infrastructure.Data;
@@ -31,22 +32,37 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
             });
         });
 
-        builder.ConfigureServices(services =>
+        // Configure services BEFORE they are registered by Program.cs
+        // This ensures InMemory is registered first, and AddInfrastructure will skip SQL Server registration
+        builder.ConfigureServices((context, services) =>
         {
-            // Remove the existing DbContext registrations
-            var descriptors = services.Where(
-                d => d.ServiceType == typeof(DbContextOptions<ApplicationDbContext>) ||
-                     d.ServiceType == typeof(ApplicationDbContext)).ToList();
-            foreach (var descriptor in descriptors)
+            // Pre-register InMemory DbContext so AddInfrastructure will skip SQL Server registration
+            services.AddDbContext<TaskManagementDbContext>(options =>
+            {
+                options.UseInMemoryDatabase($"TestDatabase_{Guid.NewGuid()}", b => b.EnableNullChecks());
+            }, ServiceLifetime.Scoped);
+        });
+
+        // Also configure services AFTER Program.cs registration to clean up any remaining SQL Server services
+        builder.ConfigureServices((context, services) =>
+        {
+            // Remove any SQL Server provider-specific services that might have been registered
+            // EF Core registers provider services internally, we need to find and remove them
+            var sqlServerProviderServices = services
+                .Where(d => 
+                    (d.ImplementationType != null && 
+                     d.ImplementationType.FullName != null &&
+                     d.ImplementationType.FullName.Contains("SqlServer", StringComparison.OrdinalIgnoreCase)) ||
+                    (d.ImplementationFactory != null && 
+                     d.ImplementationFactory.Method.DeclaringType != null &&
+                     d.ImplementationFactory.Method.DeclaringType.FullName != null &&
+                     d.ImplementationFactory.Method.DeclaringType.FullName.Contains("SqlServer", StringComparison.OrdinalIgnoreCase)))
+                .ToList();
+            
+            foreach (var descriptor in sqlServerProviderServices)
             {
                 services.Remove(descriptor);
             }
-
-            // Add in-memory database
-            services.AddDbContext<ApplicationDbContext>(options =>
-            {
-                options.UseInMemoryDatabase("TestDatabase");
-            });
         });
 
         builder.UseEnvironment("Testing");

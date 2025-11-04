@@ -16,9 +16,9 @@ namespace TaskManagement.Application.Tasks.Queries.GetAssignedTasks;
 /// </summary>
 public class GetAssignedTasksQueryHandler : IRequestHandler<GetAssignedTasksQuery, GetTasksResponse>
 {
-    private readonly ApplicationDbContext _context;
+    private readonly TaskManagementDbContext _context;
 
-    public GetAssignedTasksQueryHandler(ApplicationDbContext context)
+    public GetAssignedTasksQueryHandler(TaskManagementDbContext context)
     {
         _context = context;
     }

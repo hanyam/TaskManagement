@@ -92,7 +92,11 @@ This is an enterprise-grade Task Management API built with .NET 8.0 following **
 - **Command Repository**: `ICommandRepository<T>` → `EfCommandRepository<T>` (EF Core)
 - **Query Repository**: `IQueryRepository<T>` → Dapper-based repositories
 - **Unit of Work**: `IUnitOfWork` → `UnitOfWork` (EF Core transaction management)
-- **Direct Context Access**: Handlers can access `ApplicationDbContext` directly when needed (e.g., `_context.Set<Task>().FindAsync()`)
+- **Direct Context Access**: Handlers can access `TaskManagementDbContext` directly when needed (e.g., `_context.Set<Task>().FindAsync()`)
+- **Transaction Management**:
+  - **Simple Operations**: Use `DbContext` directly with `SaveChangesAsync()` (implicit transaction - recommended for most cases)
+  - **Complex Operations**: Use `UnitOfWork` with explicit transaction control (`BeginTransactionAsync`, `CommitTransactionAsync`, `RollbackTransactionAsync`)
+  - **Note**: UnitOfWork does NOT dispose DbContext (managed by DI scoped lifetime)
 
 ### 4. Base Entity Pattern
 - **All entities inherit from `BaseEntity`**:
@@ -167,13 +171,15 @@ This is an enterprise-grade Task Management API built with .NET 8.0 following **
 - **Validation**: Business validation in handler, input validation in FluentValidation
 - **Repository Usage**: Use appropriate repository (EF for commands, Dapper for queries)
 - **Direct Context Access**: Use `_context.Set<T>().FindAsync()` when repository doesn't have method
-- **Transaction Management**: Use `_context.SaveChangesAsync()` after repository operations
+- **Transaction Management**: 
+  - **Default Approach**: Use `_context.SaveChangesAsync()` after repository operations (implicit transaction - recommended)
+  - **Complex Operations**: Use `UnitOfWork` for explicit transaction control when needed
 - **Example**:
   ```csharp
   public class CreateTaskCommandHandler : ICommandHandler<CreateTaskCommand, TaskDto>
   {
       private readonly TaskEfCommandRepository _taskRepository;
-      private readonly ApplicationDbContext _context;
+      private readonly TaskManagementDbContext _context;
       
       public async Task<Result<TaskDto>> Handle(CreateTaskCommand request, CancellationToken cancellationToken)
       {
@@ -187,12 +193,42 @@ This is an enterprise-grade Task Management API built with .NET 8.0 following **
           if (errors.Any())
               return Result<TaskDto>.Failure(errors);
           
-          // Business logic
+          // Business logic - simple operation uses implicit transaction
           var task = new Task(...);
           await _taskRepository.AddAsync(task, cancellationToken);
-          await _context.SaveChangesAsync(cancellationToken);
+          await _context.SaveChangesAsync(cancellationToken); // Implicit transaction
           
           return Result<TaskDto>.Success(taskDto);
+      }
+  }
+  
+  // Example with UnitOfWork for complex operations:
+  public class ComplexOperationCommandHandler : ICommandHandler<ComplexCommand>
+  {
+      private readonly IUnitOfWork _unitOfWork;
+      private readonly TaskManagementDbContext _context;
+      
+      public async Task<Result> Handle(ComplexCommand request, CancellationToken cancellationToken)
+      {
+          // Begin explicit transaction for complex multi-step operation
+          await _unitOfWork.BeginTransactionAsync(cancellationToken);
+          try
+          {
+              // Multiple operations across different aggregates
+              await _unitOfWork.Tasks.AddAsync(task);
+              await _context.Set<TaskAssignment>().AddRangeAsync(assignments);
+              await _context.Set<TaskProgressHistory>().AddAsync(progress);
+              
+              await _unitOfWork.SaveChangesAsync(cancellationToken);
+              await _unitOfWork.CommitTransactionAsync(cancellationToken);
+              
+              return Result.Success();
+          }
+          catch
+          {
+              await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+              throw;
+          }
       }
   }
   ```
@@ -274,12 +310,29 @@ public class CreateTaskCommandHandlerTests : InMemoryDatabaseTestBase
 
 ## Dependency Injection
 
-### Service Registration
-- **Application Services**: Registered in `Program.cs` or via `IServiceLocator`
-- **Handlers**: Registered for both `ICommandHandler` and `IRequestHandler` interfaces
-- **Validators**: Registered as `IValidator<TRequest>`
-- **Repositories**: Registered as interfaces (`ICommandRepository<T>`, `IQueryRepository<T>`)
-- **Mediator**: `PipelineMediator` registered as `IMediator`
+### Service Registration Pattern
+Each layer has its own `DependencyInjection.cs` class with an extension method:
+- **Infrastructure Layer**: `AddInfrastructure(IServiceCollection, IConfiguration)` in `TaskManagement.Infrastructure/DependencyInjection.cs`
+  - Registers: DbContext, generic repositories, UnitOfWork, authentication services
+- **Application Layer**: `AddApplication(IServiceCollection, IConfiguration)` in `TaskManagement.Application/DependencyInjection.cs`
+  - Registers: Mediators, handlers (via reflection), validators, pipeline behaviors, business services, Dapper/EF repositories
+- **API/Presentation Layer**: `AddPresentation(IServiceCollection, IConfiguration)` in `TaskManagement.Api/DependencyInjection.cs`
+  - Registers: Controllers, authentication, Swagger, CORS, options
+
+### Registration in Program.cs
+```csharp
+// Register services by layer
+builder.Services.AddPresentation(builder.Configuration);  // API/Presentation layer
+builder.Services.AddApplication(builder.Configuration);    // Application layer
+builder.Services.AddInfrastructure(builder.Configuration); // Infrastructure layer
+```
+
+### Handler Registration
+- **Automatic Discovery**: Handlers are registered via reflection in `Application/DependencyInjection.cs`
+- **Command Handlers**: Registered for both `ICommandHandler` and `IRequestHandler` interfaces (PipelineMediator uses IRequestHandler internally)
+- **Query Handlers**: Registered for `IRequestHandler` interface only
+- **Validators**: Registered via `AddValidatorsFromAssembly` (FluentValidation)
+- **Repositories**: Registered explicitly in `Application/DependencyInjection.cs` (Dapper/EF repositories)
 
 ### IServiceLocator Pattern
 - **Purpose**: Abstraction for service resolution (allows test substitution)
@@ -310,8 +363,8 @@ public class CreateTaskCommandHandlerTests : InMemoryDatabaseTestBase
 ## Database Design
 
 ### Entity Framework Core
-- **DbContext**: `ApplicationDbContext` in Infrastructure layer
-- **Migrations**: Standard EF Core migrations
+- **DbContext**: `TaskManagementDbContext` in Infrastructure layer (uses "Tasks" schema)
+- **Migrations**: Standard EF Core migrations in `src/TaskManagement.Infrastructure/Migrations/TaskManagement/`
 - **In-Memory Testing**: Use `InMemoryDatabaseTestBase` with `DbContextOptionsBuilder.UseInMemoryDatabase`
 
 ### Data Access Patterns
@@ -362,7 +415,7 @@ public class CreateTaskCommandHandlerTests : InMemoryDatabaseTestBase
 3. **Create Handlers**: Use Result pattern, centralized errors
 4. **Create Validators**: Use FluentValidation, co-locate with commands
 5. **Create Tests**: Follow existing test patterns, use helper methods
-6. **Register Services**: Register handlers for both interfaces in DI container
+6. **Register Services**: Handlers are automatically registered via reflection in `Application/DependencyInjection.cs`. If adding new repository types or services, add them to the appropriate layer's `DependencyInjection.cs`
 7. **Update Documentation**: Update relevant docs
 
 ### Code Review Checklist
@@ -370,7 +423,7 @@ public class CreateTaskCommandHandlerTests : InMemoryDatabaseTestBase
 - ✅ Uses Result pattern (no exceptions for business logic)
 - ✅ Uses centralized error constants (no hardcoded strings)
 - ✅ Entity properties have private setters
-- ✅ Handlers registered for both ICommandHandler and IRequestHandler
+- ✅ Handlers automatically discovered and registered (no manual registration needed)
 - ✅ Tests use ErrorAssertionExtensions
 - ✅ Tests use helper methods from InMemoryDatabaseTestBase
 - ✅ No redundant properties in entities
@@ -396,10 +449,15 @@ public class CreateTaskCommandHandlerTests : InMemoryDatabaseTestBase
 - **Test Base**: `tests/TaskManagement.Tests/Unit/TestHelpers/InMemoryDatabaseTestBase.cs`
 - **Test Service Locator**: `tests/TaskManagement.Tests/Unit/TestHelpers/TestServiceLocator.cs`
 - **Error Assertions**: `tests/TaskManagement.Tests/Unit/TestHelpers/ErrorAssertionExtensions.cs`
-- **DbContext**: `src/TaskManagement.Infrastructure/Data/ApplicationDbContext.cs`
+- **DbContext**: `src/TaskManagement.Infrastructure/Data/TaskManagementDbContext.cs`
+- **Dependency Injection**: 
+  - `src/TaskManagement.Infrastructure/DependencyInjection.cs`
+  - `src/TaskManagement.Application/DependencyInjection.cs`
+  - `src/TaskManagement.Api/DependencyInjection.cs`
 
 ---
 
 **Last Updated**: Based on project state as of current development session
 **Maintainer**: This file should be updated whenever significant architectural decisions or patterns are introduced
+
 

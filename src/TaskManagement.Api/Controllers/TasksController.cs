@@ -26,15 +26,11 @@ namespace TaskManagement.Api.Controllers;
 ///     Controller for handling task operations.
 /// </summary>
 [ApiController]
-[Route("api/[controller]")]
+[Route("tasks")]
 [Authorize]
-public class TasksController : BaseController
+public class TasksController(ICommandMediator commandMediator, IRequestMediator requestMediator)
+    : BaseController(commandMediator, requestMediator)
 {
-    public TasksController(ICommandMediator commandMediator, IRequestMediator requestMediator) 
-        : base(commandMediator, requestMediator)
-    {
-    }
-
     /// <summary>
     ///     Gets a task by its ID.
     /// </summary>
@@ -43,7 +39,18 @@ public class TasksController : BaseController
     [HttpGet("{id}")]
     public async Task<IActionResult> GetTaskById(Guid id)
     {
-        var query = new GetTaskByIdQuery { Id = id };
+        // Get user ID from claims (should be set during authentication)
+        var userIdClaim = User.FindFirst("user_id")?.Value;
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+        {
+            return BadRequest(ApiResponse<object>.ErrorResponse("User ID not found in token", HttpContext.TraceIdentifier));
+        }
+
+        var query = new GetTaskByIdQuery 
+        { 
+            Id = id,
+            UserId = userId
+        };
         var result = await _requestMediator.Send(query);
         return HandleResult(result);
     }

@@ -19,5 +19,21 @@ services:
       timeout: 10s
       retries: 5
 
+  taskmanagement.api:
+    image: taskmanagement.api
+    build:
+      context: .
+      dockerfile: src/TaskManagement.Api/Dockerfile
+    container_name: taskmanagement-api
+    ports:
+      - "5010:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=TaskManagement;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True;
+    depends_on:
+      - sqlserver
+    restart: unless-stopped
+
 volumes:
   sqlserver_data:
+

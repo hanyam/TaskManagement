@@ -24,12 +24,12 @@ public class CreateTaskCommandHandlerTests
 {
     private readonly Mock<TaskEfCommandRepository> _mockTaskCommandRepository;
     private readonly Mock<UserDapperRepository> _mockUserQueryRepository;
-    private readonly Mock<ApplicationDbContext> _mockContext;
+    private readonly Mock<TaskManagementDbContext> _mockContext;
     private readonly CreateTaskCommandHandler _handler;
 
     public CreateTaskCommandHandlerTests()
     {
-        _mockTaskCommandRepository = new Mock<TaskEfCommandRepository>(Mock.Of<ApplicationDbContext>());
+        _mockTaskCommandRepository = new Mock<TaskEfCommandRepository>(Mock.Of<TaskManagementDbContext>());
         _mockUserQueryRepository = new Mock<UserDapperRepository>(Mock.Of<IConfiguration>());
         _mockContext = DbContextTestHelper.CreateMockDbContext();
         _handler = new CreateTaskCommandHandler(_mockTaskCommandRepository.Object, _mockUserQueryRepository.Object, _mockContext.Object);

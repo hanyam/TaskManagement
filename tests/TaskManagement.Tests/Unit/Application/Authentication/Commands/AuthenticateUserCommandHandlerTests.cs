@@ -26,7 +26,7 @@ public class AuthenticateUserCommandHandlerTests
     private readonly Mock<IAuthenticationService> _mockAuthenticationService;
     private readonly Mock<UserDapperRepository> _mockUserQueryRepository;
     private readonly Mock<UserEfCommandRepository> _mockUserCommandRepository;
-    private readonly Mock<ApplicationDbContext> _mockContext;
+    private readonly Mock<TaskManagementDbContext> _mockContext;
     private readonly AuthenticateUserCommandHandler _handler;
 
     public AuthenticateUserCommandHandlerTests()

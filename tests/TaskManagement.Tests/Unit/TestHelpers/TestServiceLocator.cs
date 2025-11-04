@@ -37,9 +37,9 @@ namespace TaskManagement.Tests.Unit.TestHelpers;
 public class TestServiceLocator : IServiceLocator
 {
     private readonly IServiceProvider _serviceProvider;
-    private readonly ApplicationDbContext _context;
+    private readonly TaskManagementDbContext _context;
 
-    public TestServiceLocator(IServiceProvider serviceProvider, ApplicationDbContext context)
+    public TestServiceLocator(IServiceProvider serviceProvider, TaskManagementDbContext context)
     {
         _serviceProvider = serviceProvider;
         _context = context;
@@ -149,7 +149,7 @@ public class TestServiceLocator : IServiceLocator
 
         if (serviceType == typeof(IRequestHandler<GetTaskByIdQuery, TaskDto>))
         {
-            return new GetTaskByIdQueryHandler(taskRepository);
+            return new GetTaskByIdQueryHandler(taskRepository, _context);
         }
 
         if (serviceType == typeof(IRequestHandler<GetDashboardStatsQuery, DashboardStatsDto>))

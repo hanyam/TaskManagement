@@ -211,7 +211,7 @@ public record CreateTaskCommand : ICommand<TaskDto>
 
 public class CreateTaskCommandHandler : ICommandHandler<CreateTaskCommand, TaskDto>
 {
-    private readonly ApplicationDbContext _context;
+    private readonly TaskManagementDbContext _context;
     // Uses EF Core for change tracking
 }
 
@@ -308,7 +308,7 @@ The application uses a **hybrid repository pattern**:
 - Manage database context and transactions
 
 **Key Components:**
-- `Data/`: ApplicationDbContext, Repositories, UnitOfWork
+- `Data/`: TaskManagementDbContext, Repositories, UnitOfWork
 - `Authentication/`: AuthenticationService (Azure AD + JWT)
 
 ### API Layer

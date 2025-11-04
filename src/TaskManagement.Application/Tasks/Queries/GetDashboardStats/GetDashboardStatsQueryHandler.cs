@@ -15,9 +15,9 @@ namespace TaskManagement.Application.Tasks.Queries.GetDashboardStats;
 /// </summary>
 public class GetDashboardStatsQueryHandler : IRequestHandler<GetDashboardStatsQuery, DashboardStatsDto>
 {
-    private readonly ApplicationDbContext _context;
+    private readonly TaskManagementDbContext _context;
 
-    public GetDashboardStatsQueryHandler(ApplicationDbContext context)
+    public GetDashboardStatsQueryHandler(TaskManagementDbContext context)
     {
         _context = context;
     }

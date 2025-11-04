@@ -68,7 +68,7 @@ TaskManagement/
 - Create validator in same directory
 
 **3. Infrastructure Layer:**
-- Update `ApplicationDbContext` if needed
+- Update `TaskManagementDbContext` if needed
 - Create migrations if schema changed
 
 **4. API Layer:**
@@ -165,9 +165,9 @@ public record CreateProjectCommand : ICommand<ProjectDto>
 // src/TaskManagement.Application/Projects/Commands/CreateProject/CreateProjectCommandHandler.cs
 public class CreateProjectCommandHandler : ICommandHandler<CreateProjectCommand, ProjectDto>
 {
-    private readonly ApplicationDbContext _context;
+    private readonly TaskManagementDbContext _context;
     
-    public CreateProjectCommandHandler(ApplicationDbContext context)
+    public CreateProjectCommandHandler(TaskManagementDbContext context)
     {
         _context = context;
     }
@@ -230,7 +230,7 @@ public async Task<IActionResult> CreateProject([FromBody] CreateProjectRequest r
 ```csharp
 public class CreateEntityCommandHandler : ICommandHandler<CreateEntityCommand, EntityDto>
 {
-    private readonly ApplicationDbContext _context;
+    private readonly TaskManagementDbContext _context;
     
     public async Task<Result<EntityDto>> Handle(CreateEntityCommand request, CancellationToken cancellationToken)
     {
@@ -337,7 +337,7 @@ public class CreateEntityCommandHandlerTests : InMemoryDatabaseTestBase
 ```csharp
 public class CommandHandler : ICommandHandler<Command, Response>
 {
-    private readonly ApplicationDbContext _context;
+    private readonly TaskManagementDbContext _context;
     
     public async Task<Result<Response>> Handle(Command request, CancellationToken cancellationToken)
     {

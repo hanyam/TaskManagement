@@ -21,7 +21,7 @@ public class DapperQueryRepository<T> : IQueryRepository<T> where T : BaseEntity
 
     public virtual async Task<T?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var sql = $"SELECT * FROM {typeof(T).Name}s WHERE Id = @Id";
+        var sql = $"SELECT * FROM [Tasks].[{typeof(T).Name}s] WHERE Id = @Id";
         using var connection = CreateConnection();
         return await connection.QueryFirstOrDefaultAsync<T>(new CommandDefinition(sql, new { Id = id },
             cancellationToken: cancellationToken));
@@ -29,7 +29,7 @@ public class DapperQueryRepository<T> : IQueryRepository<T> where T : BaseEntity
 
     public virtual async Task<IEnumerable<T>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        var sql = $"SELECT * FROM {typeof(T).Name}s";
+        var sql = $"SELECT * FROM [Tasks].[{typeof(T).Name}s]";
         using var connection = CreateConnection();
         return await connection.QueryAsync<T>(new CommandDefinition(sql, cancellationToken: cancellationToken));
     }

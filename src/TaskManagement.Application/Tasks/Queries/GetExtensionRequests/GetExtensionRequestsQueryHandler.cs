@@ -13,9 +13,9 @@ namespace TaskManagement.Application.Tasks.Queries.GetExtensionRequests;
 /// </summary>
 public class GetExtensionRequestsQueryHandler : IRequestHandler<GetExtensionRequestsQuery, List<ExtensionRequestDto>>
 {
-    private readonly ApplicationDbContext _context;
+    private readonly TaskManagementDbContext _context;
 
-    public GetExtensionRequestsQueryHandler(ApplicationDbContext context)
+    public GetExtensionRequestsQueryHandler(TaskManagementDbContext context)
     {
         _context = context;
     }

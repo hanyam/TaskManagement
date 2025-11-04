@@ -9,16 +9,11 @@ namespace TaskManagement.Api.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
-public abstract class BaseController : ControllerBase
+public abstract class BaseController(ICommandMediator commandMediator, IRequestMediator requestMediator)
+    : ControllerBase
 {
-    protected readonly ICommandMediator _commandMediator;
-    protected readonly IRequestMediator _requestMediator;
-
-    protected BaseController(ICommandMediator commandMediator, IRequestMediator requestMediator)
-    {
-        _commandMediator = commandMediator;
-        _requestMediator = requestMediator;
-    }
+    protected readonly ICommandMediator _commandMediator = commandMediator;
+    protected readonly IRequestMediator _requestMediator = requestMediator;
 
     /// <summary>
     ///     Handles the result of a command or query and returns appropriate HTTP response.

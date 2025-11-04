@@ -9,14 +9,10 @@ namespace TaskManagement.Api.Controllers;
 ///     Controller for handling authentication operations.
 /// </summary>
 [ApiController]
-[Route("api/[controller]")]
-public class AuthenticationController : BaseController
+[Route("authentication")]
+public class AuthenticationController(ICommandMediator commandMediator, IRequestMediator requestMediator)
+    : BaseController(commandMediator, requestMediator)
 {
-    public AuthenticationController(ICommandMediator commandMediator, IRequestMediator requestMediator) 
-        : base(commandMediator, requestMediator)
-    {
-    }
-
     /// <summary>
     ///     Authenticates a user with Azure AD token and returns a JWT token.
     /// </summary>

@@ -12,17 +12,17 @@ namespace TaskManagement.Tests.Unit.TestHelpers;
 /// </summary>
 public abstract class InMemoryDatabaseTestBase : IDisposable
 {
-    protected ApplicationDbContext Context { get; }
+    protected TaskManagementDbContext Context { get; }
     protected readonly List<Guid> TestUserIds = new();
     protected readonly List<Guid> TestTaskIds = new();
 
     protected InMemoryDatabaseTestBase()
     {
-        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+        var options = new DbContextOptionsBuilder<TaskManagementDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
 
-        Context = new ApplicationDbContext(options);
+        Context = new TaskManagementDbContext(options);
         
         // Seed test data
         SeedTestData();

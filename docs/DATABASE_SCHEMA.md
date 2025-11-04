@@ -626,7 +626,7 @@ The initial migration creates all tables, indexes, and relationships. It should 
 
 When adding new features:
 1. Update domain entities
-2. Update `ApplicationDbContext` configuration
+2. Update `TaskManagementDbContext` configuration
 3. Create migration
 4. Review migration SQL
 5. Apply to development database

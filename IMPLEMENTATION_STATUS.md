@@ -97,7 +97,7 @@
 ### Repositories
 - ⚠️ Using DbContext directly for new entities (standard EF Core pattern)
 - ℹ️ Dedicated repositories can be added later if needed for optimization
-- ✅ DbSets configured and accessible via ApplicationDbContext
+- ✅ DbSets configured and accessible via TaskManagementDbContext
 
 ## 📋 Implementation Details
 

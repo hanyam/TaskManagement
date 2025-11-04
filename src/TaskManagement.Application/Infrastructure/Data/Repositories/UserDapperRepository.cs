@@ -18,7 +18,7 @@ public class UserDapperRepository : DapperQueryRepository<User>
     /// </summary>
     public virtual async Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
     {
-        var sql = "SELECT * FROM Users WHERE Email = @Email";
+        var sql = "SELECT * FROM [Tasks].[Users] WHERE Email = @Email";
         using var connection = CreateConnection();
         return await connection.QueryFirstOrDefaultAsync<User>(new CommandDefinition(sql, new { Email = email },
             cancellationToken: cancellationToken));

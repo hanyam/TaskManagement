@@ -8,7 +8,7 @@ namespace TaskManagement.Application.Infrastructure.Data.Repositories;
 /// </summary>
 public class TaskEfCommandRepository : EfCommandRepository<DomainTask>, ITaskEfCommandRepository
 {
-    public TaskEfCommandRepository(ApplicationDbContext context) : base(context)
+    public TaskEfCommandRepository(TaskManagementDbContext context) : base(context)
     {
     }
 }

@@ -11,10 +11,10 @@ namespace TaskManagement.Infrastructure.Data.Repositories;
 /// <typeparam name="T">The entity type.</typeparam>
 public class Repository<T> : IRepository<T> where T : BaseEntity
 {
-    protected readonly ApplicationDbContext _context;
+    protected readonly TaskManagementDbContext _context;
     protected readonly DbSet<T> _dbSet;
 
-    public Repository(ApplicationDbContext context)
+    public Repository(TaskManagementDbContext context)
     {
         _context = context;
         _dbSet = context.Set<T>();

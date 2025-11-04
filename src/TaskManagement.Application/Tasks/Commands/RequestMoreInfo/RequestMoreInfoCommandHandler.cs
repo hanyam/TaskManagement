@@ -15,14 +15,14 @@ namespace TaskManagement.Application.Tasks.Commands.RequestMoreInfo;
 /// </summary>
 public class RequestMoreInfoCommandHandler : ICommandHandler<RequestMoreInfoCommand, TaskDto>
 {
-    private readonly ApplicationDbContext _context;
+    private readonly TaskManagementDbContext _context;
     private readonly TaskEfCommandRepository _taskCommandRepository;
     private readonly UserDapperRepository _userQueryRepository;
 
     public RequestMoreInfoCommandHandler(
         TaskEfCommandRepository taskCommandRepository,
         UserDapperRepository userQueryRepository,
-        ApplicationDbContext context)
+        TaskManagementDbContext context)
     {
         _taskCommandRepository = taskCommandRepository;
         _userQueryRepository = userQueryRepository;

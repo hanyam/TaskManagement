@@ -11,15 +11,11 @@ namespace TaskManagement.Api.Controllers;
 ///     Controller for dashboard operations.
 /// </summary>
 [ApiController]
-[Route("api/[controller]")]
+[Route("dashboard")]
 [Authorize]
-public class DashboardController : BaseController
+public class DashboardController(ICommandMediator commandMediator, IRequestMediator requestMediator)
+    : BaseController(commandMediator, requestMediator)
 {
-    public DashboardController(ICommandMediator commandMediator, IRequestMediator requestMediator)
-        : base(commandMediator, requestMediator)
-    {
-    }
-
     /// <summary>
     ///     Gets dashboard statistics for the current user.
     /// </summary>

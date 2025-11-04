@@ -9,4 +9,5 @@ namespace TaskManagement.Application.Tasks.Queries.GetTaskById;
 public record GetTaskByIdQuery : IQuery<TaskDto>
 {
     public Guid Id { get; init; }
+    public Guid UserId { get; init; }
 }

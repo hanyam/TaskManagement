@@ -10,13 +10,13 @@ namespace TaskManagement.Tests.TestHelpers;
 public static class DbContextTestHelper
 {
     /// <summary>
-    /// Creates DbContextOptions for ApplicationDbContext that can be used in unit tests.
+    /// Creates DbContextOptions for TaskManagementDbContext that can be used in unit tests.
     /// This properly sets up the ContextType to avoid the "ContextType is null" error.
     /// </summary>
-    /// <returns>DbContextOptions configured for ApplicationDbContext</returns>
-    public static DbContextOptions<ApplicationDbContext> CreateOptions()
+    /// <returns>DbContextOptions configured for TaskManagementDbContext</returns>
+    public static DbContextOptions<TaskManagementDbContext> CreateOptions()
     {
-        var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
+        var optionsBuilder = new DbContextOptionsBuilder<TaskManagementDbContext>();
         
         // Use in-memory database for testing
         optionsBuilder.UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString());
@@ -29,12 +29,12 @@ public static class DbContextTestHelper
     }
 
     /// <summary>
-    /// Creates a mock ApplicationDbContext with properly configured options.
+    /// Creates a mock TaskManagementDbContext with properly configured options.
     /// </summary>
-    /// <returns>Mock ApplicationDbContext</returns>
-    public static Mock<ApplicationDbContext> CreateMockDbContext()
+    /// <returns>Mock TaskManagementDbContext</returns>
+    public static Mock<TaskManagementDbContext> CreateMockDbContext()
     {
         var options = CreateOptions();
-        return new Mock<ApplicationDbContext>(options);
+        return new Mock<TaskManagementDbContext>(options);
     }
 }

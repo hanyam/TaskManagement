@@ -47,5 +47,9 @@ public static class TaskErrors
 
     // Task query errors
     public static Error InvalidTaskId => Error.Validation("Task ID is required", "Id");
+    public static Error InvalidUserId => Error.Validation("User ID is required", "UserId");
     public static Error InvalidFilterParameters => Error.Validation("Invalid filter parameters provided", "Filters");
+
+    // Task access control errors
+    public static Error AccessDenied => Error.Forbidden("You do not have access to this task. Tasks can only be accessed by the creator, assigned user, or users in the assignment chain.");
 }

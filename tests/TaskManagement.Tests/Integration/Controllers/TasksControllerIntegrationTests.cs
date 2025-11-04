@@ -43,7 +43,7 @@ public class TasksControllerIntegrationTests : IClassFixture<TestWebApplicationF
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/tasks", createTaskRequest);
+        var response = await _client.PostAsJsonAsync("/tasks", createTaskRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -76,7 +76,7 @@ public class TasksControllerIntegrationTests : IClassFixture<TestWebApplicationF
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/tasks", createTaskRequest);
+        var response = await _client.PostAsJsonAsync("/tasks", createTaskRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -86,7 +86,7 @@ public class TasksControllerIntegrationTests : IClassFixture<TestWebApplicationF
     public async Task GetTasks_ShouldReturnTasksList()
     {
         // Act
-        var response = await _client.GetAsync("/api/tasks");
+        var response = await _client.GetAsync("/tasks");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -111,7 +111,7 @@ public class TasksControllerIntegrationTests : IClassFixture<TestWebApplicationF
         var taskId = Guid.NewGuid();
 
         // Act
-        var response = await _client.GetAsync($"/api/tasks/{taskId}");
+        var response = await _client.GetAsync($"/tasks/{taskId}");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);

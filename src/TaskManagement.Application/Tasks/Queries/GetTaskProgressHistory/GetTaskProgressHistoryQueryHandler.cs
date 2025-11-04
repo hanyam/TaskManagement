@@ -13,9 +13,9 @@ namespace TaskManagement.Application.Tasks.Queries.GetTaskProgressHistory;
 /// </summary>
 public class GetTaskProgressHistoryQueryHandler : IRequestHandler<GetTaskProgressHistoryQuery, List<TaskProgressDto>>
 {
-    private readonly ApplicationDbContext _context;
+    private readonly TaskManagementDbContext _context;
 
-    public GetTaskProgressHistoryQueryHandler(ApplicationDbContext context)
+    public GetTaskProgressHistoryQueryHandler(TaskManagementDbContext context)
     {
         _context = context;
     }

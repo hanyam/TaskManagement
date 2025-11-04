@@ -10,10 +10,10 @@ namespace TaskManagement.Application.Infrastructure.Data.Repositories;
 /// <typeparam name="T">The type of entity for command operations.</typeparam>
 public class EfCommandRepository<T> : ICommandRepository<T> where T : BaseEntity
 {
-    protected readonly ApplicationDbContext _context;
+    protected readonly TaskManagementDbContext _context;
     protected readonly DbSet<T> _dbSet;
 
-    public EfCommandRepository(ApplicationDbContext context)
+    public EfCommandRepository(TaskManagementDbContext context)
     {
         _context = context;
         _dbSet = context.Set<T>();

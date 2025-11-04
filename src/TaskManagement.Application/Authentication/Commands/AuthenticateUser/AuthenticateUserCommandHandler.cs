@@ -17,7 +17,7 @@ namespace TaskManagement.Application.Authentication.Commands.AuthenticateUser;
 public class AuthenticateUserCommandHandler : ICommandHandler<AuthenticateUserCommand, AuthenticationResponse>
 {
     private readonly IAuthenticationService _authenticationService;
-    private readonly ApplicationDbContext _context;
+    private readonly TaskManagementDbContext _context;
     private readonly UserEfCommandRepository _userCommandRepository;
     private readonly UserDapperRepository _userQueryRepository;
 
@@ -25,7 +25,7 @@ public class AuthenticateUserCommandHandler : ICommandHandler<AuthenticateUserCo
         IAuthenticationService authenticationService,
         UserDapperRepository userQueryRepository,
         UserEfCommandRepository userCommandRepository,
-        ApplicationDbContext context)
+        TaskManagementDbContext context)
     {
         _authenticationService = authenticationService;
         _userQueryRepository = userQueryRepository;

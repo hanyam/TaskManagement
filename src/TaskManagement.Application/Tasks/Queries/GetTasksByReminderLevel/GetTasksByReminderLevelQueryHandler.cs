@@ -17,11 +17,11 @@ namespace TaskManagement.Application.Tasks.Queries.GetTasksByReminderLevel;
 /// </summary>
 public class GetTasksByReminderLevelQueryHandler : IRequestHandler<GetTasksByReminderLevelQuery, GetTasksResponse>
 {
-    private readonly ApplicationDbContext _context;
+    private readonly TaskManagementDbContext _context;
     private readonly IReminderCalculationService _reminderCalculationService;
 
     public GetTasksByReminderLevelQueryHandler(
-        ApplicationDbContext context,
+        TaskManagementDbContext context,
         IReminderCalculationService reminderCalculationService)
     {
         _context = context;
