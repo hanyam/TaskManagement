@@ -14,11 +14,11 @@ public class AssignTaskCommandValidator : AbstractValidator<AssignTaskCommand>
 
         RuleFor(x => x.UserIds)
             .NotEmpty().WithMessage("At least one user must be assigned")
-            .Must(ids => ids.Count > 0).WithMessage("At least one user ID is required");
+            .Must(ids => ids?.Count > 0).WithMessage("At least one user ID is required");
 
         RuleForEach(x => x.UserIds)
             .NotEmpty().WithMessage("User ID cannot be empty");
-
+        
         RuleFor(x => x.AssignedById)
             .NotEmpty().WithMessage("Assigned by user ID is required");
     }
