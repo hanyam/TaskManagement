@@ -4,31 +4,31 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TaskManagement.Api", "src\TaskManagement.Api\TaskManagement.Api.csproj", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TaskManagement.Application", "src\TaskManagement.Application\TaskManagement.Application.csproj", "{00000000-0000-0000-0000-000000000000}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TaskManagement.Application", "src\TaskManagement.Application\TaskManagement.Application.csproj", "{1209D9DF-999B-455F-914E-50AB0F2E1008}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TaskManagement.Domain", "src\TaskManagement.Domain\TaskManagement.Domain.csproj", "{00000000-0000-0000-0000-000000000000}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TaskManagement.Domain", "src\TaskManagement.Domain\TaskManagement.Domain.csproj", "{9DB5939C-276C-4BCA-8CFA-AFF7F7BF2631}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TaskManagement.Infrastructure", "src\TaskManagement.Infrastructure\TaskManagement.Infrastructure.csproj", "{00000000-0000-0000-0000-000000000000}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TaskManagement.Infrastructure", "src\TaskManagement.Infrastructure\TaskManagement.Infrastructure.csproj", "{5D55890D-538B-4D56-B49C-EF6A6B1C0F66}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TaskManagement.Tests", "tests\TaskManagement.Tests\TaskManagement.Tests.csproj", "{00000000-0000-0000-0000-000000000000}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TaskManagement.Tests", "tests\TaskManagement.Tests\TaskManagement.Tests.csproj", "{E6ED1C9F-22D6-4ADC-93EF-B88F6CA2E051}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{7879002A-3E88-444D-989D-5B30FA31DDEE}"
 	ProjectSection(SolutionItems) = preProject
 		docs\API_EXAMPLES.md = docs\API_EXAMPLES.md
-		docs\ARCHITECTURE.md = docs\ARCHITECTURE.md
-		docs\DOMAIN_MODEL.md = docs\DOMAIN_MODEL.md
-		docs\EXTENDING_FEATURES.md = docs\EXTENDING_FEATURES.md
 		docs\API_REFERENCE.md = docs\API_REFERENCE.md
-		docs\FEATURES.md = docs\FEATURES.md
-		docs\DATABASE_SCHEMA.md = docs\DATABASE_SCHEMA.md
+		docs\ARCHITECTURE.md = docs\ARCHITECTURE.md
 		docs\BUSINESS_RULES.md = docs\BUSINESS_RULES.md
 		docs\CONFIGURATION.md = docs\CONFIGURATION.md
+		docs\DATABASE_SCHEMA.md = docs\DATABASE_SCHEMA.md
 		docs\DEPLOYMENT.md = docs\DEPLOYMENT.md
 		docs\DEVELOPER_GUIDE.md = docs\DEVELOPER_GUIDE.md
+		docs\DOMAIN_MODEL.md = docs\DOMAIN_MODEL.md
+		docs\ENTERPRISE_MATURITY_ASSESSMENT.md = docs\ENTERPRISE_MATURITY_ASSESSMENT.md
 		docs\ERROR_HANDLING.md = docs\ERROR_HANDLING.md
+		docs\EXTENDING_FEATURES.md = docs\EXTENDING_FEATURES.md
+		docs\FEATURES.md = docs\FEATURES.md
 		docs\SECURITY.md = docs\SECURITY.md
 		docs\TESTING.md = docs\TESTING.md
-		docs\ENTERPRISE_MATURITY_ASSESSMENT.md = docs\ENTERPRISE_MATURITY_ASSESSMENT.md
 	EndProjectSection
 EndProject
 Global
@@ -41,8 +41,22 @@ Global
 		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release|Any CPU.Build.0 = Release|Any CPU
-		{00000000-0000-0000-0000-000000000000}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{00000000-0000-0000-0000-000000000000}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1209D9DF-999B-455F-914E-50AB0F2E1008}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1209D9DF-999B-455F-914E-50AB0F2E1008}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1209D9DF-999B-455F-914E-50AB0F2E1008}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1209D9DF-999B-455F-914E-50AB0F2E1008}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9DB5939C-276C-4BCA-8CFA-AFF7F7BF2631}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9DB5939C-276C-4BCA-8CFA-AFF7F7BF2631}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9DB5939C-276C-4BCA-8CFA-AFF7F7BF2631}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9DB5939C-276C-4BCA-8CFA-AFF7F7BF2631}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5D55890D-538B-4D56-B49C-EF6A6B1C0F66}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5D55890D-538B-4D56-B49C-EF6A6B1C0F66}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5D55890D-538B-4D56-B49C-EF6A6B1C0F66}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5D55890D-538B-4D56-B49C-EF6A6B1C0F66}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E6ED1C9F-22D6-4ADC-93EF-B88F6CA2E051}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E6ED1C9F-22D6-4ADC-93EF-B88F6CA2E051}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E6ED1C9F-22D6-4ADC-93EF-B88F6CA2E051}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E6ED1C9F-22D6-4ADC-93EF-B88F6CA2E051}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
