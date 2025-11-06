@@ -88,7 +88,8 @@ public class AssignTaskCommandValidatorTests
         var result = _validator.TestValidate(command);
 
         // Assert
-        result.ShouldHaveValidationErrorFor(x => x.UserIds);
+        result.ShouldHaveValidationErrorFor(x => x.UserIds)
+            .WithErrorMessage("User IDs are required");
     }
 
     [Fact]
