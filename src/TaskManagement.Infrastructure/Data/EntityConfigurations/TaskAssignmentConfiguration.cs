@@ -37,3 +37,4 @@ public class TaskAssignmentConfiguration : IEntityTypeConfiguration<TaskAssignme
     }
 }
 
+

@@ -44,3 +44,4 @@ public class TaskProgressHistoryConfiguration : IEntityTypeConfiguration<TaskPro
     }
 }
 
+

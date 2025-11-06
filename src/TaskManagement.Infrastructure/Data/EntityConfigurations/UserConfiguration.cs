@@ -51,3 +51,4 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
     }
 }
 
+
