@@ -1,0 +1,452 @@
+{
+  "generatedAt": "2025-11-08T00:00:00Z",
+  "unifiedResponseEnvelope": {
+    "successKey": "success",
+    "dataKey": "data",
+    "messageKey": "message",
+    "errorsKey": "errors",
+    "traceIdKey": "traceId",
+    "timestampKey": "timestamp",
+    "notes": [
+      "All endpoints return ApiResponse<T> or ApiResponse wrapping the payload inside the 'data' field when success=true.",
+      "Validation errors populate the 'errors' array with code, message, and optional field. Domain errors use the same structure.",
+      "When success=false and 'errors' is empty, the 'message' field contains a human readable summary."
+    ]
+  },
+  "enums": {
+    "TaskStatus": ["Created", "Assigned", "UnderReview", "Accepted", "Rejected", "Completed", "Cancelled"],
+    "TaskPriority": ["Low", "Medium", "High", "Critical"],
+    "TaskType": ["Simple", "WithDueDate", "WithProgress", "WithAcceptedProgress"],
+    "ReminderLevel": ["None", "Low", "Medium", "High", "Critical"],
+    "ExtensionRequestStatus": ["Pending", "Approved", "Rejected"],
+    "ProgressStatus": ["Pending", "Accepted", "Rejected"],
+    "UserRole": ["Employee", "Manager", "Admin"]
+  },
+  "sharedTypes": {
+    "TaskDto": {
+      "id": "Guid",
+      "title": "string",
+      "description": "string?",
+      "status": "TaskStatus",
+      "priority": "TaskPriority",
+      "dueDate": "DateTime?",
+      "originalDueDate": "DateTime?",
+      "extendedDueDate": "DateTime?",
+      "assignedUserId": "Guid",
+      "assignedUserEmail": "string?",
+      "type": "TaskType",
+      "reminderLevel": "ReminderLevel",
+      "progressPercentage": "number?",
+      "createdById": "Guid",
+      "createdBy": "string",
+      "createdAt": "DateTime",
+      "updatedAt": "DateTime?",
+      "assignments": "TaskAssignmentDto[]",
+      "recentProgressHistory": "TaskProgressDto[]"
+    },
+    "TaskAssignmentDto": {
+      "id": "Guid",
+      "taskId": "Guid",
+      "userId": "Guid",
+      "userEmail": "string?",
+      "userDisplayName": "string?",
+      "isPrimary": "bool",
+      "assignedAt": "DateTime"
+    },
+    "TaskProgressDto": {
+      "id": "Guid",
+      "taskId": "Guid",
+      "updatedById": "Guid",
+      "updatedByEmail": "string?",
+      "progressPercentage": "number",
+      "notes": "string?",
+      "status": "ProgressStatus",
+      "acceptedById": "Guid?",
+      "acceptedByEmail": "string?",
+      "acceptedAt": "DateTime?",
+      "updatedAt": "DateTime"
+    },
+    "GetTasksResponse": {
+      "tasks": "TaskDto[]",
+      "totalCount": "number",
+      "page": "number",
+      "pageSize": "number",
+      "totalPages": "number"
+    },
+    "ExtensionRequestDto": {
+      "id": "Guid",
+      "taskId": "Guid",
+      "taskTitle": "string",
+      "requestedById": "Guid",
+      "requestedByEmail": "string?",
+      "requestedDueDate": "DateTime",
+      "reason": "string",
+      "status": "ExtensionRequestStatus",
+      "reviewedById": "Guid?",
+      "reviewedByEmail": "string?",
+      "reviewedAt": "DateTime?",
+      "reviewNotes": "string?",
+      "createdAt": "DateTime"
+    },
+    "DashboardStatsDto": {
+      "tasksCreatedByUser": "number",
+      "tasksCompleted": "number",
+      "tasksNearDueDate": "number",
+      "tasksDelayed": "number",
+      "tasksInProgress": "number",
+      "tasksUnderReview": "number",
+      "tasksPendingAcceptance": "number"
+    },
+    "AuthenticationResponse": {
+      "accessToken": "string",
+      "tokenType": "string",
+      "expiresIn": "number",
+      "user": "UserDto"
+    },
+    "UserDto": {
+      "id": "Guid",
+      "email": "string",
+      "firstName": "string",
+      "lastName": "string",
+      "displayName": "string",
+      "isActive": "bool",
+      "createdAt": "DateTime",
+      "lastLoginAt": "DateTime?"
+    }
+  },
+  "features": [
+    {
+      "name": "Authentication",
+      "summary": "Azure AD token exchange that returns a first-party JWT and the authenticated user profile.",
+      "endpoints": [
+        {
+          "type": "command",
+          "name": "AuthenticateUser",
+          "http": {
+            "method": "POST",
+            "path": "/authentication/authenticate",
+            "auth": "anonymous",
+            "roles": []
+          },
+          "request": { "body": { "azureAdToken": "string" } },
+          "response": { "dataType": "AuthenticationResponse" },
+          "errors": ["UserErrors.InvalidCredentials", "UserErrors.AccountLocked", "Error.Internal"],
+          "ui": {
+            "screens": [
+              {
+                "name": "SignInPage",
+                "route": "/[locale]/sign-in",
+                "layout": "public",
+                "widgets": ["AzureAdTokenInput", "SignInButton", "ErrorBanner"]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "summary": "Personal productivity dashboard with task KPIs for the current user.",
+      "endpoints": [
+        {
+          "type": "query",
+          "name": "GetDashboardStats",
+          "http": {
+            "method": "GET",
+            "path": "/dashboard/stats",
+            "auth": "jwt",
+            "roles": ["Employee", "Manager", "Admin"]
+          },
+          "request": { "query": {} },
+          "response": { "dataType": "DashboardStatsDto" }
+        }
+      ],
+      "ui": {
+        "screens": [
+          {
+            "name": "DashboardPage",
+            "route": "/[locale]/dashboard",
+            "layout": "app-shell",
+            "widgets": [
+              "StatsCards(tasksCreatedByUser,tasksCompleted,tasksNearDueDate,tasksDelayed)",
+              "StatusBreakdownChart(tasksInProgress,tasksUnderReview,tasksPendingAcceptance)",
+              "NearDueTable(link=/[locale]/tasks?filter=near-due)"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "Tasks",
+      "summary": "Core task lifecycle management including assignment, progress, approvals, and deadline control.",
+      "dataSources": ["TasksController", "TaskDto", "TaskProgressDto", "ExtensionRequestDto"],
+      "states": ["TaskStatus", "ReminderLevel"],
+      "endpoints": [
+        {
+          "type": "query",
+          "name": "GetTasks",
+          "http": {
+            "method": "GET",
+            "path": "/tasks",
+            "auth": "jwt",
+            "roles": ["Employee", "Manager", "Admin"]
+          },
+          "request": {
+            "query": {
+              "status": "TaskStatus?",
+              "priority": "TaskPriority?",
+              "assignedUserId": "Guid?",
+              "dueDateFrom": "DateTime?",
+              "dueDateTo": "DateTime?",
+              "page": "number",
+              "pageSize": "number"
+            }
+          },
+          "response": {
+            "dataType": "GetTasksResponse",
+            "meta": { "pagination": ["totalCount", "page", "pageSize", "totalPages"] }
+          }
+        },
+        {
+          "type": "query",
+          "name": "GetTaskById",
+          "http": {
+            "method": "GET",
+            "path": "/tasks/{taskId}",
+            "auth": "jwt",
+            "roles": ["Employee", "Manager", "Admin"]
+          },
+          "request": { "route": { "taskId": "Guid" } },
+          "response": { "dataType": "TaskDto" }
+        },
+        {
+          "type": "command",
+          "name": "CreateTask",
+          "http": {
+            "method": "POST",
+            "path": "/tasks",
+            "auth": "jwt",
+            "roles": ["Manager", "Admin"]
+          },
+          "request": {
+            "body": {
+              "title": "string",
+              "description": "string?",
+              "priority": "TaskPriority",
+              "dueDate": "DateTime?",
+              "assignedUserId": "Guid",
+              "type": "TaskType"
+            }
+          },
+          "response": { "dataType": "TaskDto" }
+        },
+        {
+          "type": "command",
+          "name": "AssignTask",
+          "http": {
+            "method": "POST",
+            "path": "/tasks/{taskId}/assign",
+            "auth": "jwt",
+            "roles": ["Manager"]
+          },
+          "request": { "route": { "taskId": "Guid" }, "body": { "userIds": "Guid[]" } },
+          "response": { "dataType": "TaskDto" }
+        },
+        {
+          "type": "command",
+          "name": "ReassignTask",
+          "http": {
+            "method": "PUT",
+            "path": "/tasks/{taskId}/reassign",
+            "auth": "jwt",
+            "roles": ["Manager"]
+          },
+          "request": { "route": { "taskId": "Guid" }, "body": { "newUserIds": "Guid[]" } },
+          "response": { "dataType": "TaskDto" }
+        },
+        {
+          "type": "command",
+          "name": "UpdateTaskProgress",
+          "http": {
+            "method": "POST",
+            "path": "/tasks/{taskId}/progress",
+            "auth": "jwt",
+            "roles": ["Employee", "Manager"]
+          },
+          "request": { "route": { "taskId": "Guid" }, "body": { "progressPercentage": "number", "notes": "string?" } },
+          "response": { "dataType": "TaskProgressDto" }
+        },
+        {
+          "type": "command",
+          "name": "AcceptTaskProgress",
+          "http": {
+            "method": "POST",
+            "path": "/tasks/{taskId}/progress/accept",
+            "auth": "jwt",
+            "roles": ["Manager"]
+          },
+          "request": { "route": { "taskId": "Guid" }, "body": { "progressHistoryId": "Guid" } },
+          "response": { "dataType": null }
+        },
+        {
+          "type": "command",
+          "name": "AcceptTask",
+          "http": {
+            "method": "POST",
+            "path": "/tasks/{taskId}/accept",
+            "auth": "jwt",
+            "roles": ["Employee", "Manager"]
+          },
+          "request": { "route": { "taskId": "Guid" } },
+          "response": { "dataType": "TaskDto" }
+        },
+        {
+          "type": "command",
+          "name": "RejectTask",
+          "http": {
+            "method": "POST",
+            "path": "/tasks/{taskId}/reject",
+            "auth": "jwt",
+            "roles": ["Employee", "Manager"]
+          },
+          "request": { "route": { "taskId": "Guid" }, "body": { "reason": "string?" } },
+          "response": { "dataType": "TaskDto" }
+        },
+        {
+          "type": "command",
+          "name": "RequestMoreInfo",
+          "http": {
+            "method": "POST",
+            "path": "/tasks/{taskId}/request-info",
+            "auth": "jwt",
+            "roles": ["Employee", "Manager"]
+          },
+          "request": { "route": { "taskId": "Guid" }, "body": { "requestMessage": "string" } },
+          "response": { "dataType": "TaskDto" }
+        },
+        {
+          "type": "command",
+          "name": "RequestDeadlineExtension",
+          "http": {
+            "method": "POST",
+            "path": "/tasks/{taskId}/extension-request",
+            "auth": "jwt",
+            "roles": ["Employee", "Manager"]
+          },
+          "request": { "route": { "taskId": "Guid" }, "body": { "requestedDueDate": "DateTime", "reason": "string" } },
+          "response": { "dataType": "ExtensionRequestDto" }
+        },
+        {
+          "type": "command",
+          "name": "ApproveExtensionRequest",
+          "http": {
+            "method": "POST",
+            "path": "/tasks/{taskId}/extension-request/{requestId}/approve",
+            "auth": "jwt",
+            "roles": ["Manager"]
+          },
+          "request": { "route": { "taskId": "Guid", "requestId": "Guid" }, "body": { "reviewNotes": "string?" } },
+          "response": { "dataType": null }
+        },
+        {
+          "type": "command",
+          "name": "MarkTaskCompleted",
+          "http": {
+            "method": "POST",
+            "path": "/tasks/{taskId}/complete",
+            "auth": "jwt",
+            "roles": ["Manager"]
+          },
+          "request": { "route": { "taskId": "Guid" } },
+          "response": { "dataType": "TaskDto" }
+        }
+      ],
+      "ui": {
+        "routes": [
+          {
+            "path": "/[locale]/tasks",
+            "name": "TaskListPage",
+            "layout": "app-shell",
+            "requirements": [
+              "Server-driven pagination with TanStack Query",
+              "Virtualized data grid with sorting/filtering/column management",
+              "Bulk selection placeholder (API support pending)"
+            ],
+            "data": ["useTasksListQuery"],
+            "actions": ["OpenCreateTaskDrawer", "RowActions (view, accept, reject, requestInfo, markComplete, requestExtension)"]
+          },
+          {
+            "path": "/[locale]/tasks/create",
+            "name": "TaskCreatePage",
+            "layout": "app-shell",
+            "requirements": ["React Hook Form + Zod schema (CreateTask)", "Server-side validation mapping"],
+            "actions": ["SubmitCreateTaskMutation"]
+          },
+          {
+            "path": "/[locale]/tasks/[taskId]",
+            "name": "TaskDetailsPage",
+            "layout": "app-shell",
+            "requirements": [
+              "Header with title/status/priority badges",
+              "Summary sections: metadata, assignment, deadlines",
+              "Timeline using recentProgressHistory",
+              "Action bar with role-guarded buttons"
+            ],
+            "data": ["useTaskDetailsQuery"],
+            "actions": [
+              "useAcceptTaskMutation",
+              "useRejectTaskMutation",
+              "useUpdateProgressMutation",
+              "useRequestMoreInfoMutation",
+              "useRequestExtensionMutation",
+              "useMarkTaskCompletedMutation"
+            ]
+          }
+        ],
+        "modals": [
+          { "name": "AssignTaskModal", "action": "AssignTask", "linkedRoute": "/[locale]/tasks/[taskId]", "roles": ["Manager"] },
+          { "name": "ReassignTaskModal", "action": "ReassignTask", "linkedRoute": "/[locale]/tasks/[taskId]", "roles": ["Manager"] },
+          {
+            "name": "UpdateProgressDrawer",
+            "action": "UpdateTaskProgress",
+            "linkedRoute": "/[locale]/tasks/[taskId]",
+            "roles": ["Employee", "Manager"]
+          },
+          { "name": "AcceptProgressModal", "action": "AcceptTaskProgress", "linkedRoute": "/[locale]/tasks/[taskId]", "roles": ["Manager"] },
+          {
+            "name": "RequestExtensionModal",
+            "action": "RequestDeadlineExtension",
+            "linkedRoute": "/[locale]/tasks/[taskId]",
+            "roles": ["Employee", "Manager"]
+          },
+          { "name": "ApproveExtensionModal", "action": "ApproveExtensionRequest", "linkedRoute": "/[locale]/tasks/[taskId]", "roles": ["Manager"] }
+        ],
+        "pendingEndpoints": [
+          {
+            "query": "GetAssignedTasks",
+            "status": "Not exposed by API controller; UI should fall back to filtered /tasks with assignedUserId until endpoint exists."
+          },
+          {
+            "query": "GetExtensionRequests",
+            "status": "No REST endpoint yet; block dedicated extension requests list pending backend exposure."
+          },
+          {
+            "query": "GetTaskProgressHistory",
+            "status": "No REST endpoint; rely on TaskDto.recentProgressHistory when available."
+          },
+          {
+            "query": "GetTasksByReminderLevel",
+            "status": "No REST endpoint; emulate with /tasks?status filters for now."
+          }
+        ]
+      }
+    }
+  ],
+  "notes": [
+    "All dates from the API are UTC and should be rendered in the user’s timezone with locale-aware formatting.",
+    "Roles are enforced server-side; client-side guards should mirror but never replace backend checks.",
+    "Validation messages originate from FluentValidation / domain errors. Map Error.field to Zod path in forms.",
+    "Some read-side queries exist without REST endpoints. The UI scaffold should surface TODOs (pendingEndpoints) for future backend parity."
+  ]
+}
+

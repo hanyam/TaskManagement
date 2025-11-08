@@ -1,0 +1,16 @@
+{
+  "required": "{field} is required.",
+  "minLength": "{field} must be at least {count} {count, plural, one {character} other {characters}}.",
+  "maxLength": "{field} must be {count} {count, plural, one {character} other {characters}} or fewer.",
+  "futureDate": "Please select a future date.",
+  "invalidEmail": "Enter a valid email address.",
+  "invalidSelection": "Select a valid option.",
+  "server": {
+    "TaskErrors.AssignedUserNotFound": "The selected user is no longer available.",
+    "TaskErrors.AssignedUserInactive": "The selected user is inactive.",
+    "TaskErrors.AccessDenied": "You do not have permission to access this task.",
+    "TaskErrors.NotFound": "The task could not be found.",
+    "VALIDATION_ERROR": "Please review the highlighted fields."
+  }
+}
+

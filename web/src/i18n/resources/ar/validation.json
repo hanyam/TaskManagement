@@ -1,0 +1,16 @@
+{
+  "required": "حقل {field} إجباري.",
+  "minLength": "يجب ألا يقل {field} عن {count} {count, plural, one {حرف} other {أحرف}}.",
+  "maxLength": "يجب ألا يزيد {field} عن {count} {count, plural, one {حرف} other {حرفًا}}.",
+  "futureDate": "يرجى اختيار تاريخ لاحق.",
+  "invalidEmail": "يرجى إدخال بريد إلكتروني صالح.",
+  "invalidSelection": "يرجى اختيار قيمة صالحة.",
+  "server": {
+    "TaskErrors.AssignedUserNotFound": "المستخدم المحدد غير موجود.",
+    "TaskErrors.AssignedUserInactive": "المستخدم المحدد غير نشط.",
+    "TaskErrors.AccessDenied": "ليست لديك صلاحية الوصول إلى هذه المهمة.",
+    "TaskErrors.NotFound": "تعذر العثور على المهمة.",
+    "VALIDATION_ERROR": "يرجى مراجعة الحقول المظللة."
+  }
+}
+

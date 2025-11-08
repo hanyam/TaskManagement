@@ -1,0 +1,39 @@
+{
+  "title": "Dashboard",
+  "subtitle": "Real-time overview of your workstream.",
+  "widgets": {
+    "created": {
+      "title": "Created by you",
+      "description": "Tasks you originated."
+    },
+    "completed": {
+      "title": "Completed",
+      "description": "Tasks completed by you or your team."
+    },
+    "nearDue": {
+      "title": "Near due date",
+      "description": "Tasks due within the next three days."
+    },
+    "delayed": {
+      "title": "Delayed",
+      "description": "Tasks past their due date."
+    },
+    "inProgress": {
+      "title": "In progress",
+      "description": "Assigned or accepted tasks currently in progress."
+    },
+    "underReview": {
+      "title": "Under review",
+      "description": "Tasks awaiting review or approval."
+    },
+    "pendingAcceptance": {
+      "title": "Pending acceptance",
+      "description": "Assignments awaiting acceptance."
+    }
+  },
+  "recentTasks": {
+    "title": "Tasks requiring attention",
+    "empty": "No tasks require your attention right now."
+  }
+}
+

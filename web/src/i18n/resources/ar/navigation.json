@@ -1,0 +1,20 @@
+{
+  "appShell": {
+    "dashboard": "لوحة المعلومات",
+    "tasks": "المهام",
+    "myAssignments": "مهامي",
+    "extensionRequests": "طلبات التمديد",
+    "settings": "الإعدادات",
+    "commandPalette": "لوحة الأوامر",
+    "openCommandPalette": "فتح لوحة الأوامر",
+    "language": "اللغة",
+    "theme": "السمة"
+  },
+  "breadcrumbs": {
+    "home": "الرئيسية",
+    "tasks": "المهام",
+    "createTask": "إنشاء مهمة",
+    "taskDetails": "تفاصيل المهمة"
+  }
+}
+

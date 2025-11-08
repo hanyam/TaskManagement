@@ -1,0 +1,20 @@
+{
+  "appShell": {
+    "dashboard": "Dashboard",
+    "tasks": "Tasks",
+    "myAssignments": "My assignments",
+    "extensionRequests": "Extension requests",
+    "settings": "Settings",
+    "commandPalette": "Command palette",
+    "openCommandPalette": "Open command palette",
+    "language": "Language",
+    "theme": "Theme"
+  },
+  "breadcrumbs": {
+    "home": "Home",
+    "tasks": "Tasks",
+    "createTask": "Create task",
+    "taskDetails": "Task details"
+  }
+}
+

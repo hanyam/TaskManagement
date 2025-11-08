@@ -1,0 +1,98 @@
+{
+  "app": {
+    "name": "Task Management Console",
+    "description": "Plan, assign, and track work across the Task Management platform."
+  },
+  "actions": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "edit": "Edit",
+    "delete": "Delete",
+    "refresh": "Refresh",
+    "retry": "Retry",
+    "confirm": "Confirm",
+    "create": "Create",
+    "assign": "Assign",
+    "reassign": "Reassign",
+    "accept": "Accept",
+    "reject": "Reject",
+    "requestInfo": "Request information",
+    "extendDeadline": "Request extension",
+    "approve": "Approve",
+    "signOut": "Sign out",
+    "signIn": "Sign in",
+    "markComplete": "Mark complete",
+    "viewDetails": "View details",
+    "previous": "Previous",
+    "next": "Next"
+  },
+  "forms": {
+    "search": "Search",
+    "optional": "Optional",
+    "required": "Required",
+    "select": "Select…",
+    "perPage": "{count} per page"
+  },
+  "filters": {
+    "status": "Status",
+    "priority": "Priority",
+    "assignedTo": "Assigned to",
+    "dueDate": "Due date",
+    "createdBy": "Created by",
+    "reminderLevel": "Reminder level",
+    "type": "Type"
+  },
+  "states": {
+    "loading": "Loading…",
+    "empty": "No data available",
+    "error": "Something went wrong",
+    "unauthorized": "You are not authorized to view this resource."
+  },
+  "theme": {
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "date": {
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "dueIn": "Due in {count, plural, one {# day} other {# days}}",
+    "overdueBy": "Overdue by {count, plural, one {# day} other {# days}}",
+    "noDueDate": "No due date"
+  },
+  "reminderLevel": {
+    "none": "No reminders",
+    "low": "Low",
+    "medium": "Medium",
+    "high": "High",
+    "critical": "Critical"
+  },
+  "priority": {
+    "low": "Low",
+    "medium": "Medium",
+    "high": "High",
+    "critical": "Critical"
+  },
+  "taskStatus": {
+    "created": "Created",
+    "assigned": "Assigned",
+    "underReview": "Under review",
+    "accepted": "Accepted",
+    "rejected": "Rejected",
+    "completed": "Completed",
+    "cancelled": "Cancelled"
+  },
+  "taskType": {
+    "simple": "Simple",
+    "withDueDate": "Due date",
+    "withProgress": "Progress tracked",
+    "withAcceptedProgress": "Progress with approval"
+  },
+  "role": {
+    "employee": "Employee",
+    "manager": "Manager",
+    "admin": "Administrator"
+  }
+}
+

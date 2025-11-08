@@ -1,0 +1,100 @@
+{
+  "list": {
+    "title": "المهام",
+    "subtitle": "خطط ووزع وتابع الأعمال عبر فرقك.",
+    "summary": "عرض {start}–{end} من أصل {total}",
+    "table": {
+      "columns": {
+        "title": "العنوان",
+        "status": "الحالة",
+        "priority": "الأولوية",
+        "assignedTo": "المكلف",
+        "dueDate": "تاريخ الاستحقاق",
+        "reminderLevel": "مستوى التذكير",
+        "createdAt": "تاريخ الإنشاء",
+        "actions": "الإجراءات"
+      },
+      "empty": "لا توجد مهام مطابقة للمرشحات الحالية.",
+      "loading": "جاري تحميل المهام…"
+    },
+    "filters": {
+      "quickSearch": "بحث سريع",
+      "showMyTasks": "عرض مهامي فقط"
+    }
+  },
+  "details": {
+    "title": "نظرة عامة على المهمة",
+    "metadata": {
+      "createdBy": "أنشأها",
+      "createdAt": "تاريخ الإنشاء",
+      "updatedAt": "آخر تحديث",
+      "originalDueDate": "تاريخ الاستحقاق الأصلي",
+      "extendedDueDate": "تاريخ الاستحقاق بعد التمديد",
+      "type": "نوع المهمة",
+      "progress": "نسبة الإنجاز"
+    },
+    "sections": {
+      "description": "الوصف",
+      "assignments": "التكليفات",
+      "progressHistory": "سجل التقدم",
+      "extensions": "طلبات التمديد"
+    },
+    "actions": {
+      "accept": "قبول المهمة",
+      "reject": "رفض المهمة",
+      "markCompleted": "تعيين كمكتملة",
+      "requestInfo": "طلب معلومات",
+      "updateProgress": "تحديث التقدم",
+      "requestExtension": "طلب تمديد",
+      "approveExtension": "اعتماد طلب التمديد"
+    }
+  },
+  "forms": {
+    "create": {
+      "title": "إنشاء مهمة",
+      "instructions": "أدخل بيانات المهمة واختر المكلف لبدء العمل.",
+      "fields": {
+        "title": "العنوان",
+        "description": "الوصف",
+        "priority": "الأولوية",
+        "dueDate": "تاريخ الاستحقاق",
+        "assignedUserId": "المستخدم المكلف",
+        "type": "نوع المهمة"
+      },
+      "success": "تم إنشاء المهمة بنجاح."
+    },
+    "assign": {
+      "title": "إسناد المهمة",
+      "description": "اختر مستخدمًا أو أكثر لتولي المهمة.",
+      "fields": {
+        "userIds": "المكلفون"
+      },
+      "success": "تم تحديث إسناد المهمة."
+    },
+    "progress": {
+      "title": "تحديث التقدم",
+      "fields": {
+        "progressPercentage": "نسبة التقدم (%)",
+        "notes": "ملاحظات"
+      },
+      "success": "تم تحديث التقدم."
+    },
+    "extension": {
+      "title": "طلب تمديد موعد الاستحقاق",
+      "fields": {
+        "requestedDueDate": "تاريخ الاستحقاق المطلوب",
+        "reason": "السبب"
+      },
+      "success": "تم إرسال طلب التمديد."
+    },
+    "approveExtension": {
+      "title": "اعتماد طلب التمديد",
+      "fields": {
+        "extensionRequestId": "معرّف طلب التمديد",
+        "reviewNotes": "ملاحظات المراجعة"
+      },
+      "success": "تم اعتماد طلب التمديد."
+    }
+  }
+}
+

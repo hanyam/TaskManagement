@@ -1,0 +1,98 @@
+{
+  "app": {
+    "name": "منصة إدارة المهام",
+    "description": "تخطيط وتوزيع ومتابعة الأعمال عبر منصة إدارة المهام."
+  },
+  "actions": {
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "close": "إغلاق",
+    "edit": "تحرير",
+    "delete": "حذف",
+    "refresh": "تحديث",
+    "retry": "إعادة المحاولة",
+    "confirm": "تأكيد",
+    "create": "إنشاء",
+    "assign": "إسناد",
+    "reassign": "إعادة الإسناد",
+    "accept": "قبول",
+    "reject": "رفض",
+    "requestInfo": "طلب معلومات",
+    "extendDeadline": "طلب تمديد",
+    "approve": "اعتماد",
+    "signOut": "تسجيل الخروج",
+    "signIn": "تسجيل الدخول",
+    "markComplete": "تعيين كمكتمل",
+    "viewDetails": "عرض التفاصيل",
+    "previous": "السابق",
+    "next": "التالي"
+  },
+  "forms": {
+    "search": "بحث",
+    "optional": "اختياري",
+    "required": "إلزامي",
+    "select": "اختر…",
+    "perPage": "{count} لكل صفحة"
+  },
+  "filters": {
+    "status": "الحالة",
+    "priority": "الأولوية",
+    "assignedTo": "المكلف",
+    "dueDate": "تاريخ الاستحقاق",
+    "createdBy": "أنشأه",
+    "reminderLevel": "مستوى التذكير",
+    "type": "النوع"
+  },
+  "states": {
+    "loading": "جاري التحميل…",
+    "empty": "لا توجد بيانات مطابقة",
+    "error": "حدث خطأ ما",
+    "unauthorized": "ليست لديك صلاحية للوصول إلى هذا المحتوى."
+  },
+  "theme": {
+    "light": "فاتح",
+    "dark": "داكن",
+    "system": "النظام"
+  },
+  "date": {
+    "today": "اليوم",
+    "yesterday": "الأمس",
+    "dueIn": "متبقٍ {count, plural, one {# يوم} other {# أيام}}",
+    "overdueBy": "متأخر {count, plural, one {# يوم} other {# أيام}}",
+    "noDueDate": "بدون تاريخ استحقاق"
+  },
+  "reminderLevel": {
+    "none": "بدون تذكير",
+    "low": "منخفض",
+    "medium": "متوسط",
+    "high": "مرتفع",
+    "critical": "حرج"
+  },
+  "priority": {
+    "low": "منخفضة",
+    "medium": "متوسطة",
+    "high": "مرتفعة",
+    "critical": "حرجة"
+  },
+  "taskStatus": {
+    "created": "تم الإنشاء",
+    "assigned": "مُسند",
+    "underReview": "قيد المراجعة",
+    "accepted": "مقبول",
+    "rejected": "مرفوض",
+    "completed": "مكتمل",
+    "cancelled": "ملغى"
+  },
+  "taskType": {
+    "simple": "بسيط",
+    "withDueDate": "بتاريخ استحقاق",
+    "withProgress": "يتضمن تقدم",
+    "withAcceptedProgress": "تقدم بموافقة"
+  },
+  "role": {
+    "employee": "موظف",
+    "manager": "مدير",
+    "admin": "مسؤول"
+  }
+}
+

@@ -1,0 +1,100 @@
+{
+  "list": {
+    "title": "Tasks",
+    "subtitle": "Plan, delegate, and track follow-up across your teams.",
+    "summary": "Showing {start}–{end} of {total}",
+    "table": {
+      "columns": {
+        "title": "Title",
+        "status": "Status",
+        "priority": "Priority",
+        "assignedTo": "Assigned to",
+        "dueDate": "Due date",
+        "reminderLevel": "Reminder level",
+        "createdAt": "Created at",
+        "actions": "Actions"
+      },
+      "empty": "No tasks match the current filters.",
+      "loading": "Retrieving tasks…"
+    },
+    "filters": {
+      "quickSearch": "Quick search",
+      "showMyTasks": "Only tasks assigned to me"
+    }
+  },
+  "details": {
+    "title": "Task overview",
+    "metadata": {
+      "createdBy": "Created by",
+      "createdAt": "Created on",
+      "updatedAt": "Last updated",
+      "originalDueDate": "Original due date",
+      "extendedDueDate": "Extended due date",
+      "type": "Task type",
+      "progress": "Progress"
+    },
+    "sections": {
+      "description": "Description",
+      "assignments": "Assignments",
+      "progressHistory": "Progress history",
+      "extensions": "Deadline extensions"
+    },
+    "actions": {
+      "accept": "Accept task",
+      "reject": "Reject task",
+      "markCompleted": "Mark completed",
+      "requestInfo": "Request information",
+      "updateProgress": "Update progress",
+      "requestExtension": "Request extension",
+      "approveExtension": "Approve extension"
+    }
+  },
+  "forms": {
+    "create": {
+      "title": "Create task",
+      "instructions": "Provide task metadata and assign an owner to kick off work.",
+      "fields": {
+        "title": "Title",
+        "description": "Description",
+        "priority": "Priority",
+        "dueDate": "Due date",
+        "assignedUserId": "Assigned user",
+        "type": "Task type"
+      },
+      "success": "Task created successfully."
+    },
+    "assign": {
+      "title": "Assign task",
+      "description": "Select one or more users to own the task.",
+      "fields": {
+        "userIds": "Assignees"
+      },
+      "success": "Task assignment updated."
+    },
+    "progress": {
+      "title": "Update progress",
+      "fields": {
+        "progressPercentage": "Progress (%)",
+        "notes": "Notes"
+      },
+      "success": "Progress updated."
+    },
+    "extension": {
+      "title": "Request deadline extension",
+      "fields": {
+        "requestedDueDate": "Requested due date",
+        "reason": "Reason"
+      },
+      "success": "Deadline extension requested."
+    },
+    "approveExtension": {
+      "title": "Approve deadline extension",
+      "fields": {
+        "extensionRequestId": "Extension request ID",
+        "reviewNotes": "Review notes"
+      },
+      "success": "Extension request approved."
+    }
+  }
+}
+
