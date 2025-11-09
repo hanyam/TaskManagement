@@ -19,5 +19,5 @@ export default function Home() {
 
   const locale = normalizeLocale(storedLocale ?? browserLocale ?? DEFAULT_LOCALE);
 
-  redirect(`/${locale}`);
+  redirect(`/${locale}/sign-in`);
 }

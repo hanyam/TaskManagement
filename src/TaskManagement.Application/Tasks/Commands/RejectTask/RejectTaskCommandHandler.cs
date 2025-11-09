@@ -7,6 +7,7 @@ using TaskManagement.Domain.Entities;
 using TaskManagement.Domain.Errors.Tasks;
 using TaskManagement.Infrastructure.Data;
 using Task = TaskManagement.Domain.Entities.Task;
+using TaskStatus = TaskManagement.Domain.Entities.TaskStatus;
 
 namespace TaskManagement.Application.Tasks.Commands.RejectTask;
 
@@ -48,6 +49,14 @@ public class RejectTaskCommandHandler : ICommandHandler<RejectTaskCommand, TaskD
         
         var isAssigned = task.AssignedUserId == request.RejectedById ||
                         assignments.Any(a => a.UserId == request.RejectedById);
+
+
+        // Check if already rejected
+        if (task.Status == TaskStatus.Rejected)
+        {
+            errors.Add(TaskErrors.TaskAlreadyCompleted);
+            return Result<TaskDto>.Failure(errors);
+        }
 
         if (!isAssigned)
         {
