@@ -1,11 +1,13 @@
 # Task Management API - Technical Standards & Design Patterns
 
 ## Project Overview
-This is an enterprise-grade Task Management API built with .NET 8.0 following **Vertical Slice Architecture** combined with **Clean Architecture** principles. The system implements CQRS pattern with a custom mediator, uses Entity Framework Core for commands and Dapper for queries, and includes comprehensive testing with xUnit, FluentAssertions, and Moq.
+
+This repository contains both the .NET 8 Task Management API and the Next.js front-end. The API uses **Vertical Slice Architecture** + **Clean Architecture** with a custom CQRS mediator pipeline (EF Core commands, Dapper queries, FluentValidation, Serilog, xUnit). The React UI (Next.js App Router, TypeScript) consumes the unified API envelope and implements enterprise UX patterns (TanStack Query, React Hook Form + Zod, Tailwind, sonner, react-i18next with Arabic/English + RTL).
 
 ## Architecture Principles
 
 ### 1. Vertical Slice Architecture
+
 - **Feature Organization**: Features are organized as vertical slices by business capability
 - **Structure**: Each feature slice contains Commands and Queries in the Application layer
 - **Example Structure**:
@@ -25,7 +27,9 @@ This is an enterprise-grade Task Management API built with .NET 8.0 following **
 - **Benefits**: Feature isolation, easy navigation, independent development, simplified testing
 
 ### 2. Clean Architecture Layers
+
 1. **Domain Layer** (`TaskManagement.Domain`):
+
    - Entities (immutable with private setters, validation in constructors)
    - DTOs (data transfer objects)
    - Interfaces (domain contracts)
@@ -35,6 +39,7 @@ This is an enterprise-grade Task Management API built with .NET 8.0 following **
    - NO dependencies on other layers
 
 2. **Application Layer** (`TaskManagement.Application`):
+
    - Feature slices (Commands/Queries)
    - Handlers (business logic orchestration)
    - Validators (FluentValidation)
@@ -43,6 +48,7 @@ This is an enterprise-grade Task Management API built with .NET 8.0 following **
    - Depends ONLY on Domain layer
 
 3. **Infrastructure Layer** (`TaskManagement.Infrastructure`):
+
    - Data access (EF Core DbContext, Repositories, UnitOfWork)
    - External services (Authentication, Email, etc.)
    - Depends on Application and Domain layers
@@ -54,6 +60,7 @@ This is an enterprise-grade Task Management API built with .NET 8.0 following **
    - Depends on Application and Infrastructure layers
 
 ### 3. CQRS Pattern (Command Query Responsibility Segregation)
+
 - **Commands**: Write operations that modify state (return `Result<T>` or `Result`)
 - **Queries**: Read operations that query data (return `Result<T>`)
 - **Separate Repositories**:
@@ -64,6 +71,7 @@ This is an enterprise-grade Task Management API built with .NET 8.0 following **
 ## Design Patterns
 
 ### 1. Custom Mediator Pattern
+
 - **Implementation**: Custom `PipelineMediator` (not MediatR)
 - **Interfaces**: `IRequest<TResponse>`, `IRequest`, `ICommandHandler<TCommand, TResponse>`, `IRequestHandler<TRequest, TResponse>`
 - **Pipeline Behaviors** (executed in order):
@@ -74,6 +82,7 @@ This is an enterprise-grade Task Management API built with .NET 8.0 following **
 - **Registration**: Handlers must be registered for BOTH `ICommandHandler` and `IRequestHandler` interfaces (PipelineMediator uses IRequestHandler internally)
 
 ### 2. Result Pattern
+
 - **Purpose**: Standardized API responses, no exceptions for business logic
 - **Implementation**: `Result<T>` for operations with return value, `Result` for void operations
 - **Properties**:
@@ -89,6 +98,7 @@ This is an enterprise-grade Task Management API built with .NET 8.0 following **
   ```
 
 ### 3. Repository Pattern
+
 - **Command Repository**: `ICommandRepository<T>` → `EfCommandRepository<T>` (EF Core)
 - **Query Repository**: `IQueryRepository<T>` → Dapper-based repositories
 - **Unit of Work**: `IUnitOfWork` → `UnitOfWork` (EF Core transaction management)
@@ -99,6 +109,7 @@ This is an enterprise-grade Task Management API built with .NET 8.0 following **
   - **Note**: UnitOfWork does NOT dispose DbContext (managed by DI scoped lifetime)
 
 ### 4. Base Entity Pattern
+
 - **All entities inherit from `BaseEntity`**:
   - `Id` (Guid, auto-generated)
   - `CreatedAt` (DateTime.UtcNow in constructor)
@@ -112,6 +123,7 @@ This is an enterprise-grade Task Management API built with .NET 8.0 following **
   - NO redundant properties (e.g., don't duplicate `CreatedAt` as `AssignedAt` in child entities)
 
 ### 5. Centralized Error Management
+
 - **Error Class**: `Error` static factory methods:
   - `Error.NotFound(message, field?)`
   - `Error.Validation(message, field?)`
@@ -123,6 +135,7 @@ This is an enterprise-grade Task Management API built with .NET 8.0 following **
 - **Usage in Tests**: Use `ErrorAssertionExtensions` helper methods, NEVER hardcode error strings
 
 ### 6. FluentValidation
+
 - **Validator Location**: Co-located with commands in feature slices
 - **Validator Registration**: Registered in DI container via `IServiceLocator`
 - **Validation Pipeline**: Automatically executed by `PipelineMediator` before handler
@@ -131,6 +144,7 @@ This is an enterprise-grade Task Management API built with .NET 8.0 following **
 ## Coding Standards
 
 ### 1. Naming Conventions
+
 - **Commands**: `{Feature}Command` (e.g., `CreateTaskCommand`)
 - **Queries**: `{Feature}Query` (e.g., `GetTaskByIdQuery`)
 - **Handlers**: `{Feature}CommandHandler` / `{Feature}QueryHandler`
@@ -140,6 +154,7 @@ This is an enterprise-grade Task Management API built with .NET 8.0 following **
 - **Repositories**: `{Entity}{Purpose}Repository` (e.g., `TaskEfCommandRepository`, `UserDapperRepository`)
 
 ### 2. Entity Design
+
 - **Immutability**: All properties have private setters
 - **Validation**: Validation in constructor and public methods
 - **State Changes**: Only through public methods (no direct property assignment)
@@ -148,15 +163,15 @@ This is an enterprise-grade Task Management API built with .NET 8.0 following **
   public class Task : BaseEntity
   {
       public string Title { get; private set; }
-      
-      public Task(string title, ...) 
+
+      public Task(string title, ...)
       {
           if (string.IsNullOrWhiteSpace(title))
               throw new ArgumentException("Title cannot be null or empty");
           Title = title;
       }
-      
-      public void UpdateTitle(string title) 
+
+      public void UpdateTitle(string title)
       {
           if (string.IsNullOrWhiteSpace(title))
               throw new ArgumentException("Title cannot be null or empty");
@@ -166,48 +181,50 @@ This is an enterprise-grade Task Management API built with .NET 8.0 following **
   ```
 
 ### 3. Handler Patterns
+
 - **Constructor Injection**: All dependencies injected via constructor
 - **Error Handling**: Use centralized error constants, never hardcode strings
 - **Validation**: Business validation in handler, input validation in FluentValidation
 - **Repository Usage**: Use appropriate repository (EF for commands, Dapper for queries)
 - **Direct Context Access**: Use `_context.Set<T>().FindAsync()` when repository doesn't have method
-- **Transaction Management**: 
+- **Transaction Management**:
   - **Default Approach**: Use `_context.SaveChangesAsync()` after repository operations (implicit transaction - recommended)
   - **Complex Operations**: Use `UnitOfWork` for explicit transaction control when needed
 - **Example**:
+
   ```csharp
   public class CreateTaskCommandHandler : ICommandHandler<CreateTaskCommand, TaskDto>
   {
       private readonly TaskEfCommandRepository _taskRepository;
       private readonly TaskManagementDbContext _context;
-      
+
       public async Task<Result<TaskDto>> Handle(CreateTaskCommand request, CancellationToken cancellationToken)
       {
           var errors = new List<Error>();
-          
+
           // Validation using centralized errors
           var user = await _userRepository.GetByIdAsync(request.AssignedUserId, cancellationToken);
           if (user == null)
               errors.Add(TaskErrors.AssignedUserNotFound);
-          
+
           if (errors.Any())
               return Result<TaskDto>.Failure(errors);
-          
+
           // Business logic - simple operation uses implicit transaction
           var task = new Task(...);
           await _taskRepository.AddAsync(task, cancellationToken);
           await _context.SaveChangesAsync(cancellationToken); // Implicit transaction
-          
+
           return Result<TaskDto>.Success(taskDto);
       }
   }
-  
+
   // Example with UnitOfWork for complex operations:
   public class ComplexOperationCommandHandler : ICommandHandler<ComplexCommand>
   {
       private readonly IUnitOfWork _unitOfWork;
       private readonly TaskManagementDbContext _context;
-      
+
       public async Task<Result> Handle(ComplexCommand request, CancellationToken cancellationToken)
       {
           // Begin explicit transaction for complex multi-step operation
@@ -218,10 +235,10 @@ This is an enterprise-grade Task Management API built with .NET 8.0 following **
               await _unitOfWork.Tasks.AddAsync(task);
               await _context.Set<TaskAssignment>().AddRangeAsync(assignments);
               await _context.Set<TaskProgressHistory>().AddAsync(progress);
-              
+
               await _unitOfWork.SaveChangesAsync(cancellationToken);
               await _unitOfWork.CommitTransactionAsync(cancellationToken);
-              
+
               return Result.Success();
           }
           catch
@@ -234,6 +251,7 @@ This is an enterprise-grade Task Management API built with .NET 8.0 following **
   ```
 
 ### 4. Controller Patterns
+
 - **Thin Controllers**: Controllers delegate to mediator, contain minimal logic
 - **Authorization**: Use `[Authorize]` and role-based attributes
 - **Response Mapping**: Map `Result<T>` to `ApiResponse<T>` via `MapToApiResponse`
@@ -245,7 +263,7 @@ This is an enterprise-grade Task Management API built with .NET 8.0 following **
   {
       command.CreatedById = UserId;
       command.CreatedBy = UserEmail;
-      
+
       var result = await _mediator.Send(command);
       return result.MapToApiResponse();
   }
@@ -254,6 +272,7 @@ This is an enterprise-grade Task Management API built with .NET 8.0 following **
 ### 5. Testing Standards
 
 #### Test Structure
+
 - **Unit Tests**: `tests/TaskManagement.Tests/Unit/`
   - Handler tests: `Unit/Application/{Feature}/Commands/{Command}/{Command}HandlerTests.cs`
   - Domain tests: `Unit/Domain/{Entity}Tests.cs`
@@ -263,6 +282,7 @@ This is an enterprise-grade Task Management API built with .NET 8.0 following **
 - **Service Locator**: `TestServiceLocator` for dependency resolution in tests
 
 #### Test Patterns
+
 - **Arrange-Act-Assert (AAA)** pattern
 - **Error Assertions**: Use `ErrorAssertionExtensions` helper methods:
   - `result.ShouldContainError(TaskErrors.NotFound)`
@@ -278,6 +298,7 @@ This is an enterprise-grade Task Management API built with .NET 8.0 following **
 - **Registration**: Handlers must be registered in `TestServiceLocator` for both `ICommandHandler` and `IRequestHandler`
 
 #### Example Test
+
 ```csharp
 public class CreateTaskCommandHandlerTests : InMemoryDatabaseTestBase
 {
@@ -286,10 +307,10 @@ public class CreateTaskCommandHandlerTests : InMemoryDatabaseTestBase
     {
         // Arrange
         var command = new CreateTaskCommand { AssignedUserId = Guid.NewGuid() };
-        
+
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
-        
+
         // Assert
         result.IsFailure.Should().BeTrue();
         result.ShouldContainError(TaskErrors.AssignedUserNotFound);
@@ -298,20 +319,17 @@ public class CreateTaskCommandHandlerTests : InMemoryDatabaseTestBase
 ```
 
 ## Technology Stack
-- **.NET 8.0**
-- **Entity Framework Core** (for commands, change tracking)
-- **Dapper** (for queries, performance)
-- **FluentValidation** (input validation)
-- **Serilog** (structured logging)
-- **xUnit** (testing framework)
-- **FluentAssertions** (test assertions)
-- **Moq** (mocking - use sparingly, prefer in-memory database)
-- **Swagger/OpenAPI** (API documentation)
+
+- **Backend:** .NET 8, EF Core, Dapper, FluentValidation, Serilog, Swagger/OpenAPI, xUnit, FluentAssertions, Moq (prefer in-memory DB).
+- **Frontend:** Next.js 14 App Router, TypeScript strict mode, TanStack Query, React Hook Form + Zod, Tailwind CSS + tailwind-merge, sonner, react-i18next + i18next-icu, Headless UI, Heroicons.
+- **Tooling:** ESLint (import order, Tailwind, a11y, security), Prettier, Vitest + React Testing Library.
 
 ## Dependency Injection
 
 ### Service Registration Pattern
+
 Each layer has its own `DependencyInjection.cs` class with an extension method:
+
 - **Infrastructure Layer**: `AddInfrastructure(IServiceCollection, IConfiguration)` in `TaskManagement.Infrastructure/DependencyInjection.cs`
   - Registers: DbContext, generic repositories, UnitOfWork, authentication services
 - **Application Layer**: `AddApplication(IServiceCollection, IConfiguration)` in `TaskManagement.Application/DependencyInjection.cs`
@@ -320,6 +338,7 @@ Each layer has its own `DependencyInjection.cs` class with an extension method:
   - Registers: Controllers, authentication, Swagger, CORS, options
 
 ### Registration in Program.cs
+
 ```csharp
 // Register services by layer
 builder.Services.AddPresentation(builder.Configuration);  // API/Presentation layer
@@ -328,6 +347,7 @@ builder.Services.AddInfrastructure(builder.Configuration); // Infrastructure lay
 ```
 
 ### Handler Registration
+
 - **Automatic Discovery**: Handlers are registered via reflection in `Application/DependencyInjection.cs`
 - **Command Handlers**: Registered for both `ICommandHandler` and `IRequestHandler` interfaces (PipelineMediator uses IRequestHandler internally)
 - **Query Handlers**: Registered for `IRequestHandler` interface only
@@ -335,6 +355,7 @@ builder.Services.AddInfrastructure(builder.Configuration); // Infrastructure lay
 - **Repositories**: Registered explicitly in `Application/DependencyInjection.cs` (Dapper/EF repositories)
 
 ### IServiceLocator Pattern
+
 - **Purpose**: Abstraction for service resolution (allows test substitution)
 - **Implementation**: `ServiceLocator` (production), `TestServiceLocator` (tests)
 - **Usage**: Mediator uses `IServiceLocator` to resolve handlers and behaviors
@@ -342,11 +363,13 @@ builder.Services.AddInfrastructure(builder.Configuration); // Infrastructure lay
 ## API Design
 
 ### Response Format
+
 - **Success**: `ApiResponse<T>` with `Data`, `Success = true`
 - **Failure**: `ApiResponse<T>` with `Error`, `Success = false`, `TraceId`
 - **Validation Errors**: Multiple errors in `Errors` collection
 
 ### Status Codes
+
 - **200 OK**: Successful operation
 - **400 Bad Request**: Validation errors, bad input
 - **401 Unauthorized**: Missing/invalid authentication
@@ -356,6 +379,7 @@ builder.Services.AddInfrastructure(builder.Configuration); // Infrastructure lay
 - **500 Internal Server Error**: Unexpected errors
 
 ### Authorization
+
 - **Roles**: `Employee`, `Manager`, `Admin`
 - **Attribute-Based**: `[Authorize(Roles = "Manager,Admin")]`
 - **User Context**: Extracted from JWT claims in `BaseController`
@@ -363,11 +387,13 @@ builder.Services.AddInfrastructure(builder.Configuration); // Infrastructure lay
 ## Database Design
 
 ### Entity Framework Core
+
 - **DbContext**: `TaskManagementDbContext` in Infrastructure layer (uses "Tasks" schema)
 - **Migrations**: Standard EF Core migrations in `src/TaskManagement.Infrastructure/Migrations/TaskManagement/`
 - **In-Memory Testing**: Use `InMemoryDatabaseTestBase` with `DbContextOptionsBuilder.UseInMemoryDatabase`
 
 ### Data Access Patterns
+
 - **Commands**: Use EF Core repositories for write operations
 - **Queries**: Use Dapper repositories for read operations
 - **Transactions**: Use `IUnitOfWork` pattern for multi-operation transactions
@@ -376,12 +402,14 @@ builder.Services.AddInfrastructure(builder.Configuration); // Infrastructure lay
 ## Error Handling
 
 ### Exception Handling Middleware
+
 - **Global Exception Handler**: `ExceptionHandlingMiddleware`
 - **Logging**: All exceptions logged with context
 - **Mapping**: Exceptions mapped to appropriate `Error` types
 - **Response**: Exceptions converted to `ApiResponse` with trace ID
 
 ### Error Categories
+
 1. **Validation Errors** (`VALIDATION_ERROR`): Input validation failures
 2. **Not Found** (`NOT_FOUND`): Resource doesn't exist
 3. **Conflict** (`CONFLICT`): Business rule violation
@@ -391,73 +419,82 @@ builder.Services.AddInfrastructure(builder.Configuration); // Infrastructure lay
 ## Logging
 
 ### Structured Logging
+
 - **Framework**: Serilog
 - **Context**: Request type, user, trace ID
 - **Levels**: Information (operations), Warning (validation failures), Error (exceptions)
 - **Sinks**: Console, File (with rotation)
 
-## Documentation
+## Frontend Guidelines
 
-### Documentation Files
-- **README.md**: Project overview, setup, API examples
-- **docs/ARCHITECTURE.md**: Detailed architecture documentation
-- **docs/DOMAIN_MODEL.md**: Domain model and entities
-- **docs/API_REFERENCE.md**: Complete API reference
-- **docs/FEATURES.md**: Feature documentation
-- **docs/TESTING.md**: Testing guidelines
-- **docs/ENTERPRISE_MATURITY_ASSESSMENT.md**: Enterprise readiness assessment
+- Structure: `src/features/<Feature>` (api, components, hooks, i18n, types). Shared primitives in `src/ui`.
+- Providers: `AppProviders` wraps `I18nProvider`, `ThemeProvider`, `AuthProvider`, `QueryProvider`, `Sonner`.
+- Server state: TanStack Query. Define keys in `taskKeys`; invalidate relevant queries after mutations.
+- Forms: React Hook Form + Zod. Map API validation errors through `form.setError`.
+- Internationalisation: add strings to both `en` and `ar` resources. Use `t("namespace:key")`.
+- RTL support: rely on logical Tailwind utilities; `I18nProvider` sets `<html dir>`.
+- Styling: Tailwind tokens via CSS variables. Keep class order tidy (lint enforced).
+- Testing: Vitest + RTL. Place tests under `src/**/__tests__`.
+- Linting: obey ESLint rules for import order, accessibility, Tailwind, security.
 
-## Future Development Guidelines
+## Docker & Compose
 
-### Adding New Features
-1. **Create Domain Entity**: Inherit from `BaseEntity`, follow immutability pattern
-2. **Create Commands/Queries**: Follow vertical slice structure
-3. **Create Handlers**: Use Result pattern, centralized errors
-4. **Create Validators**: Use FluentValidation, co-locate with commands
-5. **Create Tests**: Follow existing test patterns, use helper methods
-6. **Register Services**: Handlers are automatically registered via reflection in `Application/DependencyInjection.cs`. If adding new repository types or services, add them to the appropriate layer's `DependencyInjection.cs`
-7. **Update Documentation**: Update relevant docs
+- `docker-compose.yml` orchestrates SQL Server, API (`src/TaskManagement.Api/Dockerfile`), and web UI (`web/Dockerfile`) listening on `http://localhost:3000`.
+- `web/Dockerfile` uses Node 20 Alpine (`npm ci`, `npm run build`, `npm run start`).
+- Environment variables (`NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_APP_NAME`) are injected via compose.
+
+## Combined Development Checklist
+
+1. **Domain/Backend**
+   - Create domain entities inheriting `BaseEntity`.
+   - Add CQRS commands/queries, handlers, validators, and tests.
+   - Use centralized errors, Result pattern, and automatic handler registration.
+2. **API Exposure**
+   - Minimal controllers calling mediator.
+   - Update Swagger responses as needed.
+3. **Frontend Slice**
+   - Add hooks/api callers in `src/features/<Feature>/api`.
+   - Build pages/components with TanStack Query, RHF + Zod, localized strings.
+   - Update navigation, routes, and provider configuration if required.
+4. **Testing & Docs**
+   - Backend xUnit & frontend Vitest coverage.
+   - Update README/docs (`web/docs/*`, `features-map.json`) when adding features.
 
 ### Code Review Checklist
-- ✅ Follows Vertical Slice Architecture
-- ✅ Uses Result pattern (no exceptions for business logic)
-- ✅ Uses centralized error constants (no hardcoded strings)
-- ✅ Entity properties have private setters
-- ✅ Handlers automatically discovered and registered (no manual registration needed)
-- ✅ Tests use ErrorAssertionExtensions
-- ✅ Tests use helper methods from InMemoryDatabaseTestBase
-- ✅ No redundant properties in entities
-- ✅ Proper separation: EF Core for commands, Dapper for queries
-- ✅ Validation in FluentValidation validators, not handlers
+
+- ✅ Backend follows vertical slice + clean architecture.
+- ✅ Result pattern + centralized enums/errors, no business exceptions.
+- ✅ EF Core only for writes, Dapper only for reads.
+- ✅ FluentValidation covers input; business rules inside handlers.
+- ✅ Tests use shared helpers (ErrorAssertionExtensions/InMemoryDatabaseTestBase).
+- ✅ Frontend uses TanStack Query, RHF+Zod, localized strings (en/ar).
+- ✅ Server errors mapped to forms/toasts; i18n resources updated.
+- ✅ Tailwind classes align with tokens; lint/test scripts succeed.
+- ✅ Docker Compose builds API + web successfully; environment variables configured.
 
 ### Anti-Patterns to Avoid
-- ❌ Direct property assignment on entities
-- ❌ Hardcoded error strings in handlers or tests
-- ❌ Throwing exceptions for business logic failures
-- ❌ Creating redundant properties that duplicate BaseEntity
-- ❌ Using EF Core for queries (use Dapper instead)
-- ❌ Using Dapper for commands (use EF Core instead)
-- ❌ Forgetting to register handlers for both interfaces
-- ❌ Checking only `result.Error` in tests (must check `Errors` collection too)
+
+- ❌ Direct setter access on entities (use methods).
+- ❌ Hardcoded text (use i18n for UI; centralized errors for backend).
+- ❌ Mixing EF Core for queries or Dapper for commands.
+- ❌ Skipping handler registration or missing validator coverage.
+- ❌ React components bypassing Query hooks in favour of manual fetches.
+- ❌ Tailwind classes with raw hex values instead of tokens.
+- ❌ Lack of RTL consideration or missing Arabic translations.
 
 ## Key Files Reference
-- **Mediator**: `src/TaskManagement.Application/Common/PipelineMediator.cs`
-- **Result Pattern**: `src/TaskManagement.Domain/Common/Result.cs`
-- **Base Entity**: `src/TaskManagement.Domain/Common/BaseEntity.cs`
-- **Error Class**: `src/TaskManagement.Domain/Common/Error.cs`
-- **Task Errors**: `src/TaskManagement.Domain/Errors/Tasks/TaskErrors.cs`
-- **Test Base**: `tests/TaskManagement.Tests/Unit/TestHelpers/InMemoryDatabaseTestBase.cs`
-- **Test Service Locator**: `tests/TaskManagement.Tests/Unit/TestHelpers/TestServiceLocator.cs`
-- **Error Assertions**: `tests/TaskManagement.Tests/Unit/TestHelpers/ErrorAssertionExtensions.cs`
-- **DbContext**: `src/TaskManagement.Infrastructure/Data/TaskManagementDbContext.cs`
-- **Dependency Injection**: 
-  - `src/TaskManagement.Infrastructure/DependencyInjection.cs`
-  - `src/TaskManagement.Application/DependencyInjection.cs`
-  - `src/TaskManagement.Api/DependencyInjection.cs`
+
+- Backend: mediator, Result, BaseEntity, Error, TaskErrors, DI files as listed previously.
+- Frontend:
+  - Providers: `src/core/providers/AppProviders.tsx`
+  - API client: `src/core/api/client.ts`
+  - Auth session: `src/core/auth/session.*`
+  - Localization: `src/i18n/*`
+  - Task feature: `src/features/tasks/**`
+  - Dashboard: `src/features/dashboard/**`
+  - UI primitives: `src/ui/components/*`
 
 ---
 
-**Last Updated**: Based on project state as of current development session
-**Maintainer**: This file should be updated whenever significant architectural decisions or patterns are introduced
-
-
+**Last Updated**: synced with current backend and frontend state (Docker, UI scaffolding, i18n, testing).
+**Maintainer**: update whenever architectural or tooling changes occur across API or UI.

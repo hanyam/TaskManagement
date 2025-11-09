@@ -30,6 +30,23 @@ npm run test         # unit/component tests (vitest + RTL)
 npm run test:coverage
 ```
 
+## Running with Docker Compose
+
+The repository root ships with a `docker-compose.yml` that spins up:
+
+- SQL Server (`sqlserver`)
+- Task Management API (`taskmanagement.api`) built from `src/TaskManagement.Api/Dockerfile`
+- Next.js web UI (`taskmanagement.web`) built from `web/Dockerfile`
+
+From the repository root:
+
+```bash
+docker compose build        # build all images
+docker compose up           # launch api + sql + web (http://localhost:3000)
+```
+
+Environment variables for the web container (`NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_APP_NAME`) are set in `docker-compose.yml`. Adjust them if your API runs on a different host/port.
+
 ## Project Layout
 
 ```

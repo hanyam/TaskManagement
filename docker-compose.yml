@@ -34,6 +34,22 @@ services:
       - sqlserver
     restart: unless-stopped
 
+  taskmanagement.web:
+    image: taskmanagement.web
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+    container_name: taskmanagement-web
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_BASE_URL=http://taskmanagement-api:8080
+      - NEXT_PUBLIC_APP_NAME=Task Management Console
+      - NODE_ENV=production
+    depends_on:
+      - taskmanagement.api
+    restart: unless-stopped
+
 volumes:
   sqlserver_data:
 
