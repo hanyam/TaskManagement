@@ -39,17 +39,15 @@ export function middleware(request: NextRequest) {
   const isPublicRoute = PUBLIC_SEGMENTS.has(section);
 
   if (!token && !isPublicRoute) {
-    const url = request.nextUrl.clone();
-    url.pathname = `/${locale}/sign-in`;
-    url.search = search;
-    return NextResponse.redirect(url);
+    const rewriteUrl = request.nextUrl.clone();
+    rewriteUrl.pathname = `/${locale}/sign-in`;
+    rewriteUrl.search = search;
+    return NextResponse.rewrite(rewriteUrl);
   }
 
   if (token && isPublicRoute) {
-    const url = request.nextUrl.clone();
-    url.pathname = `/${locale}/dashboard`;
-    url.search = "";
-    return NextResponse.redirect(url);
+    const redirectUrl = new URL(`/${locale}/dashboard`, request.url);
+    return NextResponse.redirect(redirectUrl);
   }
 
   const response = NextResponse.next();
