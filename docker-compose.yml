@@ -13,10 +13,11 @@ services:
       - sqlserver_data:/var/opt/mssql
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P YourStrong@Passw0rd -Q 'SELECT 1' || exit 1"]
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P YourStrong@Passw0rd -Q \"SELECT 1\" || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
+      start_period: 30s
 
 
   taskmanagement.api:
@@ -51,6 +52,28 @@ services:
       - taskmanagement.api
     restart: unless-stopped
 
+  integration.tests:
+    image: mcr.microsoft.com/dotnet/sdk:9.0
+    container_name: taskmanagement-tests
+    working_dir: /src
+    volumes:
+      - .:/src
+      - nuget_packages:/root/.nuget/packages
+    environment:
+      ASPNETCORE_ENVIRONMENT: Testing
+      ConnectionStrings__DefaultConnection: Server=sqlserver,1433;Database=TaskManagementIntegrationTests;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=true;MultipleActiveResultSets=true;
+      TEST_FILTER: FullyQualifiedName~TasksControllerIntegrationTests
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    profiles:
+      - tests
+    command: >
+      sh -c "dotnet restore tests/TaskManagement.Tests/TaskManagement.Tests.csproj &&
+             FILTER_ARG=\"\" &&
+             if [ -n \"${TEST_FILTER}\" ]; then FILTER_ARG=\"--filter ${TEST_FILTER}\"; fi &&
+             dotnet test tests/TaskManagement.Tests/TaskManagement.Tests.csproj $FILTER_ARG"
 
 volumes:
   sqlserver_data:
+  nuget_packages:
