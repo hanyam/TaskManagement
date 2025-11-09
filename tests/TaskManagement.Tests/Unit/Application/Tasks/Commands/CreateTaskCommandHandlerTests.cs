@@ -1,4 +1,5 @@
 using FluentAssertions;
+using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Moq;
@@ -8,9 +9,9 @@ using TaskManagement.Domain.Common;
 using TaskManagement.Domain.DTOs;
 using TaskManagement.Domain.Entities;
 using TaskManagement.Domain.Errors.Tasks;
-using TaskManagement.Domain.Errors.Users;
 using TaskManagement.Infrastructure.Data;
 using TaskManagement.Tests.TestHelpers;
+using TaskManagement.Tests.Unit.TestHelpers;
 using Xunit;
 using DomainTask = TaskManagement.Domain.Entities.Task;
 using SystemTask = System.Threading.Tasks.Task;
@@ -29,9 +30,15 @@ public class CreateTaskCommandHandlerTests
 
     public CreateTaskCommandHandlerTests()
     {
-        _mockTaskCommandRepository = new Mock<TaskEfCommandRepository>(Mock.Of<TaskManagementDbContext>());
-        _mockUserQueryRepository = new Mock<UserDapperRepository>(Mock.Of<IConfiguration>());
         _mockContext = DbContextTestHelper.CreateMockDbContext();
+        _mockTaskCommandRepository = new Mock<TaskEfCommandRepository>(_mockContext.Object);
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["ConnectionStrings:DefaultConnection"] = "Server=localhost;Database=TestDb;Trusted_Connection=true;"
+            })
+            .Build();
+        _mockUserQueryRepository = new Mock<UserDapperRepository>(configuration);
         _handler = new CreateTaskCommandHandler(_mockTaskCommandRepository.Object, _mockUserQueryRepository.Object, _mockContext.Object);
     }
 
@@ -46,6 +53,7 @@ public class CreateTaskCommandHandlerTests
             Priority = TaskPriority.High,
             DueDate = DateTime.UtcNow.AddDays(1),
             AssignedUserId = Guid.NewGuid(),
+            CreatedById = Guid.NewGuid(),
             CreatedBy = "test@example.com"
         };
 
@@ -86,6 +94,7 @@ public class CreateTaskCommandHandlerTests
             Priority = TaskPriority.High,
             DueDate = DateTime.UtcNow.AddDays(1),
             AssignedUserId = Guid.NewGuid(),
+            CreatedById = Guid.NewGuid(),
             CreatedBy = "test@example.com"
         };
 
@@ -99,7 +108,7 @@ public class CreateTaskCommandHandlerTests
         result.IsSuccess.Should().BeFalse();
         result.IsFailure.Should().BeTrue();
         result.Errors.Should().HaveCount(1);
-        result.Errors[0].Should().Be(TaskErrors.AssignedUserNotFound);
+        result.ShouldContainError(TaskErrors.AssignedUserNotFound);
     }
 
     [Fact]
@@ -113,6 +122,7 @@ public class CreateTaskCommandHandlerTests
             Priority = TaskPriority.High,
             DueDate = DateTime.UtcNow.AddDays(1),
             AssignedUserId = Guid.NewGuid(),
+            CreatedById = Guid.NewGuid(),
             CreatedBy = "test@example.com"
         };
 
@@ -128,7 +138,7 @@ public class CreateTaskCommandHandlerTests
         result.IsSuccess.Should().BeFalse();
         result.IsFailure.Should().BeTrue();
         result.Errors.Should().HaveCount(1);
-        result.Errors[0].Should().Be(TaskErrors.TitleRequired);
+        result.ShouldContainError(TaskErrors.TitleRequired);
     }
 
     [Fact]
@@ -142,6 +152,7 @@ public class CreateTaskCommandHandlerTests
             Priority = TaskPriority.High,
             DueDate = DateTime.UtcNow.AddDays(-1), // Past date
             AssignedUserId = Guid.NewGuid(),
+            CreatedById = Guid.NewGuid(),
             CreatedBy = "test@example.com"
         };
 
@@ -157,7 +168,7 @@ public class CreateTaskCommandHandlerTests
         result.IsSuccess.Should().BeFalse();
         result.IsFailure.Should().BeTrue();
         result.Errors.Should().HaveCount(1);
-        result.Errors[0].Should().Be(TaskErrors.DueDateInPast);
+        result.ShouldContainError(TaskErrors.DueDateInPast);
     }
 
     [Fact]
@@ -171,6 +182,7 @@ public class CreateTaskCommandHandlerTests
             Priority = TaskPriority.High,
             DueDate = DateTime.UtcNow.AddDays(-1), // Past date
             AssignedUserId = Guid.NewGuid(),
+            CreatedById = Guid.NewGuid(),
             CreatedBy = "test@example.com"
         };
 
@@ -186,8 +198,8 @@ public class CreateTaskCommandHandlerTests
         result.IsSuccess.Should().BeFalse();
         result.IsFailure.Should().BeTrue();
         result.Errors.Should().HaveCount(2);
-        result.Errors.Should().Contain(TaskErrors.TitleRequired);
-        result.Errors.Should().Contain(TaskErrors.DueDateInPast);
+        result.ShouldContainErrorInCollection(TaskErrors.TitleRequired);
+        result.ShouldContainErrorInCollection(TaskErrors.DueDateInPast);
     }
 
     [Fact]
@@ -201,6 +213,7 @@ public class CreateTaskCommandHandlerTests
             Priority = TaskPriority.High,
             DueDate = DateTime.UtcNow.AddDays(1),
             AssignedUserId = Guid.NewGuid(),
+            CreatedById = Guid.NewGuid(),
             CreatedBy = "test@example.com"
         };
 
@@ -235,6 +248,7 @@ public class CreateTaskCommandHandlerTests
             Priority = TaskPriority.High,
             DueDate = DateTime.UtcNow.AddDays(1),
             AssignedUserId = Guid.NewGuid(),
+            CreatedById = Guid.NewGuid(),
             CreatedBy = "test@example.com"
         };
 

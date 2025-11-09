@@ -8,6 +8,7 @@ using TaskManagement.Domain.Entities;
 using TaskManagement.Tests.Unit.TestHelpers;
 using Xunit;
 using Task = System.Threading.Tasks.Task;
+using TaskManagement.Domain.Errors.Tasks;
 
 namespace TaskManagement.Tests.Unit.Application.Tasks.Queries;
 
@@ -42,7 +43,11 @@ public class GetTaskByIdQueryHandlerTests : InMemoryDatabaseTestBase
     {
         // Arrange - Use a test task from the seeded data
         var testTask = GetAllTestTasks().First();
-        var query = new GetTaskByIdQuery { Id = testTask.Id };
+        var query = new GetTaskByIdQuery
+        {
+            Id = testTask.Id,
+            UserId = testTask.CreatedById
+        };
 
         // Act
         var result = await _mediator.Send(query);
@@ -64,7 +69,12 @@ public class GetTaskByIdQueryHandlerTests : InMemoryDatabaseTestBase
     {
         // Arrange
         var nonExistentId = Guid.NewGuid();
-        var query = new GetTaskByIdQuery { Id = nonExistentId };
+        var userId = GetAllTestUsers().First().Id;
+        var query = new GetTaskByIdQuery
+        {
+            Id = nonExistentId,
+            UserId = userId
+        };
 
         // Act
         var result = await _mediator.Send(query);
@@ -72,15 +82,19 @@ public class GetTaskByIdQueryHandlerTests : InMemoryDatabaseTestBase
         // Assert
         result.Should().NotBeNull();
         result.IsSuccess.Should().BeFalse();
-        result.Error.Should().NotBeNull();
-        result.Error!.Code.Should().Be("TASK_NOT_FOUND");
+        result.ShouldContainError(TaskErrors.NotFound);
     }
 
     [Fact]
     public async Task Handle_WithEmptyId_ShouldReturnValidationError()
     {
         // Arrange
-        var query = new GetTaskByIdQuery { Id = Guid.Empty };
+        var userId = GetAllTestUsers().First().Id;
+        var query = new GetTaskByIdQuery
+        {
+            Id = Guid.Empty,
+            UserId = userId
+        };
 
         // Act
         var result = await _mediator.Send(query);
@@ -88,8 +102,7 @@ public class GetTaskByIdQueryHandlerTests : InMemoryDatabaseTestBase
         // Assert
         result.Should().NotBeNull();
         result.IsSuccess.Should().BeFalse();
-        result.Error.Should().NotBeNull();
-        result.Error!.Code.Should().Be("INVALID_TASK_ID");
+        result.ShouldContainError(TaskErrors.InvalidTaskId);
     }
 
     [Fact]
@@ -97,7 +110,11 @@ public class GetTaskByIdQueryHandlerTests : InMemoryDatabaseTestBase
     {
         // Arrange - Use a test task from the seeded data
         var testTask = GetAllTestTasks().First();
-        var query = new GetTaskByIdQuery { Id = testTask.Id };
+        var query = new GetTaskByIdQuery
+        {
+            Id = testTask.Id,
+            UserId = testTask.CreatedById
+        };
 
         // Act
         var result = await _mediator.Send(query);
@@ -117,7 +134,11 @@ public class GetTaskByIdQueryHandlerTests : InMemoryDatabaseTestBase
         // Arrange - Get all test tasks and pick a specific one
         var allTasks = GetAllTestTasks().ToList();
         var targetTask = allTasks[1]; // Pick the second task
-        var query = new GetTaskByIdQuery { Id = targetTask.Id };
+        var query = new GetTaskByIdQuery
+        {
+            Id = targetTask.Id,
+            UserId = targetTask.CreatedById
+        };
 
         // Act
         var result = await _mediator.Send(query);

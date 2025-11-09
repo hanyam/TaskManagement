@@ -5,6 +5,7 @@ using TaskManagement.Application.Common;
 using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Application.Tasks.Queries.GetTasks;
 using TaskManagement.Domain.Entities;
+using TaskManagement.Domain.Errors.Tasks;
 using TaskManagement.Tests.Unit.TestHelpers;
 using Xunit;
 using Task = System.Threading.Tasks.Task;
@@ -189,6 +190,6 @@ public class GetTasksQueryHandlerTests : InMemoryDatabaseTestBase
         result.Should().NotBeNull();
         result.IsSuccess.Should().BeFalse();
         result.Errors.Should().NotBeEmpty();
-        result.Errors.Should().Contain(e => e.Code == "INVALID_DATE_RANGE");
+        result.ShouldContainError(TaskErrors.InvalidDateRange);
     }
 }

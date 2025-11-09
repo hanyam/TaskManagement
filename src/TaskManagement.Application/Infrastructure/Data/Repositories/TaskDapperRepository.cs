@@ -19,7 +19,7 @@ public class TaskDapperRepository : DapperQueryRepository<Task>
     /// <summary>
     ///     Gets a task by ID with assigned user information.
     /// </summary>
-    public async Task<TaskDto?> GetTaskWithUserAsync(Guid taskId, CancellationToken cancellationToken = default)
+    public virtual async Task<TaskDto?> GetTaskWithUserAsync(Guid taskId, CancellationToken cancellationToken = default)
     {
         var sql = @"
             SELECT 
@@ -39,7 +39,7 @@ public class TaskDapperRepository : DapperQueryRepository<Task>
     /// <summary>
     ///     Gets tasks with filtering and pagination.
     /// </summary>
-    public async Task<(IEnumerable<TaskDto> Tasks, int TotalCount)> GetTasksWithPaginationAsync(
+    public virtual async Task<(IEnumerable<TaskDto> Tasks, int TotalCount)> GetTasksWithPaginationAsync(
         TaskStatus? status = null,
         TaskPriority? priority = null,
         Guid? assignedUserId = null,

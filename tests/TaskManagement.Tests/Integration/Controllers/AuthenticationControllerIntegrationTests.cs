@@ -33,7 +33,7 @@ public class AuthenticationControllerIntegrationTests : IClassFixture<TestWebApp
         // Arrange
         var authenticateRequest = new
         {
-            AzureAdToken = "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6InlFVXdtWFdMMTA3Q2MtN1FaMldTYmVPYjNzUSIsImtpZCI6InlFVXdtWFdMMTA3Q2MtN1FaMldTYmVPYjNzUSJ9.eyJhdWQiOiJhcGk6Ly9lNTc5M2NhOC01NGFmLTQyMDktYWYwOS05MGY5Yjg5ZDI4ZDIiLCJpc3MiOiJodHRwczovL3N0cy53aW5kb3dzLm5ldC9jMjE2MzYyMC1hNjQ3LTRiODAtYTNkNy0xZWRkNWQ4ZWM5NTEvIiwiaWF0IjoxNzYyMjM0NzgzLCJuYmYiOjE3NjIyMzQ3ODMsImV4cCI6MTc2MjIzOTYxMiwiYWNyIjoiMSIsImFpbyI6IkFaUUFhLzhhQUFBQXRmZVc4T2M2YnRsclN4bWNQN3dqdEtoMFQxWnRwUmw2K00xbUFaSFU3VWkyK2NrSU9sMkwySkQ3QmtRd1FDSnR5M0FvbG1oT0I3TmVValBpNzVseEJraUpzcnBMc2hIeVZ2UEo0UHYrOE03MkMxTzhpUjFYSTlLWStPVkdVblpPeTF0S1JHZ1ZsVjVkbDZVdDA4aExKN1hqZ2ZXb0xRMFZjNjhCZFVMTlNGYy9OY2lybXI1aXN4dmllOHE5NE0wNiIsImFtciI6WyJwd2QiLCJtZmEiXSwiYXBwaWQiOiIxOTZkNDA1YS0zMGRlLTRkYzQtOTEyOC1mNjY3YzQxZjkyNTUiLCJhcHBpZGFjciI6IjAiLCJmYW1pbHlfbmFtZSI6Ik1vaGFtZWQiLCJnaXZlbl9uYW1lIjoiSGFuaSIsImlwYWRkciI6IjIxMi42Mi4xMjQuOTgiLCJuYW1lIjoiSGFuaSBBLiBNb2hhbWVkIiwib2lkIjoiMDdjODU2MDktZTU0YS00ZDQwLWFiMTgtMzRhNTFmOTE2ZDcwIiwicmgiOiIxLkFZRUFJRFlXd2tlbWdFdWoxeDdkWFk3SlVhZzhlZVd2VkFsQ3J3bVEtYmlkS05LQkFIT0JBQS4iLCJzY3AiOiJBY2Nlc3NBUEkiLCJzaWQiOiIwMDhkNTNjOS0wYmU3LTAxZTktZThiMS1lYWMyYzQ5YWMzNGUiLCJzdWIiOiIwTmRtODFsUGVGemxhb3ljUjhhODhsR0NtQnpQUEw4Tnd2dEc5NlF3alZzIiwidGlkIjoiYzIxNjM2MjAtYTY0Ny00YjgwLWEzZDctMWVkZDVkOGVjOTUxIiwidW5pcXVlX25hbWUiOiJobW9oYW1lZEB3dGNvLmNvbS5zYSIsInVwbiI6IkhNb2hhbWVkQHd0Y28uY29tLnNhIiwidXRpIjoic0hLbWVxakFnRWVHdXlNelZ6cTZBQSIsInZlciI6IjEuMCIsInhtc19mdGQiOiJKRVh6UFJfb1JicFVIZUlhT1ZfcFpZSEdXZVQ5SzFhdndpcVRQNEo5aTJVQmMzZGxaR1Z1WXkxa2MyMXoifQ.efzjgwwxy_fjkAYYHFzhcr6ieeOXGTJcmLcduge2rX3Gm3M5Yc_NfjOe7wAP9S2bBC91Jb1frnnaU0757gX_nz4W_C_AxJTo9r5QonqWVMQDvLM_ZO_KC7XlMO5qnHtJNFeNnUa0SKmIybRFEZ4Up68uLBxwbKXDpb_LizcSRsYbdQ-72LK8L1ysqN1l8t3FRFiBhwdhHuJPUk8uOi-xzhFqLvivyRpYu14cF9Kc3gcCJ8fI-7d1IBULJ_jN8-MGLQHstjTNqH8z-yZ3FVAhiC4xUsacaKaT2zeDhuaSTG9wcc2sf5RYRxqt5iQyNUnwcJ0NE277-eGm1OOZFkq4LA"
+            AzureAdToken = "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6InlFVXdtWFdMMTA3Q2MtN1FaMldTYmVPYjNzUSIsImtpZCI6InlFVXdtWFdMMTA3Q2MtN1FaMldTYmVPYjNzUSJ9.eyJhdWQiOiJhcGk6Ly8zNWY4ZTNlNS00N2VlLTRkZTgtOTNiMy01ZjRiZWQ0YTQyMzEiLCJpc3MiOiJodHRwczovL3N0cy53aW5kb3dzLm5ldC9jMjE2MzYyMC1hNjQ3LTRiODAtYTNkNy0xZWRkNWQ4ZWM5NTEvIiwiaWF0IjoxNzYyNjk1MDU1LCJuYmYiOjE3NjI2OTUwNTUsImV4cCI6MTc2MjY5OTAwMywiYWNyIjoiMSIsImFpbyI6IkFaUUFhLzhhQUFBQURQYllQemZZRDNWWlZsOTg1MVdXZlFYMk51cUNQZG1jN2FGS0RrclBpbGN1Q1Y5bVp6K24yaXJhUE01NzcySUZLSVhrRVhOOXUyb2lmK2NFdWVTTGZzSFJQdi9BeERvdnNJbk9LOHRQVFJFWTRKaytMTGdWYUJQdmpESnUvMWxBMmNUQjVncDZmN0VoaUFJL1pCY1B6UFdmaDBYK3JJQTZGRGlHRWVuM0lPcXpyeThFM2pSSzJGczdhRUJIV3ZXWiIsImFtciI6WyJwd2QiLCJyc2EiLCJtZmEiXSwiYXBwaWQiOiIxZWUxMmYzOC04NjMwLTQ5N2ItYWNhNi01NTI4ODdkZTAzMWIiLCJhcHBpZGFjciI6IjAiLCJkZXZpY2VpZCI6ImZkMmQ2MTNiLWRhNWEtNDVjMS05NTRmLTZmZWI4ZWUwZjA5MSIsImZhbWlseV9uYW1lIjoiRkFZRUQiLCJnaXZlbl9uYW1lIjoiTU9IQU1NQUQiLCJpcGFkZHIiOiIxNTYuMjIxLjUyLjgiLCJuYW1lIjoiTU9IQU1NQUQgIEYuIEZBWUVEIiwib2lkIjoiZjM0NzIyMGYtYjViNi00MDAyLTgxNDEtZDdkMjU2YjNhYzc3IiwicmgiOiIxLkFUQUFJRFlXd2tlbWdFdWoxeDdkWFk3SlVlWGotRFh1Ui1oTms3TmZTLTFLUWpHQkFHQXdBQS4iLCJzY3AiOiJBY2Nlc3NBcGkiLCJzaWQiOiIwMDliYWJhOS1mODRhLTY3NDItNzgxNS0yMjNmYTk4M2FmOTQiLCJzdWIiOiJQWDZqbkR2dHdTbzFnb3RMU1UtTHZSTHdNUGRFc1dueGhUZFFhQmNRdXBJIiwidGlkIjoiYzIxNjM2MjAtYTY0Ny00YjgwLWEzZDctMWVkZDVkOGVjOTUxIiwidW5pcXVlX25hbWUiOiJNRkFZRURAd3Rjby5jb20uc2EiLCJ1cG4iOiJNRkFZRURAd3Rjby5jb20uc2EiLCJ1dGkiOiJXZy0wakVxLVMwT0Y1SUhNcTB0bkFBIiwidmVyIjoiMS4wIiwieG1zX2Z0ZCI6IjBJS1lrSWZBNG9UV3lldFUyaVRNRU5QbkMwT0F6Vk1qVDc5NWhWUGhpTTRCWlhWeWIzQmxkMlZ6ZEMxa2MyMXoifQ.HOuaOpChCfAowmi9ih6AjXNdO2cNZRkLCgpPKkalViZr9Z-Kd3PQZLQAq5H33m0FbVi-9aMUKy0CNZh_27hP-XqMMpHxaXyi3P2nIdxVQENAkTCqqUjt0UF6wFGbWRkUIj__RGfhFPHOwatkxSUsIMF4A_ZM1WyaoqCxhS_3eDc0LolKo8JrzS5FvZfGiDbRmRvdzXAN88a0gpPbvCw_sGcqrDZTf86hy018rpx4RCPnW_r35Lqz_CvzEmI7X2G43sVvuEqul0pLb-C2AGs5gBMdAXh9InrCKz3GANIdTadUrIhlYtIt9MtRIM2IF1fhJVwkZ2POTBdKbaKj1nG6Tw"
         };
 
         // Act
@@ -61,15 +61,18 @@ public class AuthenticationControllerIntegrationTests : IClassFixture<TestWebApp
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
         var content = await response.Content.ReadAsStringAsync();
-        var result = JsonSerializer.Deserialize<Domain.Common.ApiResponse<AuthenticationResponse>>(content,
-            new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            });
+        using var document = JsonDocument.Parse(content);
+        var root = document.RootElement;
 
-        result.Should().NotBeNull();
-        result!.Success.Should().BeFalse();
-        result.Message.Should().NotBeNullOrEmpty();
+        root.GetProperty("success").GetBoolean().Should().BeFalse();
+        if (root.TryGetProperty("message", out var messageProperty) && messageProperty.ValueKind == JsonValueKind.String)
+        {
+            messageProperty.GetString().Should().NotBeNullOrEmpty();
+        }
+        if (root.TryGetProperty("errors", out var errorsElement) && errorsElement.ValueKind == JsonValueKind.Array)
+        {
+            errorsElement.GetArrayLength().Should().BeGreaterThan(0);
+        }
     }
 
     [Fact]

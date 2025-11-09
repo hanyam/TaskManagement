@@ -29,6 +29,7 @@ public class CreateTaskCommandValidatorTests
             Priority = TaskPriority.High,
             DueDate = DateTime.UtcNow.AddDays(1),
             AssignedUserId = Guid.NewGuid(),
+            CreatedById = Guid.NewGuid(),
             CreatedBy = "test@example.com"
         };
 
@@ -50,6 +51,7 @@ public class CreateTaskCommandValidatorTests
             Priority = TaskPriority.High,
             DueDate = DateTime.UtcNow.AddDays(1),
             AssignedUserId = Guid.NewGuid(),
+            CreatedById = Guid.NewGuid(),
             CreatedBy = "test@example.com"
         };
 
@@ -72,6 +74,7 @@ public class CreateTaskCommandValidatorTests
             Priority = TaskPriority.High,
             DueDate = DateTime.UtcNow.AddDays(1),
             AssignedUserId = Guid.NewGuid(),
+            CreatedById = Guid.NewGuid(),
             CreatedBy = "test@example.com"
         };
 
@@ -94,6 +97,7 @@ public class CreateTaskCommandValidatorTests
             Priority = TaskPriority.High,
             DueDate = DateTime.UtcNow.AddDays(1),
             AssignedUserId = Guid.NewGuid(),
+            CreatedById = Guid.NewGuid(),
             CreatedBy = "test@example.com"
         };
 
@@ -116,6 +120,7 @@ public class CreateTaskCommandValidatorTests
             Priority = TaskPriority.High,
             DueDate = DateTime.UtcNow.AddDays(1),
             AssignedUserId = Guid.NewGuid(),
+            CreatedById = Guid.NewGuid(),
             CreatedBy = "test@example.com"
         };
 
@@ -138,6 +143,7 @@ public class CreateTaskCommandValidatorTests
             Priority = TaskPriority.High,
             DueDate = DateTime.UtcNow.AddDays(1),
             AssignedUserId = Guid.Empty,
+            CreatedById = Guid.NewGuid(),
             CreatedBy = "test@example.com"
         };
 
@@ -160,6 +166,7 @@ public class CreateTaskCommandValidatorTests
             Priority = TaskPriority.High,
             DueDate = DateTime.UtcNow.AddDays(1),
             AssignedUserId = Guid.NewGuid(),
+            CreatedById = Guid.NewGuid(),
             CreatedBy = ""
         };
 
@@ -182,6 +189,7 @@ public class CreateTaskCommandValidatorTests
             Priority = TaskPriority.High,
             DueDate = DateTime.UtcNow.AddDays(1),
             AssignedUserId = Guid.NewGuid(),
+            CreatedById = Guid.NewGuid(),
             CreatedBy = null!
         };
 
@@ -204,6 +212,7 @@ public class CreateTaskCommandValidatorTests
             Priority = TaskPriority.High,
             DueDate = DateTime.UtcNow.AddDays(-1), // Past date
             AssignedUserId = Guid.NewGuid(),
+            CreatedById = Guid.NewGuid(),
             CreatedBy = "test@example.com"
         };
 
@@ -226,6 +235,7 @@ public class CreateTaskCommandValidatorTests
             Priority = TaskPriority.High,
             DueDate = null, // Null is allowed
             AssignedUserId = Guid.NewGuid(),
+            CreatedById = Guid.NewGuid(),
             CreatedBy = "test@example.com"
         };
 
@@ -247,6 +257,7 @@ public class CreateTaskCommandValidatorTests
             Priority = TaskPriority.High,
             DueDate = DateTime.UtcNow.AddDays(1), // Future date
             AssignedUserId = Guid.NewGuid(),
+            CreatedById = Guid.NewGuid(),
             CreatedBy = "test@example.com"
         };
 
@@ -268,6 +279,7 @@ public class CreateTaskCommandValidatorTests
             Priority = TaskPriority.High,
             DueDate = DateTime.UtcNow.AddDays(-1), // Past date
             AssignedUserId = Guid.Empty, // Empty GUID
+            CreatedById = Guid.Empty, // Empty created by id
             CreatedBy = "" // Empty created by
         };
 
@@ -279,6 +291,7 @@ public class CreateTaskCommandValidatorTests
         result.ShouldHaveValidationErrorFor(x => x.Description);
         result.ShouldHaveValidationErrorFor(x => x.DueDate);
         result.ShouldHaveValidationErrorFor(x => x.AssignedUserId);
+        result.ShouldHaveValidationErrorFor(x => x.CreatedById);
         result.ShouldHaveValidationErrorFor(x => x.CreatedBy);
     }
 
@@ -297,6 +310,7 @@ public class CreateTaskCommandValidatorTests
             Priority = priority,
             DueDate = DateTime.UtcNow.AddDays(1),
             AssignedUserId = Guid.NewGuid(),
+            CreatedById = Guid.NewGuid(),
             CreatedBy = "test@example.com"
         };
 

@@ -1,16 +1,14 @@
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
-using TaskManagement.Infrastructure.Data;
-using System.Linq;
+using Microsoft.Extensions.DependencyInjection;
+using TaskManagement.Tests.Integration.Auth;
 
 namespace TaskManagement.Tests.Integration;
 
 /// <summary>
-/// Custom WebApplicationFactory for integration tests that uses in-memory database only.
+/// Custom WebApplicationFactory for integration tests that target the real SQL Server database.
 /// </summary>
 public class TestWebApplicationFactory : WebApplicationFactory<Program>
 {
@@ -18,9 +16,12 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
     {
         builder.ConfigureAppConfiguration((context, config) =>
         {
+            var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
+                                   ?? "Server=localhost,1433;Database=TaskManagementIntegrationTests;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=true;MultipleActiveResultSets=true;";
+
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
-                {"ConnectionStrings:DefaultConnection", "Data Source=:memory:"},
+                {"ConnectionStrings:DefaultConnection", connectionString},
                 {"Jwt:SecretKey", "supersecretkeythatisatleast32characterslong"},
                 {"Jwt:Issuer", "TestIssuer"},
                 {"Jwt:Audience", "TestAudience"},
@@ -32,37 +33,14 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
             });
         });
 
-        // Configure services BEFORE they are registered by Program.cs
-        // This ensures InMemory is registered first, and AddInfrastructure will skip SQL Server registration
         builder.ConfigureServices((context, services) =>
         {
-            // Pre-register InMemory DbContext so AddInfrastructure will skip SQL Server registration
-            services.AddDbContext<TaskManagementDbContext>(options =>
+            services.AddAuthentication(options =>
             {
-                options.UseInMemoryDatabase($"TestDatabase_{Guid.NewGuid()}", b => b.EnableNullChecks());
-            }, ServiceLifetime.Scoped);
-        });
-
-        // Also configure services AFTER Program.cs registration to clean up any remaining SQL Server services
-        builder.ConfigureServices((context, services) =>
-        {
-            // Remove any SQL Server provider-specific services that might have been registered
-            // EF Core registers provider services internally, we need to find and remove them
-            var sqlServerProviderServices = services
-                .Where(d => 
-                    (d.ImplementationType != null && 
-                     d.ImplementationType.FullName != null &&
-                     d.ImplementationType.FullName.Contains("SqlServer", StringComparison.OrdinalIgnoreCase)) ||
-                    (d.ImplementationFactory != null && 
-                     d.ImplementationFactory.Method.DeclaringType != null &&
-                     d.ImplementationFactory.Method.DeclaringType.FullName != null &&
-                     d.ImplementationFactory.Method.DeclaringType.FullName.Contains("SqlServer", StringComparison.OrdinalIgnoreCase)))
-                .ToList();
-            
-            foreach (var descriptor in sqlServerProviderServices)
-            {
-                services.Remove(descriptor);
-            }
+                options.DefaultScheme = TestAuthHandler.SchemeName;
+                options.DefaultAuthenticateScheme = TestAuthHandler.SchemeName;
+                options.DefaultChallengeScheme = TestAuthHandler.SchemeName;
+            }).AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestAuthHandler.SchemeName, _ => { });
         });
 
         builder.UseEnvironment("Testing");

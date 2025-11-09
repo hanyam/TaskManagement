@@ -29,7 +29,7 @@ public class TaskDapperRepositoryWrapper : TaskDapperRepository
         _efRepository = efRepository;
     }
 
-    public new async Task<TaskDto?> GetTaskWithUserAsync(Guid id, CancellationToken cancellationToken = default)
+    public override async Task<TaskDto?> GetTaskWithUserAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var task = await _efRepository.GetByIdAsync(id, cancellationToken);
         if (task == null) return null;
@@ -46,11 +46,16 @@ public class TaskDapperRepositoryWrapper : TaskDapperRepository
             AssignedUserEmail = task.AssignedUser?.Email,
             CreatedBy = task.CreatedBy,
             CreatedAt = task.CreatedAt,
-            
+            CreatedById = task.CreatedById,
+            OriginalDueDate = task.OriginalDueDate,
+            ExtendedDueDate = task.ExtendedDueDate,
+            Type = task.Type,
+            ReminderLevel = task.ReminderLevel,
+            ProgressPercentage = task.ProgressPercentage
         };
     }
 
-    public new async Task<(IEnumerable<TaskDto> Tasks, int TotalCount)> GetTasksWithPaginationAsync(
+    public override async Task<(IEnumerable<TaskDto> Tasks, int TotalCount)> GetTasksWithPaginationAsync(
         DomainTaskStatus? status,
         TaskPriority? priority,
         Guid? assignedUserId,
@@ -77,6 +82,12 @@ public class TaskDapperRepositoryWrapper : TaskDapperRepository
             AssignedUserEmail = t.AssignedUser?.Email,
             CreatedBy = t.CreatedBy,
             CreatedAt = t.CreatedAt,
+            CreatedById = t.CreatedById,
+            OriginalDueDate = t.OriginalDueDate,
+            ExtendedDueDate = t.ExtendedDueDate,
+            Type = t.Type,
+            ReminderLevel = t.ReminderLevel,
+            ProgressPercentage = t.ProgressPercentage
         });
         
         // Apply filters

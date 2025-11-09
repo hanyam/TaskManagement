@@ -37,6 +37,8 @@ public class MediatorTests
 
         _mockServiceLocator.Setup(sp => sp.GetRequiredService<IRequestHandler<TestRequest, string>>())
             .Returns(mockHandler.Object);
+        _mockServiceLocator.Setup(sp => sp.GetRequiredService(typeof(IRequestHandler<TestRequest, string>)))
+            .Returns(mockHandler.Object);
 
         // Act
         var result = await _mediator.Send(request);
@@ -59,6 +61,8 @@ public class MediatorTests
 
         _mockServiceLocator.Setup(sp => sp.GetRequiredService<IRequestHandler<TestRequest, string>>())
             .Returns(mockHandler.Object);
+        _mockServiceLocator.Setup(sp => sp.GetRequiredService(typeof(IRequestHandler<TestRequest, string>)))
+            .Returns(mockHandler.Object);
 
         // Act
         var result = await _mediator.Send(request);
@@ -79,6 +83,8 @@ public class MediatorTests
             .ThrowsAsync(new InvalidOperationException("Handler exception"));
 
         _mockServiceLocator.Setup(sp => sp.GetRequiredService<IRequestHandler<TestRequest, string>>())
+            .Returns(mockHandler.Object);
+        _mockServiceLocator.Setup(sp => sp.GetRequiredService(typeof(IRequestHandler<TestRequest, string>)))
             .Returns(mockHandler.Object);
 
         // Act
@@ -103,6 +109,8 @@ public class MediatorTests
 
         _mockServiceLocator.Setup(sp => sp.GetRequiredService<IRequestHandler<TestVoidRequest>>())
             .Returns(mockHandler.Object);
+        _mockServiceLocator.Setup(sp => sp.GetRequiredService(typeof(IRequestHandler<TestVoidRequest>)))
+            .Returns(mockHandler.Object);
 
         // Act
         var result = await _mediator.Send(request);
@@ -125,6 +133,8 @@ public class MediatorTests
 
         _mockServiceLocator.Setup(sp => sp.GetRequiredService<IRequestHandler<TestVoidRequest>>())
             .Returns(mockHandler.Object);
+        _mockServiceLocator.Setup(sp => sp.GetRequiredService(typeof(IRequestHandler<TestVoidRequest>)))
+            .Returns(mockHandler.Object);
 
         // Act
         var result = await _mediator.Send(request);
@@ -145,6 +155,8 @@ public class MediatorTests
             .ThrowsAsync(new InvalidOperationException("Handler exception"));
 
         _mockServiceLocator.Setup(sp => sp.GetRequiredService<IRequestHandler<TestVoidRequest>>())
+            .Returns(mockHandler.Object);
+        _mockServiceLocator.Setup(sp => sp.GetRequiredService(typeof(IRequestHandler<TestVoidRequest>)))
             .Returns(mockHandler.Object);
 
         // Act
@@ -168,6 +180,8 @@ public class MediatorTests
             .ReturnsAsync(Result<string>.Success("Success"));
 
         _mockServiceLocator.Setup(sp => sp.GetRequiredService<IRequestHandler<TestRequest, string>>())
+            .Returns(mockHandler.Object);
+        _mockServiceLocator.Setup(sp => sp.GetRequiredService(typeof(IRequestHandler<TestRequest, string>)))
             .Returns(mockHandler.Object);
 
         // Act
@@ -205,6 +219,8 @@ public class MediatorTests
 
         _mockServiceLocator.Setup(sp => sp.GetRequiredService<IRequestHandler<TestRequest, string>>())
             .Returns(mockHandler.Object);
+        _mockServiceLocator.Setup(sp => sp.GetRequiredService(typeof(IRequestHandler<TestRequest, string>)))
+            .Returns(mockHandler.Object);
 
         // Act
         await _mediator.Send(request);
@@ -230,6 +246,8 @@ public class MediatorTests
             .ThrowsAsync(new InvalidOperationException("Test exception"));
 
         _mockServiceLocator.Setup(sp => sp.GetRequiredService<IRequestHandler<TestRequest, string>>())
+            .Returns(mockHandler.Object);
+        _mockServiceLocator.Setup(sp => sp.GetRequiredService(typeof(IRequestHandler<TestRequest, string>)))
             .Returns(mockHandler.Object);
 
         // Act
