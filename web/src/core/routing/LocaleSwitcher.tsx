@@ -1,5 +1,6 @@
 "use client";
 
+import type { Route } from "next";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
 import { useTranslation } from "react-i18next";
@@ -38,7 +39,7 @@ export function LocaleSwitcher({ className }: LocaleSwitcherProps) {
   function handleChange(event: React.ChangeEvent<HTMLSelectElement>) {
     const targetLocale = normalizeLocale(event.target.value);
     startTransition(() => {
-      router.push(buildTargetPath(targetLocale));
+      router.push(buildTargetPath(targetLocale) as Route);
     });
   }
 

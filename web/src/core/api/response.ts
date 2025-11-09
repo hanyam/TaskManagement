@@ -6,9 +6,7 @@ export function parseEnvelope<T>(payload: unknown): ApiEnvelope<T> {
       success: false,
       message: "Malformed response",
       errors: [],
-      traceId: undefined,
-      timestamp: undefined,
-      data: undefined
+      traceId: null
     };
   }
 
@@ -16,11 +14,11 @@ export function parseEnvelope<T>(payload: unknown): ApiEnvelope<T> {
 
   return {
     success: envelope.success ?? false,
-    data: envelope.data,
+    ...(Object.prototype.hasOwnProperty.call(envelope, "data") ? { data: envelope.data as T } : {}),
     message: envelope.message ?? null,
     errors: envelope.errors ?? [],
     traceId: envelope.traceId ?? null,
-    timestamp: envelope.timestamp
+    ...(envelope.timestamp !== undefined ? { timestamp: envelope.timestamp } : {})
   };
 }
 

@@ -1,3 +1,6 @@
+'use client';
+
+import type { Route } from "next";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { PropsWithChildren, ReactNode } from "react";
@@ -46,11 +49,12 @@ export function AppShell({ children, headerSlot }: AppShellProps) {
             const normalizedTarget = targetPath.replace(/\?.*$/, "");
             const isActive = item.exact ? pathname === targetPath : pathname.startsWith(normalizedTarget);
             const Icon = item.icon;
+            const linkHref = targetPath as Route;
 
             return (
               <Link
                 key={item.id}
-                href={targetPath}
+                href={linkHref}
                 className={cn(
                   "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition",
                   isActive

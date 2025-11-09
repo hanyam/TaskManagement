@@ -2,6 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
+import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
 import { useForm } from "react-hook-form";
@@ -26,7 +27,7 @@ type SignInFormValues = z.infer<typeof signInSchema>;
 
 interface SignInFormProps {
   locale: SupportedLocale;
-  redirectTo?: string;
+  redirectTo?: string | undefined;
 }
 
 interface LoginResponse {
@@ -63,26 +64,28 @@ export function SignInForm({ locale, redirectTo }: SignInFormProps) {
     mode: "onSubmit"
   });
 
-  const { mutateAsync, isPending } = useMutation(async (values: SignInFormValues) => {
-    const response = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(values),
-      credentials: "include",
-      cache: "no-store"
-    });
+  const { mutateAsync, isPending } = useMutation({
+    mutationFn: async (values: SignInFormValues) => {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(values),
+        credentials: "include",
+        cache: "no-store"
+      });
 
-    const payload = (await response.json()) as LoginResponse;
+      const payload = (await response.json()) as LoginResponse;
 
-    if (!response.ok || !payload.success) {
-      const error = new Error(payload.message ?? "auth:signIn.invalidToken");
-      (error as Error & { details?: LoginResponse["errors"] }).details = payload.errors;
-      throw error;
+      if (!response.ok || !payload.success) {
+        const error = new Error(payload.message ?? "auth:signIn.invalidToken");
+        (error as Error & { details?: LoginResponse["errors"] }).details = payload.errors;
+        throw error;
+      }
+
+      return payload.data;
     }
-
-    return payload.data;
   });
 
   async function handleSubmit(values: SignInFormValues) {
@@ -95,13 +98,14 @@ export function SignInForm({ locale, redirectTo }: SignInFormProps) {
           id: data.user.id,
           email: data.user.email,
           displayName: data.user.displayName,
-          role: data.user.role ?? undefined
+          ...(data.user.role ? { role: data.user.role } : {})
         },
         expiresAt: new Date(Date.now() + data.expiresIn * 1000).toISOString()
       };
 
       setSession(session);
-      router.push(redirectTo ?? `/${locale}/dashboard`);
+      const targetPath = (redirectTo ?? `/${locale}/dashboard`) as Route;
+      router.push(targetPath);
       router.refresh();
     } catch (error) {
       const err = error as Error & { details?: LoginResponse["errors"] };
@@ -128,6 +132,11 @@ export function SignInForm({ locale, redirectTo }: SignInFormProps) {
   }
 
   const description = useMemo(() => t("auth:signIn.description"), [t]);
+  const azureAdTokenErrorMessage = form.formState.errors.azureAdToken
+    ? t(form.formState.errors.azureAdToken.message ?? "validation:required", {
+        field: t("auth:signIn.azureAdToken")
+      })
+    : undefined;
 
   return (
     <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6" noValidate>
@@ -149,13 +158,7 @@ export function SignInForm({ locale, redirectTo }: SignInFormProps) {
           />
           <FormFieldError
             id="azureAdToken-error"
-            message={
-              form.formState.errors.azureAdToken
-                ? t(form.formState.errors.azureAdToken.message ?? "validation:required", {
-                    field: t("auth:signIn.azureAdToken")
-                  })
-                : undefined
-            }
+            {...(azureAdTokenErrorMessage ? { message: azureAdTokenErrorMessage } : {})}
           />
         </div>
       </div>

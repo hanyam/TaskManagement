@@ -1,13 +1,14 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { useCurrentLocale } from "@/core/routing/useCurrentLocale";
 import { useTasksQuery } from "@/features/tasks/api/queries";
 import { TasksTable } from "@/features/tasks/components/tables/TasksTable";
-import type { TaskListFilters, TaskPriority, TaskStatus } from "@/features/tasks/types";
+import type { TaskListFilters } from "@/features/tasks/types";
+import type { TaskPriority, TaskStatus } from "@/features/tasks/value-objects";
 import { Button } from "@/ui/components/Button";
 import { Input } from "@/ui/components/Input";
 
@@ -19,6 +20,7 @@ const PAGE_SIZE_OPTIONS = [10, 25, 50];
 export function TasksListView() {
   const { t } = useTranslation(["tasks", "common"]);
   const locale = useCurrentLocale();
+  const router = useRouter();
   const [filters, setFilters] = useState<TaskListFilters>({
     page: 1,
     pageSize: 25
@@ -27,11 +29,21 @@ export function TasksListView() {
   const { data, isLoading, refetch } = useTasksQuery(filters);
 
   function handleFilterChange<T extends keyof TaskListFilters>(key: T, value: TaskListFilters[T]) {
-    setFilters((current) => ({
-      ...current,
-      [key]: value,
-      page: key === "pageSize" ? 1 : current.page
-    }));
+  setFilters((current) => {
+    const next: TaskListFilters = { ...current };
+
+    if (value === undefined) {
+      delete next[key];
+    } else {
+      next[key] = value as TaskListFilters[T];
+    }
+
+    if (key === "pageSize") {
+      next.page = 1;
+    }
+
+    return next;
+  });
   }
 
   const totalPages = data?.totalPages ?? 1;
@@ -61,8 +73,8 @@ export function TasksListView() {
             <p className="text-sm text-muted-foreground">{t("tasks:list.subtitle")}</p>
           </div>
           <div className="flex items-center gap-2">
-            <Button asChild>
-              <Link href={`/${locale}/tasks/create`}>{t("common:actions.create")}</Link>
+            <Button onClick={() => router.push(`/${locale}/tasks/create`)}>
+              {t("common:actions.create")}
             </Button>
             <Button variant="outline" onClick={() => refetch()}>
               {t("common:actions.refresh")}

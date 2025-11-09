@@ -22,7 +22,7 @@ import {
   useUpdateTaskProgressMutation
 } from "@/features/tasks/api/queries";
 import { TaskStatusBadge } from "@/features/tasks/components/TaskStatusBadge";
-import type { AssignTaskRequest, TaskDto } from "@/features/tasks/types";
+import type { AssignTaskRequest } from "@/features/tasks/types";
 import { Button } from "@/ui/components/Button";
 import { FormFieldError } from "@/ui/components/FormFieldError";
 import { Input } from "@/ui/components/Input";
@@ -324,15 +324,13 @@ function AssignTaskDialog({ open, onOpenChange, mutation, mode = "assign" }: Ass
                   placeholder="guid-1, guid-2"
                   {...form.register("userIds")}
                 />
-                <FormFieldError
-                  message={
-                    form.formState.errors.userIds
-                      ? t("validation:required", {
-                          field: t("tasks:forms.assign.fields.userIds")
-                        })
-                      : undefined
-                  }
-                />
+                {form.formState.errors.userIds ? (
+                  <FormFieldError
+                    message={t("validation:required", {
+                      field: t("tasks:forms.assign.fields.userIds")
+                    })}
+                  />
+                ) : null}
               </div>
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
@@ -398,15 +396,13 @@ function UpdateProgressDialog({ open, onOpenChange, taskId }: ModalProps) {
                   max={100}
                   {...form.register("progressPercentage", { valueAsNumber: true })}
                 />
-                <FormFieldError
-                  message={
-                    form.formState.errors.progressPercentage
-                      ? t("validation:required", {
-                          field: t("tasks:forms.progress.fields.progressPercentage")
-                        })
-                      : undefined
-                  }
-                />
+                {form.formState.errors.progressPercentage ? (
+                  <FormFieldError
+                    message={t("validation:required", {
+                      field: t("tasks:forms.progress.fields.progressPercentage")
+                    })}
+                  />
+                ) : null}
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="progressNotes">{t("tasks:forms.progress.fields.notes")}</Label>
@@ -483,15 +479,13 @@ function RequestExtensionDialog({ open, onOpenChange, taskId }: ModalProps) {
               <div className="grid gap-2">
                 <Label htmlFor="extensionDueDate">{t("tasks:forms.extension.fields.requestedDueDate")}</Label>
                 <Input id="extensionDueDate" type="date" {...form.register("requestedDueDate")} />
-                <FormFieldError
-                  message={
-                    form.formState.errors.requestedDueDate
-                      ? t(form.formState.errors.requestedDueDate.message ?? "validation:required", {
-                          field: t("tasks:forms.extension.fields.requestedDueDate")
-                        })
-                      : undefined
-                  }
-                />
+                {form.formState.errors.requestedDueDate ? (
+                  <FormFieldError
+                    message={t(form.formState.errors.requestedDueDate.message ?? "validation:required", {
+                      field: t("tasks:forms.extension.fields.requestedDueDate")
+                    })}
+                  />
+                ) : null}
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="extensionReason">{t("tasks:forms.extension.fields.reason")}</Label>
@@ -501,15 +495,13 @@ function RequestExtensionDialog({ open, onOpenChange, taskId }: ModalProps) {
                   className="rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
                   {...form.register("reason")}
                 />
-                <FormFieldError
-                  message={
-                    form.formState.errors.reason
-                      ? t(form.formState.errors.reason.message ?? "validation:required", {
-                          field: t("tasks:forms.extension.fields.reason")
-                        })
-                      : undefined
-                  }
-                />
+                {form.formState.errors.reason ? (
+                  <FormFieldError
+                    message={t(form.formState.errors.reason.message ?? "validation:required", {
+                      field: t("tasks:forms.extension.fields.reason")
+                    })}
+                  />
+                ) : null}
               </div>
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
@@ -574,15 +566,13 @@ function RequestMoreInfoDialog({ open, onOpenChange, taskId }: ModalProps) {
                   className="rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
                   {...form.register("requestMessage")}
                 />
-                <FormFieldError
-                  message={
-                    form.formState.errors.requestMessage
-                      ? t(form.formState.errors.requestMessage.message ?? "validation:required", {
-                          field: t("tasks:details.actions.requestInfo")
-                        })
-                      : undefined
-                  }
-                />
+                {form.formState.errors.requestMessage ? (
+                  <FormFieldError
+                    message={t(form.formState.errors.requestMessage.message ?? "validation:required", {
+                      field: t("tasks:details.actions.requestInfo")
+                    })}
+                  />
+                ) : null}
               </div>
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
@@ -619,7 +609,7 @@ function ApproveExtensionDialog({ open, onOpenChange, taskId }: ModalProps) {
   async function onSubmit(values: { extensionRequestId: string; reviewNotes?: string | null }) {
     await mutation.mutateAsync({
       requestId: values.extensionRequestId,
-      reviewNotes: values.reviewNotes
+      reviewNotes: values.reviewNotes ?? null
     });
     toast.success(t("tasks:forms.approveExtension.success"));
     onOpenChange(false);
@@ -649,15 +639,13 @@ function ApproveExtensionDialog({ open, onOpenChange, taskId }: ModalProps) {
                   {t("tasks:forms.approveExtension.fields.extensionRequestId")}
                 </Label>
                 <Input id="extensionRequestId" {...form.register("extensionRequestId")} />
-                <FormFieldError
-                  message={
-                    form.formState.errors.extensionRequestId
-                      ? t("validation:required", {
-                          field: t("tasks:forms.approveExtension.fields.extensionRequestId")
-                        })
-                      : undefined
-                  }
-                />
+                {form.formState.errors.extensionRequestId ? (
+                  <FormFieldError
+                    message={t("validation:required", {
+                      field: t("tasks:forms.approveExtension.fields.extensionRequestId")
+                    })}
+                  />
+                ) : null}
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="approveNotes">{t("tasks:forms.approveExtension.fields.reviewNotes")}</Label>

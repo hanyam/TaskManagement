@@ -7,7 +7,7 @@ import { clearClientAuthSession, setClientAuthSession } from "@/core/auth/sessio
 import type { AuthSession } from "@/core/auth/types";
 
 interface AuthContextValue {
-  session?: AuthSession;
+  session: AuthSession | undefined;
   isAuthenticated: boolean;
   setSession: (session: AuthSession) => void;
   clearSession: () => void;
@@ -16,7 +16,7 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 interface AuthProviderProps extends PropsWithChildren {
-  initialSession?: AuthSession | null;
+  initialSession?: AuthSession | null | undefined;
 }
 
 export function AuthProvider({ children, initialSession }: AuthProviderProps) {

@@ -31,7 +31,7 @@ function toErrorDetails(envelope?: ApiEnvelope<unknown>): ApiErrorDetail[] {
         {
           code: "UNKNOWN",
           message: envelope.message,
-          field: undefined
+          field: null
         }
       ];
     }
@@ -42,7 +42,7 @@ function toErrorDetails(envelope?: ApiEnvelope<unknown>): ApiErrorDetail[] {
   return envelope.errors.map((error) => ({
     code: error.code,
     message: error.message,
-    field: error.field
+    field: error.field ?? null
   }));
 }
 
@@ -63,7 +63,7 @@ export function createApiError({
     status,
     type,
     details,
-    traceId: envelope?.traceId ?? undefined,
+    traceId: envelope?.traceId ?? null,
     rawMessage: envelope?.message ?? null,
     cause
   });
@@ -77,8 +77,8 @@ export function createNetworkError(cause: unknown): ApiErrorResponse {
     status: 0,
     type: "network" as const,
     details: [],
-    traceId: undefined,
-    rawMessage: undefined,
+    traceId: null,
+    rawMessage: null,
     cause
   });
 }

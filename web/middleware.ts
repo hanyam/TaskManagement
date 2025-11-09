@@ -1,12 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import {
-  DEFAULT_LOCALE,
-  LOCALE_COOKIE_KEY,
-  normalizeLocale,
-  isSupportedLocale,
-  toLocalePath
-} from "@/core/routing/locales";
+import { LOCALE_COOKIE_KEY, normalizeLocale, isSupportedLocale, toLocalePath } from "@/core/routing/locales";
 import { AUTH_TOKEN_COOKIE } from "@/core/auth/constants";
 
 const PUBLIC_SEGMENTS = new Set(["sign-in"]);

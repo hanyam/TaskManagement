@@ -58,11 +58,11 @@ export function TaskCreateView() {
     try {
       await mutateAsync({
         title: values.title,
-        description: values.description || undefined,
+        description: values.description ? values.description : null,
         priority: values.priority,
         assignedUserId: values.assignedUserId,
         type: values.type,
-        dueDate: values.dueDate ? new Date(values.dueDate).toISOString() : undefined
+        dueDate: values.dueDate ? new Date(values.dueDate).toISOString() : null
       });
       router.push(`/${locale}/tasks`);
       router.refresh();
@@ -85,15 +85,13 @@ export function TaskCreateView() {
         <div className="grid gap-2">
           <Label htmlFor="title">{t("tasks:forms.create.fields.title")}</Label>
           <Input id="title" {...form.register("title")} />
-          <FormFieldError
-            message={
-              form.formState.errors.title
-                ? t(form.formState.errors.title.message ?? "validation:required", {
-                    field: t("tasks:forms.create.fields.title")
-                  })
-                : undefined
-            }
-          />
+          {form.formState.errors.title ? (
+            <FormFieldError
+              message={t(form.formState.errors.title.message ?? "validation:required", {
+                field: t("tasks:forms.create.fields.title")
+              })}
+            />
+          ) : null}
         </div>
 
         <div className="grid gap-2">
@@ -104,16 +102,14 @@ export function TaskCreateView() {
             className="rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             {...form.register("description")}
           />
-          <FormFieldError
-            message={
-              form.formState.errors.description
-                ? t(form.formState.errors.description.message ?? "validation:maxLength", {
-                    field: t("tasks:forms.create.fields.description"),
-                    count: 1000
-                  })
-                : undefined
-            }
-          />
+          {form.formState.errors.description ? (
+            <FormFieldError
+              message={t(form.formState.errors.description.message ?? "validation:maxLength", {
+                field: t("tasks:forms.create.fields.description"),
+                count: 1000
+              })}
+            />
+          ) : null}
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
@@ -152,27 +148,21 @@ export function TaskCreateView() {
           <div className="grid gap-2">
             <Label htmlFor="dueDate">{t("tasks:forms.create.fields.dueDate")}</Label>
             <Input id="dueDate" type="date" {...form.register("dueDate")} />
-            <FormFieldError
-              message={
-                form.formState.errors.dueDate
-                  ? t(form.formState.errors.dueDate.message ?? "validation:futureDate", {
-                      field: t("tasks:forms.create.fields.dueDate")
-                    })
-                  : undefined
-              }
-            />
+            {form.formState.errors.dueDate ? (
+              <FormFieldError
+                message={t(form.formState.errors.dueDate.message ?? "validation:futureDate", {
+                  field: t("tasks:forms.create.fields.dueDate")
+                })}
+              />
+            ) : null}
           </div>
 
           <div className="grid gap-2">
             <Label htmlFor="assignedUserId">{t("tasks:forms.create.fields.assignedUserId")}</Label>
             <Input id="assignedUserId" {...form.register("assignedUserId")} placeholder="00000000-0000-0000-0000-000000000000" />
-            <FormFieldError
-              message={
-                form.formState.errors.assignedUserId
-                  ? t("validation:server.TaskErrors.AssignedUserNotFound")
-                  : undefined
-              }
-            />
+            {form.formState.errors.assignedUserId ? (
+              <FormFieldError message={t("validation:server.TaskErrors.AssignedUserNotFound")} />
+            ) : null}
           </div>
         </div>
 

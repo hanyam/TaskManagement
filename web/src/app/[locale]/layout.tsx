@@ -5,22 +5,13 @@ import type { ReactNode } from "react";
 import { getServerAuthToken, getServerUser } from "@/core/auth/session.server";
 import type { AuthSession } from "@/core/auth/types";
 import { AppProviders } from "@/core/providers/AppProviders";
-import {
-  isSupportedLocale,
-  LOCALE_COOKIE_KEY,
-  normalizeLocale,
-  type SupportedLocale
-} from "@/core/routing/locales";
+import { isSupportedLocale, LOCALE_COOKIE_KEY, normalizeLocale } from "@/core/routing/locales";
 
 interface LocaleLayoutProps {
   children: ReactNode;
   params: {
     locale: string;
   };
-}
-
-export function generateStaticParams(): Array<{ locale: SupportedLocale }> {
-  return [{ locale: "en" }, { locale: "ar" }];
 }
 
 export default function LocaleLayout({ children, params }: LocaleLayoutProps) {

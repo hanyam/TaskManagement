@@ -1,4 +1,4 @@
-import { createColumnHelper, flexRender, getCoreRowModel, useReactTable, type ColumnDef } from "@tanstack/react-table";
+import { createColumnHelper, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import Link from "next/link";
 import { useMemo, useRef } from "react";
@@ -7,7 +7,6 @@ import { useTranslation } from "react-i18next";
 import { useCurrentLocale } from "@/core/routing/useCurrentLocale";
 import { TaskStatusBadge } from "@/features/tasks/components/TaskStatusBadge";
 import type { TaskDto } from "@/features/tasks/types";
-import { cn } from "@/ui/utils/cn";
 
 const columnHelper = createColumnHelper<TaskDto>();
 
@@ -37,7 +36,7 @@ export function TasksTable({ data, isLoading, onRowClick }: TasksTableProps) {
   const locale = useCurrentLocale();
   const containerRef = useRef<HTMLDivElement | null>(null);
 
-  const columns = useMemo<ColumnDef<TaskDto, unknown>[]>(
+  const columns = useMemo(
     () => [
       columnHelper.accessor("title", {
         header: () => t("tasks:list.table.columns.title"),
@@ -100,7 +99,6 @@ export function TasksTable({ data, isLoading, onRowClick }: TasksTableProps) {
   const virtualRows = rowVirtualizer.getVirtualItems();
   const totalSize = rowVirtualizer.getTotalSize();
 
-  const columnCount = columns.length;
   const columnTemplate = "minmax(220px,2.5fr) minmax(160px,1fr) minmax(120px,1fr) minmax(140px,1fr) minmax(150px,1fr) minmax(120px,0.8fr)";
 
   return (
@@ -145,11 +143,14 @@ export function TasksTable({ data, isLoading, onRowClick }: TasksTableProps) {
                   }
                 }}
               >
-                {row.getVisibleCells().map((cell) => (
-                  <div key={cell.id} className="flex items-center" role="gridcell">
-                    {cell.column.columnDef.cell?.(cell.getContext())}
-                  </div>
-                ))}
+                {row.getVisibleCells().map((cell) => {
+                  const renderCell = cell.column.columnDef.cell;
+                  return (
+                    <div key={cell.id} className="flex items-center" role="gridcell">
+                      {typeof renderCell === "function" ? renderCell(cell.getContext()) : renderCell ?? null}
+                    </div>
+                  );
+                })}
               </div>
             );
           })}

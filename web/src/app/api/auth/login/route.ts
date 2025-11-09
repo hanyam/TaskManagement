@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { apiClient } from "@/core/api";
+import { apiClient } from "@/core/api/client.server";
 import type { ApiErrorResponse } from "@/core/api/types";
 import { setServerAuthSession } from "@/core/auth/session.server";
 import type { AuthSession } from "@/core/auth/types";
@@ -42,7 +42,7 @@ export async function POST(request: Request) {
       id: data.user.id,
       email: data.user.email,
       displayName: data.user.displayName,
-      role: data.user.role ?? undefined
+      ...(data.user.role ? { role: data.user.role } : {})
     };
 
     setServerAuthSession(data.accessToken, sessionUser, data.expiresIn);
