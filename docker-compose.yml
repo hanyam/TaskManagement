@@ -27,7 +27,7 @@ services:
     container_name: taskmanagement-api
     ports:
       - "5000:5000"
-      - "5001:5001"
+      #- "5001:5001"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=TaskManagement;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True;
