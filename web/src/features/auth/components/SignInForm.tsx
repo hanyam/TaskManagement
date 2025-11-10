@@ -12,6 +12,7 @@ import { z } from "zod";
 import { useAuth } from "@/core/auth/AuthProvider";
 import type { AuthSession } from "@/core/auth/types";
 import type { SupportedLocale } from "@/core/routing/locales";
+import { useAzureAdLogin } from "@/features/auth/hooks/useAzureAdLogin";
 import { Button } from "@/ui/components/Button";
 import { FormFieldError } from "@/ui/components/FormFieldError";
 import { Input } from "@/ui/components/Input";
@@ -55,6 +56,7 @@ export function SignInForm({ locale, redirectTo }: SignInFormProps) {
   const { t } = useTranslation(["auth", "common", "validation"]);
   const router = useRouter();
   const { setSession } = useAuth();
+  const { isConfigured: isAzureConfigured, isLoading: isAzureLoading, login: loginWithAzureAd } = useAzureAdLogin();
 
   const form = useForm<SignInFormValues>({
     resolver: zodResolver(signInSchema),
@@ -131,6 +133,37 @@ export function SignInForm({ locale, redirectTo }: SignInFormProps) {
     }
   }
 
+  async function handleAzureAdSignIn() {
+    form.clearErrors("azureAdToken");
+
+    try {
+      const result = await loginWithAzureAd();
+
+      if (!result) {
+        throw new Error("auth:signIn.azureAdNotConfigured");
+      }
+
+      const token = result.idToken ?? result.accessToken;
+
+      if (!token) {
+        throw new Error("auth:signIn.azureAdTokenUnavailable");
+      }
+
+      form.setValue("azureAdToken", token, { shouldDirty: false });
+      await handleSubmit({ azureAdToken: token });
+    } catch (error) {
+      const messageKey =
+        (error as Error)?.message && (error as Error)?.message?.startsWith("auth:")
+          ? (error as Error).message
+          : "auth:signIn.azureAdSignInFailed";
+
+      form.setError("azureAdToken", {
+        type: "server",
+        message: messageKey
+      });
+    }
+  }
+
   const description = useMemo(() => t("auth:signIn.description"), [t]);
   const azureAdTokenErrorMessage = form.formState.errors.azureAdToken
     ? t(form.formState.errors.azureAdToken.message ?? "validation:required", {
@@ -145,7 +178,7 @@ export function SignInForm({ locale, redirectTo }: SignInFormProps) {
         <p className="text-sm text-muted-foreground">{description}</p>
       </header>
 
-      <div className="space-y-4">
+      <div className="space-y-6">
         <div className="space-y-2">
           <Label htmlFor="azureAdToken">{t("auth:signIn.azureAdToken")}</Label>
           <Input
@@ -163,7 +196,7 @@ export function SignInForm({ locale, redirectTo }: SignInFormProps) {
         </div>
       </div>
 
-  <Button type="submit" className={cn("w-full")} disabled={isPending}>
+      <Button type="submit" className={cn("w-full")} disabled={isPending}>
         {isPending ? (
           <span className="flex items-center justify-center gap-2">
             <Spinner size="sm" />
@@ -173,6 +206,33 @@ export function SignInForm({ locale, redirectTo }: SignInFormProps) {
           t("common:actions.signIn")
         )}
       </Button>
+
+      <div className="space-y-2">
+        <div className="text-center text-xs uppercase tracking-wide text-muted-foreground">
+          {t("auth:signIn.or")}
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          disabled={!isAzureConfigured || isAzureLoading || isPending}
+          onClick={handleAzureAdSignIn}
+        >
+          {isAzureLoading ? (
+            <span className="flex items-center justify-center gap-2">
+              <Spinner size="sm" />
+              {t("auth:signIn.continueWithAzureAd")}
+            </span>
+          ) : (
+            t("auth:signIn.continueWithAzureAd")
+          )}
+        </Button>
+        {!isAzureConfigured ? (
+          <p className="text-center text-xs text-muted-foreground">
+            {t("auth:signIn.azureAdNotAvailable")}
+          </p>
+        ) : null}
+      </div>
     </form>
   );
 }
