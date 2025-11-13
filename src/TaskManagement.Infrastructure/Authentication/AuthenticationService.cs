@@ -39,7 +39,7 @@ public class AuthenticationService : IAuthenticationService
         {
             var tokenValidationParameters = new TokenValidationParameters
             {
-                ValidateIssuer = true,
+               // ValidateIssuer = true,
                 ValidateAudience = true,
                 //ValidateLifetime = true,
                 ValidateIssuerSigningKey = true,

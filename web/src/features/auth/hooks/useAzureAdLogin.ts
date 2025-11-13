@@ -30,7 +30,7 @@ export function useAzureAdLogin(): UseAzureAdLoginResult {
       return undefined;
     }
 
-    return new PublicClientApplication({
+    const msalInstance = new PublicClientApplication({
       auth: {
         clientId: azureAdConfig.clientId,
         authority: `https://login.microsoftonline.com/${azureAdConfig.tenantId}`,
@@ -41,17 +41,34 @@ export function useAzureAdLogin(): UseAzureAdLoginResult {
         storeAuthStateInCookie: typeof window !== "undefined" && window.navigator.userAgent.includes("MSIE")
       }
     });
+
+    // Initialize the MSAL instance
+    msalInstance.initialize().catch(console.error);
+
+    return msalInstance;
   }, [azureAdConfig]);
 
   const login = useCallback(async () => {
     if (!client) {
+      console.error("Azure AD client not initialized");
       return undefined;
     }
+
+    console.log("Azure AD config:", { 
+      clientId: azureAdConfig?.clientId,
+      tenantId: azureAdConfig?.tenantId,
+      redirectUri: azureAdConfig?.redirectUri,
+      scopes 
+    });
 
     setIsLoading(true);
 
     try {
+      // Ensure MSAL is initialized before proceeding
+      await client.initialize();
+      
       const accounts = client.getAllAccounts();
+      console.log("Existing accounts:", accounts.length);
 
       if (accounts.length > 0) {
         try {
@@ -60,8 +77,10 @@ export function useAzureAdLogin(): UseAzureAdLoginResult {
             scopes
           });
 
+          console.log("Silent token acquisition successful");
           return silentResult;
         } catch (error) {
+          console.log("Silent token acquisition failed:", error);
           if ((error as { errorCode?: string }).errorCode !== "interaction_required") {
             throw error;
           }
@@ -73,11 +92,17 @@ export function useAzureAdLogin(): UseAzureAdLoginResult {
         prompt: "select_account"
       };
 
-      return await client.acquireTokenPopup(request);
+      console.log("Starting popup authentication with request:", request);
+      const result = await client.acquireTokenPopup(request);
+      console.log("Popup authentication successful:", result);
+      return result;
+    } catch (error) {
+      console.error("Azure AD login error:", error);
+      throw error;
     } finally {
       setIsLoading(false);
     }
-  }, [client, scopes]);
+  }, [client, scopes, azureAdConfig]);
 
   return {
     isConfigured: Boolean(client),
