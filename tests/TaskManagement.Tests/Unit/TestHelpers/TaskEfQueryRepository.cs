@@ -107,11 +107,19 @@ public class TaskEfQueryRepository : IQueryRepository<DomainTask>
     }
 
     // Additional helper methods for testing
-    public async Task<IEnumerable<DomainTask>> GetTasksByAssignedUserAsync(Guid assignedUserId, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<DomainTask>> GetTasksByAssignedUserAsync(Guid? assignedUserId, CancellationToken cancellationToken = default)
     {
+        if (!assignedUserId.HasValue)
+        {
+            return await _context.Tasks
+                .Include(t => t.AssignedUser)
+                .Where(t => t.AssignedUserId == null)
+                .ToListAsync(cancellationToken);
+        }
+        
         return await _context.Tasks
             .Include(t => t.AssignedUser)
-            .Where(t => t.AssignedUserId == assignedUserId)
+            .Where(t => t.AssignedUserId == assignedUserId.Value)
             .ToListAsync(cancellationToken);
     }
 

@@ -43,6 +43,7 @@ public class TaskConfiguration : IEntityTypeConfiguration<Task>
         builder.HasOne(e => e.AssignedUser)
             .WithMany()
             .HasForeignKey(e => e.AssignedUserId)
+            .IsRequired(false) // Allow null for draft tasks
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(e => e.CreatedByUser)

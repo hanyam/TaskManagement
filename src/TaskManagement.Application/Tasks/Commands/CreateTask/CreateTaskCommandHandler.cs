@@ -2,6 +2,7 @@ using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Application.Infrastructure.Data.Repositories;
 using TaskManagement.Domain.Common;
 using TaskManagement.Domain.DTOs;
+using TaskManagement.Domain.Entities;
 using TaskManagement.Domain.Errors.Tasks;
 using TaskManagement.Domain.Errors.Users;
 using TaskManagement.Infrastructure.Data;
@@ -32,11 +33,15 @@ public class CreateTaskCommandHandler : ICommandHandler<CreateTaskCommand, TaskD
     {
         var errors = new List<Error>();
 
-        // Validate that the assigned user exists using Dapper (fast query)
-        var assignedUser = await _userQueryRepository.GetByIdAsync(request.AssignedUserId, cancellationToken);
-        if (assignedUser == null)
+        // Validate that the assigned user exists only if AssignedUserId is provided (not a draft)
+        User? assignedUser = null;
+        if (request.AssignedUserId.HasValue && request.AssignedUserId.Value != Guid.Empty)
         {
-            errors.Add(TaskErrors.AssignedUserNotFound);
+            assignedUser = await _userQueryRepository.GetByIdAsync(request.AssignedUserId.Value, cancellationToken);
+            if (assignedUser == null)
+            {
+                errors.Add(TaskErrors.AssignedUserNotFound);
+            }
         }
 
         // Additional validations can be added here
@@ -56,13 +61,13 @@ public class CreateTaskCommandHandler : ICommandHandler<CreateTaskCommand, TaskD
             return Result<TaskDto>.Failure(errors);
         }
 
-        // Create the task
+        // Create the task (can be draft if AssignedUserId is null)
         var task = new Task(
             request.Title,
             request.Description,
             request.Priority,
             request.DueDate,
-            request.AssignedUserId,
+            request.AssignedUserId, // Null for unassigned (draft) tasks
             request.Type,
             request.CreatedById);
 
@@ -84,7 +89,7 @@ public class CreateTaskCommandHandler : ICommandHandler<CreateTaskCommand, TaskD
             OriginalDueDate = task.OriginalDueDate,
             ExtendedDueDate = task.ExtendedDueDate,
             AssignedUserId = task.AssignedUserId,
-            AssignedUserEmail = assignedUser!.Email,
+            AssignedUserEmail = assignedUser?.Email,
             Type = task.Type,
             ReminderLevel = task.ReminderLevel,
             ProgressPercentage = task.ProgressPercentage,

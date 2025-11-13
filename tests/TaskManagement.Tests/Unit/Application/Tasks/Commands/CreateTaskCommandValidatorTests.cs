@@ -152,7 +152,29 @@ public class CreateTaskCommandValidatorTests
 
         // Assert
         result.ShouldHaveValidationErrorFor(x => x.AssignedUserId)
-            .WithErrorMessage("Assigned user ID is required");
+            .WithErrorMessage("Assigned user ID cannot be empty");
+    }
+
+    [Fact]
+    public void Validate_WithNullAssignedUserId_ShouldNotHaveValidationError()
+    {
+        // Arrange - Null AssignedUserId is allowed for draft tasks
+        var command = new CreateTaskCommand
+        {
+            Title = "Draft Task",
+            Description = "Test Description",
+            Priority = TaskPriority.High,
+            DueDate = DateTime.UtcNow.AddDays(1),
+            AssignedUserId = null, // Null is allowed for drafts
+            CreatedById = Guid.NewGuid(),
+            CreatedBy = "test@example.com"
+        };
+
+        // Act
+        var result = _validator.TestValidate(command);
+
+        // Assert
+        result.ShouldNotHaveValidationErrorFor(x => x.AssignedUserId);
     }
 
     [Fact]
@@ -278,7 +300,7 @@ public class CreateTaskCommandValidatorTests
             Description = new string('A', 1001), // Too long description
             Priority = TaskPriority.High,
             DueDate = DateTime.UtcNow.AddDays(-1), // Past date
-            AssignedUserId = Guid.Empty, // Empty GUID
+            AssignedUserId = Guid.Empty, // Empty GUID (should fail validation)
             CreatedById = Guid.Empty, // Empty created by id
             CreatedBy = "" // Empty created by
         };

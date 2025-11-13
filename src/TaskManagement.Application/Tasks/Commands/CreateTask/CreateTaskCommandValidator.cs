@@ -16,8 +16,10 @@ public class CreateTaskCommandValidator : AbstractValidator<CreateTaskCommand>
         RuleFor(x => x.Description)
             .MaximumLength(1000).WithMessage("Description cannot exceed 1000 characters");
 
+        // AssignedUserId is optional - tasks can be saved as drafts without assignment
         RuleFor(x => x.AssignedUserId)
-            .NotEmpty().WithMessage("Assigned user ID is required");
+            .NotEqual(Guid.Empty).WithMessage("Assigned user ID cannot be empty")
+            .When(x => x.AssignedUserId.HasValue);
 
         RuleFor(x => x.CreatedById)
             .NotEmpty().WithMessage("Created by user ID is required");

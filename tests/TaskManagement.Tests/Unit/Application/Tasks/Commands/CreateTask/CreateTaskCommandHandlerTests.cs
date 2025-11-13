@@ -56,6 +56,7 @@ public class CreateTaskCommandHandlerTests : InMemoryDatabaseTestBase
             Priority = TaskPriority.High,
             DueDate = DateTime.UtcNow.AddDays(7),
             AssignedUserId = assignedUser.Id,
+            CreatedById = assignedUser.Id,
             CreatedBy = assignedUser.Email
         };
 
@@ -76,7 +77,7 @@ public class CreateTaskCommandHandlerTests : InMemoryDatabaseTestBase
         var createdTask = await Context.Tasks.FindAsync(result.Value.Id);
         createdTask.Should().NotBeNull();
         createdTask!.Title.Should().Be(command.Title);
-        createdTask.AssignedUserId.Should().Be(assignedUser.Id);
+        createdTask.AssignedUserId.Should().Be((Guid?)assignedUser.Id);
     }
 
     [Fact]
@@ -91,6 +92,7 @@ public class CreateTaskCommandHandlerTests : InMemoryDatabaseTestBase
             Priority = TaskPriority.High,
             DueDate = DateTime.UtcNow.AddDays(7),
             AssignedUserId = nonExistentUserId,
+            CreatedById = Guid.NewGuid(),
             CreatedBy = "nonexistent@example.com"
         };
 
@@ -105,6 +107,41 @@ public class CreateTaskCommandHandlerTests : InMemoryDatabaseTestBase
         // Verify that no task was added to the database
         var taskCount = await Context.Tasks.CountAsync();
         taskCount.Should().Be(TestTaskIds.Count); // Should still be the initial seeded tasks
+    }
+
+    [Fact]
+    public async Task Handle_WhenAssignedUserIdIsNull_ShouldCreateDraftTaskSuccessfully()
+    {
+        // Arrange - Create a task without assigned user (draft)
+        var createdByUser = GetTestUser("john.doe@example.com");
+        var command = new CreateTaskCommand
+        {
+            Title = "Draft Task",
+            Description = "This is a draft task",
+            Priority = TaskPriority.Medium,
+            DueDate = DateTime.UtcNow.AddDays(7),
+            AssignedUserId = null, // No assigned user - draft task
+            Type = TaskType.Simple,
+            CreatedById = createdByUser.Id,
+            CreatedBy = createdByUser.Email
+        };
+
+        // Act
+        var result = await _mediator.Send(command);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().NotBeNull();
+        result.Value!.Title.Should().Be(command.Title);
+        result.Value.AssignedUserId.Should().BeNull();
+        result.Value.AssignedUserEmail.Should().BeNull();
+
+        // Verify that the draft task was added to the database
+        var createdTask = await Context.Tasks.FindAsync(result.Value.Id);
+        createdTask.Should().NotBeNull();
+        createdTask!.Title.Should().Be(command.Title);
+        createdTask.AssignedUserId.Should().BeNull();
     }
 
     [Fact]
@@ -154,6 +191,7 @@ public class CreateTaskCommandHandlerTests : InMemoryDatabaseTestBase
             Priority = TaskPriority.Medium,
             DueDate = DateTime.UtcNow.AddDays(10),
             AssignedUserId = assignedUser.Id,
+            CreatedById = assignedUser.Id,
             CreatedBy = assignedUser.Email
         };
 
@@ -195,6 +233,7 @@ public class CreateTaskCommandHandlerTests : InMemoryDatabaseTestBase
             Priority = TaskPriority.Low,
             DueDate = DateTime.UtcNow.AddDays(5),
             AssignedUserId = user1.Id,
+            CreatedById = user1.Id,
             CreatedBy = user1.Email
         };
 
@@ -205,6 +244,7 @@ public class CreateTaskCommandHandlerTests : InMemoryDatabaseTestBase
             Priority = TaskPriority.High,
             DueDate = DateTime.UtcNow.AddDays(10),
             AssignedUserId = user2.Id,
+            CreatedById = user2.Id,
             CreatedBy = user2.Email
         };
 

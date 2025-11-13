@@ -99,7 +99,11 @@ public class ReassignTaskCommandHandler : ICommandHandler<ReassignTaskCommand, T
         await _context.SaveChangesAsync(cancellationToken);
 
         // Get assigned users for DTO
-        var assignedUser = await _userQueryRepository.GetByIdAsync(task.AssignedUserId, cancellationToken);
+        User? assignedUser = null;
+        if (task.AssignedUserId.HasValue)
+        {
+            assignedUser = await _userQueryRepository.GetByIdAsync(task.AssignedUserId.Value, cancellationToken);
+        }
 
         return new TaskDto
         {

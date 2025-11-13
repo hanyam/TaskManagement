@@ -96,7 +96,7 @@ export interface CreateTaskRequest {
   description?: string | null;
   priority: TaskPriority;
   dueDate?: string | null;
-  assignedUserId: string;
+  assignedUserId?: string | null; // Optional - null for draft tasks
   type: TaskType;
 }
 

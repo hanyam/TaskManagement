@@ -68,7 +68,7 @@ public abstract class InMemoryDatabaseTestBase : IDisposable
                 "Write comprehensive documentation for the new API endpoints",
                 TaskPriority.High,
                 DateTime.UtcNow.AddDays(7),
-                userIds[0], // John Doe
+                (Guid?)userIds[0], // John Doe - cast to nullable
                 TaskType.WithProgress,
                 userIds[0] // Created by John Doe
             ),
@@ -77,7 +77,7 @@ public abstract class InMemoryDatabaseTestBase : IDisposable
                 "Review the latest pull requests and provide feedback",
                 TaskPriority.Medium,
                 DateTime.UtcNow.AddDays(3),
-                userIds[1], // Jane Smith
+                (Guid?)userIds[1], // Jane Smith - cast to nullable
                 TaskType.Simple,
                 userIds[0] // Created by John Doe
             ),
@@ -86,7 +86,7 @@ public abstract class InMemoryDatabaseTestBase : IDisposable
                 "Update all project dependencies to latest versions",
                 TaskPriority.Low,
                 DateTime.UtcNow.AddDays(14),
-                userIds[2], // Bob Wilson
+                (Guid?)userIds[2], // Bob Wilson - cast to nullable
                 TaskType.WithDueDate,
                 userIds[1] // Created by Jane Smith
             )
@@ -174,11 +174,11 @@ public abstract class InMemoryDatabaseTestBase : IDisposable
         string? description, 
         TaskPriority priority, 
         DateTime? dueDate, 
-        Guid assignedUserId,
+        Guid? assignedUserId, // Now nullable to support draft tasks
         TaskType type = TaskType.Simple,
         Guid? createdById = null)
     {
-        var creatorId = createdById ?? assignedUserId;
+        var creatorId = createdById ?? assignedUserId ?? Guid.NewGuid(); // Use a new GUID if both are null
         var task = new TaskManagement.Domain.Entities.Task(title, description, priority, dueDate, assignedUserId, type, creatorId);
         task.SetCreatedBy("test@example.com");
         Context.Tasks.Add(task);

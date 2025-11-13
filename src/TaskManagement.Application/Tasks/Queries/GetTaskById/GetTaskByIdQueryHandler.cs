@@ -85,7 +85,7 @@ public class GetTaskByIdQueryHandler : IRequestHandler<GetTaskByIdQuery, TaskDto
         }
 
         // Check if user is assigned to the task
-        if (taskDto.AssignedUserId == userId)
+        if (taskDto.AssignedUserId.HasValue && taskDto.AssignedUserId.Value == userId)
         {
             return true;
         }

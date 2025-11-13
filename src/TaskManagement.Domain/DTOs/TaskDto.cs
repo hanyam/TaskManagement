@@ -16,7 +16,7 @@ public class TaskDto
     public DateTime? DueDate { get; set; }
     public DateTime? OriginalDueDate { get; set; }
     public DateTime? ExtendedDueDate { get; set; }
-    public Guid AssignedUserId { get; set; }
+    public Guid? AssignedUserId { get; set; }
     public string? AssignedUserEmail { get; set; }
     public TaskType Type { get; set; }
     public ReminderLevel ReminderLevel { get; set; }
@@ -38,7 +38,7 @@ public class CreateTaskRequest
     public string? Description { get; set; }
     public TaskPriority Priority { get; set; } = TaskPriority.Medium;
     public DateTime? DueDate { get; set; }
-    public Guid AssignedUserId { get; set; }
+    public Guid? AssignedUserId { get; set; }
     public TaskType Type { get; set; } = TaskType.Simple;
 }
 
@@ -51,7 +51,7 @@ public class UpdateTaskRequest
     public string? Description { get; set; }
     public TaskPriority Priority { get; set; }
     public DateTime? DueDate { get; set; }
-    public Guid AssignedUserId { get; set; }
+    public Guid? AssignedUserId { get; set; }
 }
 
 /// <summary>

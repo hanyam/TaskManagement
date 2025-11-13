@@ -25,7 +25,11 @@ const createTaskSchema = z.object({
     .refine((value) => !value || !Number.isNaN(Date.parse(value)), {
       message: "validation:futureDate"
     }),
-  assignedUserId: z.string().uuid("validation:required"),
+  assignedUserId: z
+    .string()
+    .uuid("validation:invalidUuid")
+    .optional()
+    .or(z.literal("")), // Optional - allows draft tasks without assignment
   type: z.enum(["Simple", "WithDueDate", "WithProgress", "WithAcceptedProgress"])
 });
 
@@ -47,7 +51,7 @@ export function TaskCreateView() {
       description: "",
       priority: "Medium",
       dueDate: "",
-      assignedUserId: "",
+      assignedUserId: "", // Optional - empty means draft task
       type: "Simple"
     }
   });
@@ -60,7 +64,9 @@ export function TaskCreateView() {
         title: values.title,
         description: values.description ? values.description : null,
         priority: values.priority,
-        assignedUserId: values.assignedUserId,
+        assignedUserId: values.assignedUserId && values.assignedUserId.trim() !== "" 
+          ? values.assignedUserId 
+          : null, // Null for draft tasks
         type: values.type,
         dueDate: values.dueDate ? new Date(values.dueDate).toISOString() : null
       });
@@ -158,10 +164,17 @@ export function TaskCreateView() {
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="assignedUserId">{t("tasks:forms.create.fields.assignedUserId")}</Label>
-            <Input id="assignedUserId" {...form.register("assignedUserId")} placeholder="00000000-0000-0000-0000-000000000000" />
+            <Label htmlFor="assignedUserId">
+              {t("tasks:forms.create.fields.assignedUserId")}
+              <span className="text-muted-foreground ml-1 text-xs">({t("common:optional")})</span>
+            </Label>
+            <Input 
+              id="assignedUserId" 
+              {...form.register("assignedUserId")} 
+              placeholder={t("tasks:forms.create.fields.assignedUserIdPlaceholder", { defaultValue: "Leave empty for draft" })}
+            />
             {form.formState.errors.assignedUserId ? (
-              <FormFieldError message={t("validation:server.TaskErrors.AssignedUserNotFound")} />
+              <FormFieldError message={t(form.formState.errors.assignedUserId.message ?? "validation:invalidUuid")} />
             ) : null}
           </div>
         </div>

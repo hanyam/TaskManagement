@@ -100,7 +100,13 @@ public class TaskDapperRepositoryWrapper : TaskDapperRepository
             filteredTasks = filteredTasks.Where(t => t.Priority == priority.Value);
         
         if (assignedUserId.HasValue)
+        {
             filteredTasks = filteredTasks.Where(t => t.AssignedUserId == assignedUserId.Value);
+        }
+        else
+        {
+            filteredTasks = filteredTasks.Where(t => t.AssignedUserId == null);
+        }
         
         if (dueDateFrom.HasValue)
             filteredTasks = filteredTasks.Where(t => t.DueDate >= dueDateFrom.Value);

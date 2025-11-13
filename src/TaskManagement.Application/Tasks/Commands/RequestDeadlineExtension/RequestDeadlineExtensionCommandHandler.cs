@@ -46,7 +46,7 @@ public class RequestDeadlineExtensionCommandHandler : ICommandHandler<RequestDea
             .Where(ta => ta.TaskId == request.TaskId)
             .ToListAsync(cancellationToken);
         
-        var isAssigned = task.AssignedUserId == request.RequestedById ||
+        var isAssigned = (task.AssignedUserId.HasValue && task.AssignedUserId.Value == request.RequestedById) ||
                         assignments.Any(a => a.UserId == request.RequestedById);
 
         if (!isAssigned)

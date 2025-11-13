@@ -11,14 +11,14 @@ public class Task : BaseEntity
     {
     }
 
-    public Task(string title, string? description, TaskPriority priority, DateTime? dueDate, Guid assignedUserId, TaskType type, Guid createdById)
+    public Task(string title, string? description, TaskPriority priority, DateTime? dueDate, Guid? assignedUserId, TaskType type, Guid createdById)
     {
         Title = title;
         Description = description;
         Priority = priority;
         DueDate = dueDate;
         OriginalDueDate = dueDate;
-        AssignedUserId = assignedUserId;
+        AssignedUserId = assignedUserId; // Null for unassigned tasks (draft state)
         Type = type;
         CreatedById = createdById;
         Status = TaskStatus.Created;
@@ -33,7 +33,7 @@ public class Task : BaseEntity
     public DateTime? DueDate { get; private set; }
     public DateTime? OriginalDueDate { get; private set; }
     public DateTime? ExtendedDueDate { get; private set; }
-    public Guid AssignedUserId { get; private set; }
+    public Guid? AssignedUserId { get; private set; }
     public User? AssignedUser { get; private set; }
     public TaskType Type { get; private set; }
     public ReminderLevel ReminderLevel { get; private set; }
@@ -71,6 +71,8 @@ public class Task : BaseEntity
 
     public void AssignToUser(Guid userId)
     {
+        if (userId == Guid.Empty)
+            throw new ArgumentException("User ID cannot be empty", nameof(userId));
         AssignedUserId = userId;
     }
 

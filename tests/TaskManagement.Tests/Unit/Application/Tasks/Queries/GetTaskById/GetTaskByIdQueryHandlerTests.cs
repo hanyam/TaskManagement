@@ -156,11 +156,11 @@ public class GetTaskByIdQueryHandlerTests : InMemoryDatabaseTestBase
     public async Task Handle_WhenUserIsAssignedToTask_ShouldReturnTaskSuccessfully()
     {
         // Arrange - Use a test task and access it as the assigned user
-        var testTask = GetAllTestTasks().First();
+        var testTask = GetAllTestTasks().First(t => t.AssignedUserId.HasValue);
         var query = new GetTaskByIdQuery 
         { 
             Id = testTask.Id,
-            UserId = testTask.AssignedUserId // User assigned to the task should have access
+            UserId = testTask.AssignedUserId!.Value // User assigned to the task should have access
         };
 
         // Act

@@ -56,7 +56,11 @@ public class MarkTaskCompletedCommandHandler : ICommandHandler<MarkTaskCompleted
         await _context.SaveChangesAsync(cancellationToken);
 
         // Get assigned user for DTO
-        var assignedUser = await _userQueryRepository.GetByIdAsync(task.AssignedUserId, cancellationToken);
+        User? assignedUser = null;
+        if (task.AssignedUserId.HasValue)
+        {
+            assignedUser = await _userQueryRepository.GetByIdAsync(task.AssignedUserId.Value, cancellationToken);
+        }
 
         return new TaskDto
         {
