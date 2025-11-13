@@ -89,11 +89,12 @@ public static class DependencyInjection
         // Configure CORS
         services.AddCors(options =>
         {
-            options.AddPolicy("AllowAll", policy =>
+            options.AddPolicy("AllowFrontend", policy =>
             {
-                policy.AllowAnyOrigin()
+                policy.WithOrigins("http://localhost:3000", "https://localhost:3000")
                     .AllowAnyMethod()
-                    .AllowAnyHeader();
+                    .AllowAnyHeader()
+                    .AllowCredentials(); // Required when frontend sends credentials: "include"
             });
         });
 

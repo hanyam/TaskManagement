@@ -40,12 +40,13 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+// CORS must be before authentication/authorization
+app.UseCors("AllowFrontend");
+
 // Add global exception handling middleware
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 //app.UseHttpsRedirection();
-
-app.UseCors("AllowAll");
 
 app.UseAuthentication();
 app.UseAuthorization();
