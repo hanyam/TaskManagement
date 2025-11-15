@@ -81,7 +81,9 @@
     "accepted": "مقبول",
     "rejected": "مرفوض",
     "completed": "مكتمل",
-    "cancelled": "ملغى"
+    "cancelled": "ملغى",
+    "pendingManagerReview": "في انتظار مراجعة المدير",
+    "rejectedByManager": "مرفوض من المدير"
   },
   "taskType": {
     "simple": "بسيط",

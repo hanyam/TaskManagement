@@ -7,6 +7,13 @@ export interface ApiEnvelope<T> {
   errors?: ApiErrorDetail[];
   traceId?: string | null;
   timestamp?: string;
+  links?: ApiActionLink[];
+}
+
+export interface ApiActionLink {
+  rel: string;
+  href: string;
+  method: string;
 }
 
 export interface ApiErrorDetail {
@@ -54,6 +61,7 @@ export interface ApiSuccessResponse<T> {
   data: T;
   message?: string | null;
   traceId?: string | null;
+  links?: ApiActionLink[] | undefined;
 }
 
 export interface ApiErrorResponse extends Error {

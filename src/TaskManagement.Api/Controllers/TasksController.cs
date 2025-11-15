@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Application.Tasks.Commands.AcceptTask;
@@ -11,6 +12,7 @@ using TaskManagement.Application.Tasks.Commands.ReassignTask;
 using TaskManagement.Application.Tasks.Commands.RejectTask;
 using TaskManagement.Application.Tasks.Commands.RequestDeadlineExtension;
 using TaskManagement.Application.Tasks.Commands.RequestMoreInfo;
+using TaskManagement.Application.Tasks.Commands.ReviewCompletedTask;
 using TaskManagement.Application.Tasks.Commands.UpdateTaskProgress;
 using TaskManagement.Application.Tasks.Commands.CreateTask;
 using TaskManagement.Application.Tasks.Queries.GetTaskById;
@@ -18,6 +20,7 @@ using TaskManagement.Application.Tasks.Queries.GetTasks;
 using TaskManagement.Domain.Common;
 using TaskManagement.Domain.DTOs;
 using TaskManagement.Domain.Entities;
+using TaskManagement.Infrastructure.Data;
 using TaskStatus = TaskManagement.Domain.Entities.TaskStatus;
 
 namespace TaskManagement.Api.Controllers;
@@ -28,9 +31,15 @@ namespace TaskManagement.Api.Controllers;
 [ApiController]
 [Route("tasks")]
 [Authorize]
-public class TasksController(ICommandMediator commandMediator, IRequestMediator requestMediator)
+public class TasksController(
+    ICommandMediator commandMediator, 
+    IRequestMediator requestMediator,
+    TaskManagement.Application.Tasks.Services.ITaskActionService taskActionService,
+    TaskManagementDbContext context)
     : BaseController(commandMediator, requestMediator)
 {
+    private readonly TaskManagement.Application.Tasks.Services.ITaskActionService _taskActionService = taskActionService;
+    private readonly TaskManagementDbContext _context = context;
     /// <summary>
     ///     Gets a task by its ID.
     /// </summary>
@@ -52,7 +61,16 @@ public class TasksController(ICommandMediator commandMediator, IRequestMediator 
             UserId = userId
         };
         var result = await _requestMediator.Send(query);
-        return HandleResult(result);
+        
+        if (!result.IsSuccess)
+        {
+            return HandleResult(result);
+        }
+
+        // Generate HATEOAS links
+        var links = await GenerateTaskLinks(id, userId);
+        
+        return HandleResultWithLinks(result, links);
     }
 
     /// <summary>
@@ -119,7 +137,16 @@ public class TasksController(ICommandMediator commandMediator, IRequestMediator 
         };
 
         var result = await _commandMediator.Send(command);
-        return HandleResult(result, 201);
+        
+        if (!result.IsSuccess)
+        {
+            return HandleResult(result, 201);
+        }
+
+        // Generate HATEOAS links for the newly created task
+        var links = await GenerateTaskLinks(result.Value!.Id, userId);
+        
+        return HandleResultWithLinks(result, links, 201);
     }
 
     /// <summary>
@@ -146,7 +173,16 @@ public class TasksController(ICommandMediator commandMediator, IRequestMediator 
         };
 
         var result = await _commandMediator.Send(command);
-        return HandleResult(result);
+        
+        if (!result.IsSuccess)
+        {
+            return HandleResult(result);
+        }
+
+        // Generate HATEOAS links
+        var links = await GenerateTaskLinks(id, userId);
+        
+        return HandleResultWithLinks(result, links);
     }
 
     /// <summary>
@@ -174,7 +210,16 @@ public class TasksController(ICommandMediator commandMediator, IRequestMediator 
         };
 
         var result = await _commandMediator.Send(command);
-        return HandleResult(result);
+        
+        if (!result.IsSuccess)
+        {
+            return HandleResult(result);
+        }
+
+        // Generate HATEOAS links
+        var links = await GenerateTaskLinks(id, userId);
+        
+        return HandleResultWithLinks(result, links);
     }
 
     /// <summary>
@@ -226,7 +271,16 @@ public class TasksController(ICommandMediator commandMediator, IRequestMediator 
         };
 
         var result = await _commandMediator.Send(command);
-        return HandleResult(result);
+        
+        if (!result.IsSuccess)
+        {
+            return HandleResult(result);
+        }
+
+        // Generate HATEOAS links
+        var links = await GenerateTaskLinks(id, userId);
+        
+        return HandleResultWithLinks(result, links);
     }
 
     /// <summary>
@@ -253,7 +307,16 @@ public class TasksController(ICommandMediator commandMediator, IRequestMediator 
         };
 
         var result = await _commandMediator.Send(command);
-        return HandleResult(result);
+        
+        if (!result.IsSuccess)
+        {
+            return HandleResult(result);
+        }
+
+        // Generate HATEOAS links
+        var links = await GenerateTaskLinks(id, userId);
+        
+        return HandleResultWithLinks(result, links);
     }
 
     /// <summary>
@@ -280,7 +343,16 @@ public class TasksController(ICommandMediator commandMediator, IRequestMediator 
         };
 
         var result = await _commandMediator.Send(command);
-        return HandleResult(result);
+        
+        if (!result.IsSuccess)
+        {
+            return HandleResult(result);
+        }
+
+        // Generate HATEOAS links
+        var links = await GenerateTaskLinks(id, userId);
+        
+        return HandleResultWithLinks(result, links);
     }
 
     /// <summary>
@@ -307,7 +379,16 @@ public class TasksController(ICommandMediator commandMediator, IRequestMediator 
         };
 
         var result = await _commandMediator.Send(command);
-        return HandleResult(result);
+        
+        if (!result.IsSuccess)
+        {
+            return HandleResult(result);
+        }
+
+        // Generate HATEOAS links
+        var links = await GenerateTaskLinks(id, userId);
+        
+        return HandleResultWithLinks(result, links);
     }
 
     /// <summary>
@@ -335,7 +416,16 @@ public class TasksController(ICommandMediator commandMediator, IRequestMediator 
         };
 
         var result = await _commandMediator.Send(command);
-        return HandleResult(result);
+        
+        if (!result.IsSuccess)
+        {
+            return HandleResult(result);
+        }
+
+        // Generate HATEOAS links
+        var links = await GenerateTaskLinks(id, userId);
+        
+        return HandleResultWithLinks(result, links);
     }
 
     /// <summary>
@@ -389,6 +479,91 @@ public class TasksController(ICommandMediator commandMediator, IRequestMediator 
         };
 
         var result = await _commandMediator.Send(command);
+        
+        if (!result.IsSuccess)
+        {
+            return HandleResult(result);
+        }
+
+        // Generate HATEOAS links
+        var links = await GenerateTaskLinks(id, userId);
+        
+        return HandleResultWithLinks(result, links);
+    }
+
+    /// <summary>
+    ///     Reviews a completed task with rating and feedback (manager).
+    /// </summary>
+    /// <param name="id">The task ID.</param>
+    /// <param name="request">The review request.</param>
+    /// <returns>Updated task information.</returns>
+    [HttpPost("{id}/review-completed")]
+    [Authorize(Roles = "Manager,Admin")]
+    public async Task<IActionResult> ReviewCompletedTask(Guid id, [FromBody] ReviewCompletedTaskRequest request)
+    {
+        var command = new ReviewCompletedTaskCommand
+        {
+            TaskId = id,
+            Accepted = request.Accepted,
+            Rating = request.Rating,
+            Feedback = request.Feedback,
+            SendBackForRework = request.SendBackForRework
+        };
+
+        var result = await _commandMediator.Send(command);
+        
+        if (!result.IsSuccess)
+        {
+            return HandleResult(result);
+        }
+
+        // Get user ID from claims for HATEOAS generation
+        var userIdClaim = User.FindFirst("user_id")?.Value;
+        if (!string.IsNullOrEmpty(userIdClaim) && Guid.TryParse(userIdClaim, out var userId))
+        {
+            // Generate HATEOAS links
+            var links = await GenerateTaskLinks(id, userId);
+            return HandleResultWithLinks(result, links);
+        }
+        
         return HandleResult(result);
     }
+
+    /// <summary>
+    ///     Generates HATEOAS links for a task based on current user and task state.
+    /// </summary>
+    /// <param name="taskId">The task ID.</param>
+    /// <param name="userId">The current user ID.</param>
+    /// <returns>List of available action links.</returns>
+    private async Task<List<ApiActionLink>?> GenerateTaskLinks(Guid taskId, Guid userId)
+    {
+        // Fetch the task entity from the database
+        var task = await _context.Set<TaskManagement.Domain.Entities.Task>()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Id == taskId);
+
+        if (task == null)
+        {
+            return null;
+        }
+
+        // Get user role from claims
+        var userRole = User.FindFirst(ClaimTypes.Role)?.Value ?? "Employee";
+
+        // Generate HATEOAS links using the service
+        var links = _taskActionService.GetAvailableActions(task, userId, userRole);
+
+        return links;
+    }
+}
+
+/// <summary>
+///     Request DTO for reviewing a completed task.
+/// </summary>
+public class ReviewCompletedTaskRequest
+{
+    public bool Accepted { get; set; }
+    public int Rating { get; set; }
+    public string? Feedback { get; set; }
+    public bool SendBackForRework { get; set; }
 }

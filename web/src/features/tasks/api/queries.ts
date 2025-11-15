@@ -12,8 +12,11 @@ import type {
   RequestMoreInfoRequest,
   RequestDeadlineExtensionRequest,
   ApproveExtensionRequestRequest,
-  CreateTaskRequest
-, ExtensionRequestDto, TaskProgressDto } from "@/features/tasks/types";
+  CreateTaskRequest,
+  ExtensionRequestDto,
+  TaskProgressDto,
+  ReviewCompletedTaskRequest
+} from "@/features/tasks/types";
 
 
 export const taskKeys = {
@@ -48,13 +51,13 @@ export function useTaskDetailsQuery(taskId: string, enabled = true) {
     queryKey: taskKeys.detail(taskId),
     enabled,
     queryFn: async ({ signal }) => {
-      const { data } = await apiClient.request<TaskDto>({
+      const response = await apiClient.request<TaskDto>({
         path: `/tasks/${taskId}`,
         method: "GET",
         signal,
         locale
       });
-      return data;
+      return response; // Return full response including links
     }
   });
 }
@@ -272,6 +275,28 @@ export function useMarkTaskCompletedMutation(taskId: string) {
       await queryClient.invalidateQueries({ queryKey: taskKeys.detail(taskId) });
       await queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
       return data;
+    }
+  });
+}
+
+export function useReviewCompletedTaskMutation(taskId: string) {
+  const locale = useCurrentLocale();
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (payload: ReviewCompletedTaskRequest) => {
+      const { data } = await apiClient.request<TaskDto>({
+        path: `/tasks/${taskId}/review-completed`,
+        method: "POST",
+        body: payload,
+        locale
+      });
+      return data;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: taskKeys.detail(taskId) });
+      await queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
+      await queryClient.invalidateQueries({ queryKey: taskKeys.dashboard() });
     }
   });
 }

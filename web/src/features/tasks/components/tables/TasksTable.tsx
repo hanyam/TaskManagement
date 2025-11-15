@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { useCurrentLocale } from "@/core/routing/useCurrentLocale";
 import { TaskStatusBadge } from "@/features/tasks/components/TaskStatusBadge";
 import type { TaskDto } from "@/features/tasks/types";
+import { getTaskPriorityString, getReminderLevelString } from "@/features/tasks/value-objects";
 
 const columnHelper = createColumnHelper<TaskDto>();
 
@@ -55,7 +56,10 @@ export function TasksTable({ data, isLoading, onRowClick }: TasksTableProps) {
       }),
       columnHelper.accessor("priority", {
         header: () => t("tasks:list.table.columns.priority"),
-        cell: (info) => t(`common:priority.${info.getValue().toLowerCase()}`)
+        cell: (info) => {
+          const priorityString = getTaskPriorityString(info.getValue());
+          return t(`common:priority.${priorityString.toLowerCase()}`);
+        }
       }),
       columnHelper.accessor("dueDate", {
         header: () => t("tasks:list.table.columns.dueDate"),
@@ -63,7 +67,10 @@ export function TasksTable({ data, isLoading, onRowClick }: TasksTableProps) {
       }),
       columnHelper.accessor("reminderLevel", {
         header: () => t("tasks:list.table.columns.reminderLevel"),
-        cell: (info) => t(`common:reminderLevel.${info.getValue().toLowerCase()}`)
+        cell: (info) => {
+          const reminderString = getReminderLevelString(info.getValue());
+          return t(`common:reminderLevel.${reminderString.toLowerCase()}`);
+        }
       }),
       columnHelper.display({
         id: "actions",

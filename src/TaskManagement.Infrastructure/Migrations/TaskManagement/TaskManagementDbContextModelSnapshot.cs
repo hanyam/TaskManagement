@@ -88,7 +88,7 @@ namespace TaskManagement.Infrastructure.Migrations.TaskManagement
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("AssignedUserId")
+                    b.Property<Guid?>("AssignedUserId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
@@ -111,6 +111,13 @@ namespace TaskManagement.Infrastructure.Migrations.TaskManagement
 
                     b.Property<DateTime?>("ExtendedDueDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("ManagerFeedback")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int?>("ManagerRating")
+                        .HasColumnType("int");
 
                     b.Property<DateTime?>("OriginalDueDate")
                         .HasColumnType("datetime2");
@@ -342,8 +349,7 @@ namespace TaskManagement.Infrastructure.Migrations.TaskManagement
                     b.HasOne("TaskManagement.Domain.Entities.User", "AssignedUser")
                         .WithMany()
                         .HasForeignKey("AssignedUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("TaskManagement.Domain.Entities.User", "CreatedByUser")
                         .WithMany()

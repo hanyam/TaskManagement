@@ -3,12 +3,13 @@
 import { Dialog, Transition } from "@headlessui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { z } from "zod";
 
+import type { ApiErrorResponse } from "@/core/api/types";
 import {
   useAssignTaskMutation,
   useAcceptTaskMutation,
@@ -23,6 +24,7 @@ import {
 } from "@/features/tasks/api/queries";
 import { TaskStatusBadge } from "@/features/tasks/components/TaskStatusBadge";
 import type { AssignTaskRequest } from "@/features/tasks/types";
+import { getTaskTypeString, getTaskPriorityString } from "@/features/tasks/value-objects";
 import { Button } from "@/ui/components/Button";
 import { FormFieldError } from "@/ui/components/FormFieldError";
 import { Input } from "@/ui/components/Input";
@@ -33,16 +35,69 @@ interface TaskDetailsViewProps {
   taskId: string;
 }
 
+/**
+ * Helper function to display API errors properly in toast notifications
+ */
+function displayApiError(error: unknown, fallbackMessage: string) {
+  console.error("API Error:", error);
+  
+  if (error && typeof error === "object") {
+    const apiError = error as ApiErrorResponse;
+    
+    // Check if we have detailed errors array
+    if ("details" in apiError && apiError.details && apiError.details.length > 0) {
+      // Display all error messages from the API
+      apiError.details.forEach((detail) => {
+        const errorMessage = detail.field 
+          ? `${detail.field}: ${detail.message}` 
+          : detail.message;
+        toast.error(errorMessage);
+      });
+      return; // Exit after displaying errors
+    }
+    
+    // Check if we have a message property (for both ApiErrorResponse and generic Error)
+    if ("message" in apiError && apiError.message) {
+      toast.error(apiError.message);
+      return;
+    }
+    
+    // Check if we have rawMessage (specific to ApiErrorResponse)
+    if ("rawMessage" in apiError && apiError.rawMessage) {
+      toast.error(apiError.rawMessage);
+      return;
+    }
+  }
+  
+  // Final fallback for unknown errors
+  toast.error(fallbackMessage);
+}
+
 export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
   const { t } = useTranslation(["tasks", "common"]);
   const router = useRouter();
-  const { data: task, isLoading, error, refetch } = useTaskDetailsQuery(taskId, Boolean(taskId));
+  const { data: response, isLoading, error, refetch } = useTaskDetailsQuery(taskId, Boolean(taskId));
+  
+  const task = response?.data;
+  const links = response?.links ?? [];
+  
+  // Helper to check if a HATEOAS link relation exists
+  const hasLink = (rel: string) => links.some(link => link.rel === rel);
 
   const acceptMutation = useAcceptTaskMutation(taskId);
   const assignMutation = useAssignTaskMutation(taskId);
   const reassignMutation = useReassignTaskMutation(taskId);
   const rejectMutation = useRejectTaskMutation(taskId);
   const markCompleteMutation = useMarkTaskCompletedMutation(taskId);
+  
+  const [isCancelDialogOpen, setCancelDialogOpen] = useState(false);
+
+  // Display query errors via toast
+  useEffect(() => {
+    if (error) {
+      displayApiError(error, t("tasks:errors.loadFailed"));
+    }
+  }, [error, t]);
 
   const [isAssignOpen, setAssignOpen] = useState(false);
   const [isReassignOpen, setReassignOpen] = useState(false);
@@ -78,7 +133,10 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
       },
       {
         label: t("tasks:details.metadata.type"),
-        value: t(`common:taskType.${task.type.charAt(0).toLowerCase()}${task.type.slice(1)}`)
+        value: (() => {
+          const typeString = getTaskTypeString(task.type);
+          return t(`common:taskType.${typeString.charAt(0).toLowerCase()}${typeString.slice(1)}`);
+        })()
       },
       {
         label: t("tasks:details.metadata.progress"),
@@ -107,21 +165,44 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
   }
 
   async function handleAcceptTask() {
-    await acceptMutation.mutateAsync();
-    toast.success(t("tasks:details.actions.accept"));
-    refetch();
+    try {
+      await acceptMutation.mutateAsync();
+      toast.success(t("tasks:details.actions.accept"));
+      refetch();
+    } catch (error) {
+      displayApiError(error, t("validation:server.INTERNAL_ERROR"));
+    }
   }
 
   async function handleRejectTask() {
-    await rejectMutation.mutateAsync({ reason: "" });
-    toast.success(t("tasks:details.actions.reject"));
-    refetch();
+    try {
+      await rejectMutation.mutateAsync({ reason: "" });
+      toast.success(t("tasks:details.actions.reject"));
+      refetch();
+    } catch (error) {
+      displayApiError(error, t("validation:server.INTERNAL_ERROR"));
+    }
   }
 
   async function handleMarkCompleted() {
-    await markCompleteMutation.mutateAsync();
-    toast.success(t("tasks:details.actions.markCompleted"));
-    router.refresh();
+    try {
+      await markCompleteMutation.mutateAsync();
+      toast.success(t("tasks:details.actions.markCompleted"));
+      router.refresh();
+    } catch (error) {
+      displayApiError(error, t("validation:server.INTERNAL_ERROR"));
+    }
+  }
+
+  function handleEditTask() {
+    // TODO: Create edit task page at /tasks/[taskId]/edit
+    toast.info("Edit task functionality will be implemented soon");
+  }
+
+  async function handleCancelTask() {
+    // TODO: Implement cancel task API call when endpoint is available
+    setCancelDialogOpen(false);
+    toast.info("Cancel task functionality will be implemented soon");
   }
 
   return (
@@ -135,7 +216,7 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
             </div>
             <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
               <span>
-                {t("common:filters.priority")}: {t(`common:priority.${task.priority.toLowerCase()}`)}
+                {t("common:filters.priority")}: {t(`common:priority.${getTaskPriorityString(task.priority).toLowerCase()}`)}
               </span>
               <span>
                 {t("common:filters.assignedTo")}: {task.assignedUserEmail ?? "—"}
@@ -147,33 +228,61 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <Button variant="secondary" onClick={() => setProgressOpen(true)}>
-              {t("tasks:details.actions.updateProgress")}
-            </Button>
-            <Button variant="outline" onClick={() => setMoreInfoOpen(true)}>
-              {t("tasks:details.actions.requestInfo")}
-            </Button>
-            <Button variant="outline" onClick={() => setExtensionOpen(true)}>
-              {t("tasks:details.actions.requestExtension")}
-            </Button>
-            <Button variant="outline" onClick={() => setApproveExtensionOpen(true)}>
-              {t("tasks:details.actions.approveExtension")}
-            </Button>
-            <Button variant="outline" onClick={() => setAssignOpen(true)}>
-              {t("tasks:forms.assign.title")}
-            </Button>
-            <Button variant="outline" onClick={() => setReassignOpen(true)}>
-              {t("tasks:forms.assign.title")}
-            </Button>
-            <Button variant="primary" onClick={handleAcceptTask} disabled={acceptMutation.isPending}>
-              {t("tasks:details.actions.accept")}
-            </Button>
-            <Button variant="outline" onClick={handleRejectTask} disabled={rejectMutation.isPending}>
-              {t("tasks:details.actions.reject")}
-            </Button>
-            <Button variant="destructive" onClick={handleMarkCompleted} disabled={markCompleteMutation.isPending}>
-              {t("tasks:details.actions.markCompleted")}
-            </Button>
+            {hasLink("update") && (
+              <Button variant="secondary" onClick={handleEditTask}>
+                {t("common:actions.edit")}
+              </Button>
+            )}
+            {hasLink("cancel") && (
+              <Button variant="destructive" onClick={() => setCancelDialogOpen(true)}>
+                {t("common:actions.cancel")}
+              </Button>
+            )}
+            {hasLink("accept") && (
+              <Button variant="primary" onClick={handleAcceptTask} disabled={acceptMutation.isPending}>
+                {t("tasks:details.actions.accept")}
+              </Button>
+            )}
+            {hasLink("reject") && (
+              <Button variant="outline" onClick={handleRejectTask} disabled={rejectMutation.isPending}>
+                {t("tasks:details.actions.reject")}
+              </Button>
+            )}
+            {hasLink("assign") && (
+              <Button variant="outline" onClick={() => setAssignOpen(true)}>
+                {t("tasks:forms.assign.title")}
+              </Button>
+            )}
+            {hasLink("reassign") && (
+              <Button variant="outline" onClick={() => setReassignOpen(true)}>
+                {t("tasks:forms.assign.title")}
+              </Button>
+            )}
+            {hasLink("update-progress") && (
+              <Button variant="secondary" onClick={() => setProgressOpen(true)}>
+                {t("tasks:details.actions.updateProgress")}
+              </Button>
+            )}
+            {hasLink("mark-completed") && (
+              <Button variant="destructive" onClick={handleMarkCompleted} disabled={markCompleteMutation.isPending}>
+                {t("tasks:details.actions.markCompleted")}
+              </Button>
+            )}
+            {hasLink("request-extension") && (
+              <Button variant="outline" onClick={() => setExtensionOpen(true)}>
+                {t("tasks:details.actions.requestExtension")}
+              </Button>
+            )}
+            {hasLink("approve-extension") && (
+              <Button variant="outline" onClick={() => setApproveExtensionOpen(true)}>
+                {t("tasks:details.actions.approveExtension")}
+              </Button>
+            )}
+            {hasLink("request-more-info") && (
+              <Button variant="outline" onClick={() => setMoreInfoOpen(true)}>
+                {t("tasks:details.actions.requestInfo")}
+              </Button>
+            )}
           </div>
         </div>
       </header>
@@ -241,6 +350,40 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
       <RequestExtensionDialog open={isExtensionOpen} onOpenChange={setExtensionOpen} taskId={task.id} />
       <RequestMoreInfoDialog open={isMoreInfoOpen} onOpenChange={setMoreInfoOpen} taskId={task.id} />
       <ApproveExtensionDialog open={isApproveExtensionOpen} onOpenChange={setApproveExtensionOpen} taskId={task.id} />
+      
+      {/* Cancel Task Confirmation Dialog */}
+      <Dialog open={isCancelDialogOpen} onClose={setCancelDialogOpen} as="div" className="relative z-50">
+        <Transition appear show={isCancelDialogOpen} as={Fragment}>
+          <div className="fixed inset-0 bg-black/40" aria-hidden />
+        </Transition>
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <Transition
+            appear
+            show={isCancelDialogOpen}
+            as={Fragment}
+            enter="transition ease-out duration-150"
+            enterFrom="opacity-0 scale-95"
+            enterTo="opacity-100 scale-100"
+          >
+            <Dialog.Panel className="w-full max-w-md space-y-4 rounded-xl border border-border bg-background p-6 shadow-lg">
+              <Dialog.Title className="text-lg font-semibold text-foreground">
+                {t("tasks:details.actions.cancelTask")}
+              </Dialog.Title>
+              <p className="text-sm text-muted-foreground">
+                {t("tasks:details.actions.cancelTaskConfirm")}
+              </p>
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => setCancelDialogOpen(false)}>
+                  {t("common:actions.close")}
+                </Button>
+                <Button type="button" variant="destructive" onClick={handleCancelTask}>
+                  {t("tasks:details.actions.cancelTask")}
+                </Button>
+              </div>
+            </Dialog.Panel>
+          </Transition>
+        </div>
+      </Dialog>
     </div>
   );
 }
@@ -285,16 +428,20 @@ function AssignTaskDialog({ open, onOpenChange, mutation, mode = "assign" }: Ass
   });
 
   async function onSubmit(values: { userIds: string }) {
-    const userIds = values.userIds
-      .split(",")
-      .map((id) => id.trim())
-      .filter(Boolean);
+    try {
+      const userIds = values.userIds
+        .split(",")
+        .map((id) => id.trim())
+        .filter(Boolean);
 
-    await mutation.mutateAsync({ userIds });
-    toast.success(
-      mode === "assign" ? t("tasks:forms.assign.success") : t("tasks:forms.assign.success")
-    );
-    onOpenChange(false);
+      await mutation.mutateAsync({ userIds });
+      toast.success(
+        mode === "assign" ? t("tasks:forms.assign.success") : t("tasks:forms.assign.success")
+      );
+      onOpenChange(false);
+    } catch (error) {
+      displayApiError(error, t("validation:server.INTERNAL_ERROR"));
+    }
   }
 
   return (
@@ -365,9 +512,13 @@ function UpdateProgressDialog({ open, onOpenChange, taskId }: ModalProps) {
   });
 
   async function onSubmit(values: { progressPercentage: number; notes?: string | null }) {
-    await mutation.mutateAsync(values);
-    toast.success(t("tasks:forms.progress.success"));
-    onOpenChange(false);
+    try {
+      await mutation.mutateAsync(values);
+      toast.success(t("tasks:forms.progress.success"));
+      onOpenChange(false);
+    } catch (error) {
+      displayApiError(error, t("validation:server.INTERNAL_ERROR"));
+    }
   }
 
   return (
@@ -449,12 +600,16 @@ function RequestExtensionDialog({ open, onOpenChange, taskId }: ModalProps) {
   });
 
   async function onSubmit(values: { requestedDueDate: string; reason: string }) {
-    await mutation.mutateAsync({
-      requestedDueDate: new Date(values.requestedDueDate).toISOString(),
-      reason: values.reason
-    });
-    toast.success(t("tasks:forms.extension.success"));
-    onOpenChange(false);
+    try {
+      await mutation.mutateAsync({
+        requestedDueDate: new Date(values.requestedDueDate).toISOString(),
+        reason: values.reason
+      });
+      toast.success(t("tasks:forms.extension.success"));
+      onOpenChange(false);
+    } catch (error) {
+      displayApiError(error, t("validation:server.INTERNAL_ERROR"));
+    }
   }
 
   return (
@@ -534,9 +689,13 @@ function RequestMoreInfoDialog({ open, onOpenChange, taskId }: ModalProps) {
   });
 
   async function onSubmit(values: { requestMessage: string }) {
-    await mutation.mutateAsync(values);
-    toast.success(t("tasks:details.actions.requestInfo"));
-    onOpenChange(false);
+    try {
+      await mutation.mutateAsync(values);
+      toast.success(t("tasks:details.actions.requestInfo"));
+      onOpenChange(false);
+    } catch (error) {
+      displayApiError(error, t("validation:server.INTERNAL_ERROR"));
+    }
   }
 
   return (
@@ -607,12 +766,16 @@ function ApproveExtensionDialog({ open, onOpenChange, taskId }: ModalProps) {
   });
 
   async function onSubmit(values: { extensionRequestId: string; reviewNotes?: string | null }) {
-    await mutation.mutateAsync({
-      requestId: values.extensionRequestId,
-      reviewNotes: values.reviewNotes ?? null
-    });
-    toast.success(t("tasks:forms.approveExtension.success"));
-    onOpenChange(false);
+    try {
+      await mutation.mutateAsync({
+        requestId: values.extensionRequestId,
+        reviewNotes: values.reviewNotes ?? null
+      });
+      toast.success(t("tasks:forms.approveExtension.success"));
+      onOpenChange(false);
+    } catch (error) {
+      displayApiError(error, t("validation:server.INTERNAL_ERROR"));
+    }
   }
 
   return (

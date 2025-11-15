@@ -12,6 +12,7 @@ public class ApiResponse<T>
     public List<Error> Errors { get; set; } = new();
     public DateTime Timestamp { get; set; } = DateTime.UtcNow;
     public string? TraceId { get; set; }
+    public List<ApiActionLink>? Links { get; set; }
 
     public static ApiResponse<T> SuccessResponse(T data, string? message = null)
     {

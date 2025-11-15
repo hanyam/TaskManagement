@@ -40,10 +40,10 @@ public class MarkTaskCompletedCommandHandler : ICommandHandler<MarkTaskCompleted
             return Result<TaskDto>.Failure(errors);
         }
 
-        // Complete task
+        // Mark task as completed by employee (moves to PendingManagerReview)
         try
         {
-            task.Complete();
+            task.MarkCompletedByEmployee();
             task.SetUpdatedBy(request.CompletedById.ToString());
         }
         catch (Exception ex)
@@ -79,7 +79,9 @@ public class MarkTaskCompletedCommandHandler : ICommandHandler<MarkTaskCompleted
             ProgressPercentage = task.ProgressPercentage,
             CreatedById = task.CreatedById,
             CreatedAt = task.CreatedAt,
-            CreatedBy = task.CreatedBy
+            CreatedBy = task.CreatedBy,
+            ManagerRating = task.ManagerRating,
+            ManagerFeedback = task.ManagerFeedback
         };
     }
 }

@@ -18,7 +18,8 @@ export function parseEnvelope<T>(payload: unknown): ApiEnvelope<T> {
     message: envelope.message ?? null,
     errors: envelope.errors ?? [],
     traceId: envelope.traceId ?? null,
-    ...(envelope.timestamp !== undefined ? { timestamp: envelope.timestamp } : {})
+    ...(envelope.timestamp !== undefined ? { timestamp: envelope.timestamp } : {}),
+    ...(envelope.links !== undefined ? { links: envelope.links } : {})
   };
 }
 

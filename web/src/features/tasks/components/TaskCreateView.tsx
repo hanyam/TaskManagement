@@ -10,6 +10,7 @@ import { z } from "zod";
 import { useCurrentLocale } from "@/core/routing/useCurrentLocale";
 import { useCreateTaskMutation } from "@/features/tasks/api/queries";
 import type { TaskPriority, TaskType } from "@/features/tasks/value-objects";
+import { TaskPriorityEnum, TaskTypeEnum } from "@/features/tasks/value-objects";
 import { Button } from "@/ui/components/Button";
 import { FormFieldError } from "@/ui/components/FormFieldError";
 import { Input } from "@/ui/components/Input";
@@ -63,11 +64,11 @@ export function TaskCreateView() {
       await mutateAsync({
         title: values.title,
         description: values.description ? values.description : null,
-        priority: values.priority,
+        priority: TaskPriorityEnum[values.priority], // Convert string to numeric enum
         assignedUserId: values.assignedUserId && values.assignedUserId.trim() !== "" 
           ? values.assignedUserId 
           : null, // Null for draft tasks
-        type: values.type,
+        type: TaskTypeEnum[values.type], // Convert string to numeric enum
         dueDate: values.dueDate ? new Date(values.dueDate).toISOString() : null
       });
       router.push(`/${locale}/tasks`);

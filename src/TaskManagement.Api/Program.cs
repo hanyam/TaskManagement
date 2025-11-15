@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using TaskManagement.Api;
+using TaskManagement.Api.Extensions;
 using TaskManagement.Api.Middleware;
 using TaskManagement.Application;
 using TaskManagement.Infrastructure;
@@ -56,15 +57,8 @@ app.MapControllers();
 // Add health check endpoint
 app.MapHealthChecks("/health");
 
-// Ensure database is created (skip in test environment)
-if (!app.Environment.IsEnvironment("Testing"))
-{
-    using (var scope = app.Services.CreateScope())
-    {
-        var context = scope.ServiceProvider.GetRequiredService<TaskManagementDbContext>();
-        context.Database.EnsureCreated();
-    }
-}
+// Apply any pending migrations automatically
+app.ApplyMigrations();
 
 try
 {

@@ -46,7 +46,11 @@
       "requestInfo": "طلب معلومات",
       "updateProgress": "تحديث التقدم",
       "requestExtension": "طلب تمديد",
-      "approveExtension": "اعتماد طلب التمديد"
+      "approveExtension": "اعتماد طلب التمديد",
+      "reviewCompleted": "مراجعة وتقييم",
+      "sendBackForRework": "إعادة للتعديل",
+      "cancelTask": "إلغاء المهمة",
+      "cancelTaskConfirm": "هل أنت متأكد من إلغاء هذه المهمة؟ لا يمكن التراجع عن هذا الإجراء."
     }
   },
   "forms": {
@@ -94,7 +98,32 @@
         "reviewNotes": "ملاحظات المراجعة"
       },
       "success": "تم اعتماد طلب التمديد."
+    },
+    "reviewCompleted": {
+      "title": "مراجعة المهمة المكتملة",
+      "description": "راجع عمل الموظف وقدم تقييمًا وملاحظات.",
+      "decision": "القرار",
+      "decisionOptions": {
+        "accept": "قبول (المهمة مكتملة بنجاح)",
+        "reject": "رفض (إغلاق كفاشلة)",
+        "sendBack": "إعادة للتعديل"
+      },
+      "fields": {
+        "rating": "التقييم (1-5 نجوم)",
+        "ratingRequired": "التقييم مطلوب",
+        "feedback": "الملاحظات (اختيارية)",
+        "feedbackPlaceholder": "قدم ملاحظات للموظف..."
+      },
+      "actions": {
+        "submit": "إرسال المراجعة",
+        "cancel": "إلغاء"
+      },
+      "success": "تم إرسال مراجعة المهمة بنجاح.",
+      "error": "فشل إرسال المراجعة. يرجى المحاولة مرة أخرى."
     }
+  },
+  "errors": {
+    "loadFailed": "فشل تحميل تفاصيل المهمة. يرجى المحاولة مرة أخرى."
   }
 }
 

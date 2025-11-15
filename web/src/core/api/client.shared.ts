@@ -122,14 +122,16 @@ export function createApiClient(resolveAuthToken: ResolveAuthTokenFn): ApiClient
           return {
             data: {} as TResponse,
             message: envelope.message ?? null,
-            traceId: envelope.traceId ?? null
+            traceId: envelope.traceId ?? null,
+            links: envelope.links ?? undefined
           };
         }
 
         return {
           data: envelope.data,
           message: envelope.message ?? null,
-          traceId: envelope.traceId ?? null
+          traceId: envelope.traceId ?? null,
+          links: envelope.links ?? undefined
         };
       } catch (error) {
         if (error instanceof Error && error.name === "ApiError") {

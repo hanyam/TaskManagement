@@ -1,23 +1,26 @@
-import type { TaskStatus, TaskPriority, TaskType, ReminderLevel, ExtensionRequestStatus, ProgressStatus } from "@/features/tasks/value-objects";
+import type { TaskStatus, TaskPriority, ReminderLevel, ExtensionRequestStatus, ProgressStatus } from "@/features/tasks/value-objects";
 
+// API response types (backend sends numeric enums)
 export interface TaskDto {
   id: string;
   title: string;
   description?: string | null;
-  status: TaskStatus;
-  priority: TaskPriority;
+  status: number; // Numeric enum from backend
+  priority: number; // Numeric enum from backend
   dueDate?: string | null;
   originalDueDate?: string | null;
   extendedDueDate?: string | null;
   assignedUserId: string;
   assignedUserEmail?: string | null;
-  type: TaskType;
-  reminderLevel: ReminderLevel;
+  type: number; // Numeric enum from backend
+  reminderLevel: number; // Numeric enum from backend
   progressPercentage?: number | null;
   createdById: string;
   createdBy: string;
   createdAt: string;
   updatedAt?: string | null;
+  managerRating?: number | null;
+  managerFeedback?: string | null;
   assignments?: TaskAssignmentDto[];
   recentProgressHistory?: TaskProgressDto[];
 }
@@ -94,10 +97,10 @@ export interface DashboardStatsDto {
 export interface CreateTaskRequest {
   title: string;
   description?: string | null;
-  priority: TaskPriority;
+  priority: number; // Numeric enum value (0=Low, 1=Medium, 2=High, 3=Critical)
   dueDate?: string | null;
   assignedUserId?: string | null; // Optional - null for draft tasks
-  type: TaskType;
+  type: number; // Numeric enum value (0=Simple, 1=WithDueDate, 2=WithProgress, 3=WithAcceptedProgress)
 }
 
 export interface AssignTaskRequest {
@@ -120,5 +123,12 @@ export interface RequestDeadlineExtensionRequest {
 
 export interface ApproveExtensionRequestRequest {
   reviewNotes?: string | null;
+}
+
+export interface ReviewCompletedTaskRequest {
+  accepted: boolean;
+  rating: number; // 1-5
+  feedback?: string | null;
+  sendBackForRework: boolean;
 }
 

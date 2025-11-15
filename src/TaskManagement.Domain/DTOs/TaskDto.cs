@@ -25,6 +25,8 @@ public class TaskDto
     public string CreatedBy { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
+    public int? ManagerRating { get; set; }
+    public string? ManagerFeedback { get; set; }
     public List<TaskAssignmentDto> Assignments { get; set; } = new();
     public List<TaskProgressDto> RecentProgressHistory { get; set; } = new();
 }

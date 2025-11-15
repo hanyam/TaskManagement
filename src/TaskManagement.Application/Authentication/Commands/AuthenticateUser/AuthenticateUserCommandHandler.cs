@@ -95,7 +95,8 @@ public class AuthenticateUserCommandHandler : ICommandHandler<AuthenticateUserCo
             { "user_id", user.Id.ToString() },
             { "display_name", user.DisplayName },
             { "first_name", user.FirstName },
-            { "last_name", user.LastName }
+            { "last_name", user.LastName },
+            { "role", user.Role.ToString() }
         };
 
         var jwtResult = await _authenticationService.GenerateJwtTokenAsync(email!, additionalClaims, cancellationToken);

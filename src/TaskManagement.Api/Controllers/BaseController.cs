@@ -26,10 +26,20 @@ public abstract class BaseController(ICommandMediator commandMediator, IRequestM
     {
         if (result.IsSuccess) return StatusCode(successStatusCode, ApiResponse<T>.SuccessResponse(result.Value!));
 
-        return result.Errors.Any()
-            ? BadRequest(ApiResponse<T>.ErrorResponse(result.Errors, HttpContext.TraceIdentifier))
-            : BadRequest(ApiResponse<T>.ErrorResponse(result.Error?.Message ?? "An error occurred",
-                HttpContext.TraceIdentifier));
+        // Collect all errors (both single Error and Errors collection)
+        var allErrors = new List<Error>();
+        if (result.Errors.Any())
+        {
+            allErrors.AddRange(result.Errors);
+        }
+        if (result.Error != null)
+        {
+            allErrors.Add(result.Error);
+        }
+
+        return allErrors.Any()
+            ? BadRequest(ApiResponse<T>.ErrorResponse(allErrors, HttpContext.TraceIdentifier))
+            : BadRequest(ApiResponse<T>.ErrorResponse("An error occurred", HttpContext.TraceIdentifier));
     }
 
     /// <summary>
@@ -42,8 +52,52 @@ public abstract class BaseController(ICommandMediator commandMediator, IRequestM
     {
         if (result.IsSuccess) return StatusCode(successStatusCode, ApiResponse.SuccessResponse());
 
-        return result.Errors.Any()
-            ? BadRequest(ApiResponse.ErrorResponse(result.Errors, HttpContext.TraceIdentifier))
-            : BadRequest(ApiResponse.ErrorResponse(result.Error?.Message ?? "An error occurred", HttpContext.TraceIdentifier));
+        // Collect all errors (both single Error and Errors collection)
+        var allErrors = new List<Error>();
+        if (result.Errors.Any())
+        {
+            allErrors.AddRange(result.Errors);
+        }
+        if (result.Error != null)
+        {
+            allErrors.Add(result.Error);
+        }
+
+        return allErrors.Any()
+            ? BadRequest(ApiResponse.ErrorResponse(allErrors, HttpContext.TraceIdentifier))
+            : BadRequest(ApiResponse.ErrorResponse("An error occurred", HttpContext.TraceIdentifier));
+    }
+
+    /// <summary>
+    ///     Handles the result with HATEOAS links.
+    /// </summary>
+    /// <typeparam name="T">The type of data being returned.</typeparam>
+    /// <param name="result">The result from the command/query handler.</param>
+    /// <param name="links">HATEOAS links to include in the response.</param>
+    /// <param name="successStatusCode">HTTP status code for successful operations.</param>
+    /// <returns>HTTP response with standardized format including HATEOAS links.</returns>
+    protected IActionResult HandleResultWithLinks<T>(Result<T> result, List<ApiActionLink>? links, int successStatusCode = 200)
+    {
+        if (result.IsSuccess)
+        {
+            var response = ApiResponse<T>.SuccessResponse(result.Value!);
+            response.Links = links;
+            return StatusCode(successStatusCode, response);
+        }
+
+        // Collect all errors (both single Error and Errors collection)
+        var allErrors = new List<Error>();
+        if (result.Errors.Any())
+        {
+            allErrors.AddRange(result.Errors);
+        }
+        if (result.Error != null)
+        {
+            allErrors.Add(result.Error);
+        }
+
+        return allErrors.Any()
+            ? BadRequest(ApiResponse<T>.ErrorResponse(allErrors, HttpContext.TraceIdentifier))
+            : BadRequest(ApiResponse<T>.ErrorResponse("An error occurred", HttpContext.TraceIdentifier));
     }
 }

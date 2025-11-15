@@ -46,7 +46,11 @@
       "requestInfo": "Request information",
       "updateProgress": "Update progress",
       "requestExtension": "Request extension",
-      "approveExtension": "Approve extension"
+      "approveExtension": "Approve extension",
+      "reviewCompleted": "Review & Rate",
+      "sendBackForRework": "Send Back for Rework",
+      "cancelTask": "Cancel Task",
+      "cancelTaskConfirm": "Are you sure you want to cancel this task? This action cannot be undone."
     }
   },
   "forms": {
@@ -94,7 +98,32 @@
         "reviewNotes": "Review notes"
       },
       "success": "Extension request approved."
+    },
+    "reviewCompleted": {
+      "title": "Review Completed Task",
+      "description": "Review the employee's work and provide a rating and feedback.",
+      "decision": "Decision",
+      "decisionOptions": {
+        "accept": "Accept (task successfully completed)",
+        "reject": "Reject (close as failed)",
+        "sendBack": "Send back for rework"
+      },
+      "fields": {
+        "rating": "Rating (1-5 stars)",
+        "ratingRequired": "Rating is required",
+        "feedback": "Feedback (optional)",
+        "feedbackPlaceholder": "Provide feedback for the employee..."
+      },
+      "actions": {
+        "submit": "Submit Review",
+        "cancel": "Cancel"
+      },
+      "success": "Task review submitted successfully.",
+      "error": "Failed to submit review. Please try again."
     }
+  },
+  "errors": {
+    "loadFailed": "Failed to load task details. Please try again."
   }
 }
 

@@ -81,7 +81,9 @@
     "accepted": "Accepted",
     "rejected": "Rejected",
     "completed": "Completed",
-    "cancelled": "Cancelled"
+    "cancelled": "Cancelled",
+    "pendingManagerReview": "Pending Manager Review",
+    "rejectedByManager": "Rejected by Manager"
   },
   "taskType": {
     "simple": "Simple",

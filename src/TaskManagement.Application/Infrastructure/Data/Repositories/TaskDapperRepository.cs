@@ -26,6 +26,7 @@ public class TaskDapperRepository : DapperQueryRepository<Task>
                 T.Id, T.Title, T.Description, T.Status, T.Priority, T.DueDate, 
                 T.OriginalDueDate, T.ExtendedDueDate, T.Type, T.ReminderLevel, T.ProgressPercentage,
                 T.AssignedUserId, T.CreatedById, T.CreatedAt, T.UpdatedAt, T.CreatedBy,
+                T.ManagerRating, T.ManagerFeedback,
                 U.Email AS AssignedUserEmail
             FROM [Tasks].[Tasks] AS T
             LEFT JOIN [Tasks].[Users] AS U ON T.AssignedUserId = U.Id

@@ -9,10 +9,12 @@ import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
 
+import { apiClient } from "@/core/api";
 import { useAuth } from "@/core/auth/AuthProvider";
 import type { AuthSession } from "@/core/auth/types";
 import type { SupportedLocale } from "@/core/routing/locales";
 import { useAzureAdLogin } from "@/features/auth/hooks/useAzureAdLogin";
+import type { AuthenticationResponse } from "@/features/auth/types";
 import { Button } from "@/ui/components/Button";
 import { FormFieldError } from "@/ui/components/FormFieldError";
 import { Input } from "@/ui/components/Input";
@@ -31,27 +33,6 @@ interface SignInFormProps {
   redirectTo?: string | undefined;
 }
 
-interface LoginResponse {
-  success: boolean;
-  data: {
-    user: {
-      id: string;
-      email: string;
-      firstName: string;
-      lastName: string;
-      displayName: string;
-      isActive: boolean;
-      createdAt: string;
-      lastLoginAt?: string | null;
-      role?: string | null;
-    };
-    token: string;
-    expiresIn: number;
-  };
-  errors?: Array<{ code: string; message: string; field?: string | null }>;
-  message?: string;
-}
-
 export function SignInForm({ locale, redirectTo }: SignInFormProps) {
   const { t } = useTranslation(["auth", "common", "validation"]);
   const router = useRouter();
@@ -68,25 +49,15 @@ export function SignInForm({ locale, redirectTo }: SignInFormProps) {
 
   const { mutateAsync, isPending } = useMutation({
     mutationFn: async (values: SignInFormValues) => {
-      const response = await fetch("/api/auth/login", {
+      // Send directly to backend API
+      const { data } = await apiClient.request<AuthenticationResponse>({
+        path: "/authentication/authenticate",
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(values),
-        credentials: "include",
-        cache: "no-store"
+        body: values,
+        auth: false
       });
 
-      const payload = (await response.json()) as LoginResponse;
-
-      if (!response.ok || !payload.success) {
-        const error = new Error(payload.message ?? "auth:signIn.invalidToken");
-        (error as Error & { details?: LoginResponse["errors"] }).details = payload.errors;
-        throw error;
-      }
-
-      return payload.data;
+      return data;
     }
   });
 
@@ -95,7 +66,7 @@ export function SignInForm({ locale, redirectTo }: SignInFormProps) {
       const data = await mutateAsync(values);
 
       const session: AuthSession = {
-        token: data.token,
+        token: data.accessToken,
         user: {
           id: data.user.id,
           email: data.user.email,
@@ -110,26 +81,10 @@ export function SignInForm({ locale, redirectTo }: SignInFormProps) {
       router.push(targetPath);
       router.refresh();
     } catch (error) {
-      const err = error as Error & { details?: LoginResponse["errors"] };
-      if (err.details?.length) {
-        err.details.forEach((detail) => {
-          if (detail.field) {
-            const normalizedField = `${detail.field.charAt(0).toLowerCase()}${detail.field.slice(1)}`;
-            if (normalizedField in form.getValues()) {
-              form.setError(normalizedField as keyof SignInFormValues, {
-                type: "server",
-                message: detail.message
-              });
-              return;
-            }
-          }
-        });
-      } else {
-        form.setError("azureAdToken", {
-          type: "server",
-          message: t("auth:signIn.invalidToken")
-        });
-      }
+      form.setError("azureAdToken", {
+        type: "server",
+        message: t("auth:signIn.invalidToken")
+      });
     }
   }
 

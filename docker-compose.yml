@@ -27,10 +27,11 @@ services:
       dockerfile: src/TaskManagement.Api/Dockerfile
     container_name: taskmanagement-api
     ports:
-      - "5000:5000"
-      #- "5001:5001"
+      - "5000:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=8080
+      - ASPNETCORE_URLS=http://+:8080
       - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=TaskManagement;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True;
     depends_on:
       - sqlserver
@@ -41,12 +42,19 @@ services:
     build:
       context: .
       dockerfile: web/Dockerfile
+      args:
+        # These will read from .env file in the repository root
+        # Or you can set them directly here
+        - NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL:-http://localhost:5000}
+        - NEXT_PUBLIC_APP_NAME=${NEXT_PUBLIC_APP_NAME:-Task Management Console}
+        - NEXT_PUBLIC_AZURE_AD_CLIENT_ID=${NEXT_PUBLIC_AZURE_AD_CLIENT_ID}
+        - NEXT_PUBLIC_AZURE_AD_TENANT_ID=${NEXT_PUBLIC_AZURE_AD_TENANT_ID}
+        - NEXT_PUBLIC_AZURE_AD_REDIRECT_URI=${NEXT_PUBLIC_AZURE_AD_REDIRECT_URI:-http://localhost:3000}
+        - NEXT_PUBLIC_AZURE_AD_SCOPES=${NEXT_PUBLIC_AZURE_AD_SCOPES}
     container_name: taskmanagement-web
     ports:
       - "3000:3000"
     environment:
-      - NEXT_PUBLIC_API_BASE_URL=http://taskmanagement-api:5000
-      - NEXT_PUBLIC_APP_NAME=Task Management Console
       - NODE_ENV=production
     depends_on:
       - taskmanagement.api

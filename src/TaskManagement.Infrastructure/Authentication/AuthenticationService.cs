@@ -148,7 +148,11 @@ public class AuthenticationService : IAuthenticationService
             // Add additional claims if provided
             if (additionalClaims != null)
                 foreach (var claim in additionalClaims)
-                    claims.Add(new Claim(claim.Key, claim.Value));
+                {
+                    // Use ClaimTypes.Role for role claim so [Authorize(Roles = "...")] works
+                    var claimType = claim.Key == "role" ? ClaimTypes.Role : claim.Key;
+                    claims.Add(new Claim(claimType, claim.Value));
+                }
 
             var token = new JwtSecurityToken(
                 _jwtOptions.Issuer,

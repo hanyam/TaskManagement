@@ -427,6 +427,45 @@ services.AddScoped<IExternalAuthProvider, GoogleAuthProvider>();
 - **Request/Response Logging**: Pipeline behavior for request tracking
 - **Exception Handling**: Global exception handling with standardized responses
 
+## 🌐 Web UI
+
+A modern Next.js front-end is available in the `web/` directory with:
+
+- **Next.js 14 App Router** - Server-side rendering and routing
+- **TypeScript** - Type-safe development
+- **TanStack Query** - Server state management
+- **React Hook Form + Zod** - Form validation
+- **Tailwind CSS** - Modern styling
+- **Internationalization** - Arabic and English with RTL support
+- **Azure AD SSO** - Single sign-on integration
+
+### Quick Start (Web UI)
+
+```bash
+cd web
+npm install
+npm run dev
+# Navigate to http://localhost:3000
+```
+
+### Azure AD Configuration (Web UI)
+
+See the web UI documentation for Azure AD setup:
+- **[Quick Start Guide](web/AZURE_AD_QUICKSTART.md)** - 5-minute setup
+- **[Detailed Setup](web/docs/AZURE_AD_SETUP.md)** - Complete configuration guide
+- **[Environment Variables](web/docs/ENVIRONMENT_VARIABLES.md)** - Configuration reference
+
+### Docker Compose
+
+Run the entire stack (SQL Server + API + Web UI) with Docker:
+
+```bash
+docker compose build
+docker compose up
+# API: http://localhost:5010
+# Web UI: http://localhost:3000
+```
+
 ## 🤝 Contributing
 
 1. Fork the repository

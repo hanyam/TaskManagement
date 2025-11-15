@@ -40,6 +40,8 @@ public class Task : BaseEntity
     public int? ProgressPercentage { get; private set; }
     public Guid CreatedById { get; private set; }
     public User? CreatedByUser { get; private set; }
+    public int? ManagerRating { get; private set; }
+    public string? ManagerFeedback { get; private set; }
     
     // Navigation properties
     public ICollection<TaskAssignment> Assignments { get; private set; } = new List<TaskAssignment>();
@@ -181,6 +183,53 @@ public class Task : BaseEntity
             ProgressPercentage = 100;
         }
     }
+
+    public void MarkCompletedByEmployee()
+    {
+        if (Status != TaskStatus.Assigned && Status != TaskStatus.Accepted)
+            throw new InvalidOperationException("Task must be assigned or accepted to be marked as completed");
+
+        if (Status == TaskStatus.Cancelled)
+            throw new InvalidOperationException("Cannot complete a cancelled task");
+
+        Status = TaskStatus.PendingManagerReview;
+        
+        if (Type == TaskType.WithProgress || Type == TaskType.WithAcceptedProgress)
+        {
+            ProgressPercentage = 100;
+        }
+    }
+
+    public void ReviewByManager(bool accepted, int? rating, string? feedback, bool sendBackForRework = false)
+    {
+        if (Status != TaskStatus.PendingManagerReview)
+            throw new InvalidOperationException("Task must be in PendingManagerReview status to be reviewed");
+
+        if (rating.HasValue && (rating.Value < 1 || rating.Value > 5))
+            throw new ArgumentException("Rating must be between 1 and 5", nameof(rating));
+
+        if (feedback != null && feedback.Length > 1000)
+            throw new ArgumentException("Feedback cannot exceed 1000 characters", nameof(feedback));
+
+        if (sendBackForRework && accepted)
+            throw new ArgumentException("Cannot accept and send back for rework at the same time");
+
+        ManagerRating = rating;
+        ManagerFeedback = feedback;
+
+        if (sendBackForRework)
+        {
+            Status = TaskStatus.Assigned;
+        }
+        else if (accepted)
+        {
+            Status = TaskStatus.Accepted;
+        }
+        else
+        {
+            Status = TaskStatus.RejectedByManager;
+        }
+    }
 }
 
 /// <summary>
@@ -195,6 +244,8 @@ public enum TaskStatus
     Rejected = 4,
     Completed = 5,
     Cancelled = 6,
+    PendingManagerReview = 7,
+    RejectedByManager = 8,
     // Legacy statuses for backward compatibility
     Pending = 0, // Maps to Created
     InProgress = 1 // Maps to Assigned

@@ -61,6 +61,8 @@ public static class DependencyInjection
 
         // Register business services
         services.AddScoped<IReminderCalculationService, ReminderCalculationService>();
+        services.AddScoped<TaskManagement.Application.Tasks.Services.ITaskActionService, 
+            TaskManagement.Application.Tasks.Services.TaskActionService>();
 
         return services;
     }

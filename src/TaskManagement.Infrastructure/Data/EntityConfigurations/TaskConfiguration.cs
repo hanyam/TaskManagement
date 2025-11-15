@@ -39,6 +39,13 @@ public class TaskConfiguration : IEntityTypeConfiguration<Task>
         builder.Property(e => e.UpdatedBy)
             .HasMaxLength(256);
 
+        builder.Property(e => e.ManagerRating)
+            .IsRequired(false);
+
+        builder.Property(e => e.ManagerFeedback)
+            .HasMaxLength(1000)
+            .IsRequired(false);
+
         // Relationships
         builder.HasOne(e => e.AssignedUser)
             .WithMany()
