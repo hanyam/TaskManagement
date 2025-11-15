@@ -3,12 +3,13 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
 
 import { useCurrentLocale } from "@/core/routing/useCurrentLocale";
 import { useCreateTaskMutation } from "@/features/tasks/api/queries";
+import { UserSearchInput } from "@/features/tasks/components/UserSearchInput";
 import type { TaskPriority, TaskType } from "@/features/tasks/value-objects";
 import { TaskPriorityEnum, TaskTypeEnum } from "@/features/tasks/value-objects";
 import { Button } from "@/ui/components/Button";
@@ -28,7 +29,6 @@ const createTaskSchema = z.object({
     }),
   assignedUserId: z
     .string()
-    .uuid("validation:invalidUuid")
     .optional()
     .or(z.literal("")), // Optional - allows draft tasks without assignment
   type: z.enum(["Simple", "WithDueDate", "WithProgress", "WithAcceptedProgress"])
@@ -167,15 +167,22 @@ export function TaskCreateView() {
           <div className="grid gap-2">
             <Label htmlFor="assignedUserId">
               {t("tasks:forms.create.fields.assignedUserId")}
-              <span className="text-muted-foreground ml-1 text-xs">({t("common:optional")})</span>
+              <span className="ml-1 text-xs text-muted-foreground">({t("common:optional")})</span>
             </Label>
-            <Input 
-              id="assignedUserId" 
-              {...form.register("assignedUserId")} 
-              placeholder={t("tasks:forms.create.fields.assignedUserIdPlaceholder", { defaultValue: "Leave empty for draft" })}
+            <Controller
+              name="assignedUserId"
+              control={form.control}
+              render={({ field }) => (
+                <UserSearchInput
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder={t("tasks:forms.create.fields.searchUserPlaceholder")}
+                  error={!!form.formState.errors.assignedUserId}
+                />
+              )}
             />
             {form.formState.errors.assignedUserId ? (
-              <FormFieldError message={t(form.formState.errors.assignedUserId.message ?? "validation:invalidUuid")} />
+              <FormFieldError message={t(form.formState.errors.assignedUserId.message ?? "validation:required")} />
             ) : null}
           </div>
         </div>

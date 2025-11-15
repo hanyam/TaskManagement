@@ -1,7 +1,9 @@
 using System.Text;
+using Azure.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Graph;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using TaskManagement.Domain.Options;
@@ -97,6 +99,24 @@ public static class DependencyInjection
                     .AllowCredentials(); // Required when frontend sends credentials: "include"
             });
         });
+
+        // Configure Microsoft Graph API client (optional - only if Azure AD is configured)
+        var azureAdOptions = configuration.GetSection(AzureAdOptions.SectionName).Get<AzureAdOptions>();
+        if (azureAdOptions != null && 
+            !string.IsNullOrEmpty(azureAdOptions.TenantId) && 
+            !string.IsNullOrEmpty(azureAdOptions.ClientId) && 
+            !string.IsNullOrEmpty(azureAdOptions.ClientSecret) &&
+            azureAdOptions.TenantId != "FAKE-DATA")
+        {
+            var scopes = new[] { "https://graph.microsoft.com/.default" };
+            var clientSecretCredential = new ClientSecretCredential(
+                azureAdOptions.TenantId, 
+                azureAdOptions.ClientId, 
+                azureAdOptions.ClientSecret);
+            
+            var graphClient = new GraphServiceClient(clientSecretCredential, scopes);
+            services.AddSingleton(graphClient);
+        }
 
         return services;
     }
