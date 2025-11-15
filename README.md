@@ -487,6 +487,13 @@ Comprehensive documentation is available in the `docs/` directory:
 - **[API Reference](docs/API_REFERENCE.md)** - Complete API endpoint documentation
 - **[Features Documentation](docs/FEATURES.md)** - Detailed feature descriptions
 - **[Developer Guide](docs/DEVELOPER_GUIDE.md)** - Guide for extending the system
+- **[HATEOAS Implementation](docs/HATEOAS.md)** - HATEOAS pattern and dynamic UI 🆕
+- **[Task State Machine](docs/STATE_MACHINE.md)** - Task lifecycle and state transitions 🆕
+- **[Implementation Status](docs/IMPLEMENTATION_STATUS.md)** - Feature completion tracking 🆕
+- **[Technical Decisions Log](docs/TECHNICAL_DECISIONS_LOG.md)** - Architecture decision records 🆕
+- **[Azure AD User Search Setup](docs/AZURE_AD_USER_SEARCH_SETUP.md)** - Azure AD integration guide 🆕
+- **[Session: November 15, 2025](docs/SESSION_NOVEMBER_15_2025.md)** - Latest session summary 🆕
+- **[Quick Start Resume](QUICK_START_RESUME.md)** - Quick reference to resume development 🆕
 - **[Database Schema](docs/DATABASE_SCHEMA.md)** - Database structure and relationships
 - **[Configuration Guide](docs/CONFIGURATION.md)** - Configuration options and setup
 - **[Security Documentation](docs/SECURITY.md)** - Security and authorization guide
