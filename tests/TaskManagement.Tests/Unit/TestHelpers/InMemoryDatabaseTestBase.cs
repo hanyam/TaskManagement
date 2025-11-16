@@ -4,6 +4,7 @@ using TaskManagement.Domain.Entities;
 using TaskAssignment = TaskManagement.Domain.Entities.TaskAssignment;
 using TaskProgressHistory = TaskManagement.Domain.Entities.TaskProgressHistory;
 using DeadlineExtensionRequest = TaskManagement.Domain.Entities.DeadlineExtensionRequest;
+using ManagerEmployee = TaskManagement.Domain.Entities.ManagerEmployee;
 
 namespace TaskManagement.Tests.Unit.TestHelpers;
 
@@ -242,6 +243,18 @@ public abstract class InMemoryDatabaseTestBase : IDisposable
         user.UpdateRole(role);
         Context.SaveChanges();
         return user;
+    }
+
+    /// <summary>
+    /// Creates a manager-employee relationship for testing.
+    /// </summary>
+    protected ManagerEmployee CreateManagerEmployeeRelationship(Guid managerId, Guid employeeId)
+    {
+        var relationship = new ManagerEmployee(managerId, employeeId);
+        relationship.SetCreatedBy("test@example.com");
+        Context.Set<ManagerEmployee>().Add(relationship);
+        Context.SaveChanges();
+        return relationship;
     }
 
     public void Dispose()

@@ -48,7 +48,15 @@ public class AssignTaskCommandHandler : ICommandHandler<AssignTaskCommand, TaskD
             return Result<TaskDto>.Failure(errors);
         }
 
-        // Validate that all users exist
+        // Get the assigner to check role and manager relationships
+        var assigner = await _userQueryRepository.GetByIdAsync(request.AssignedById, cancellationToken);
+        if (assigner == null)
+        {
+            errors.Add(TaskErrors.CreatedByNotFound);
+            return Result<TaskDto>.Failure(errors);
+        }
+
+        // Validate that all users exist and check manager relationships
         foreach (var userId in request.UserIds)
         {
             var user = await _userQueryRepository.GetByIdAsync(userId, cancellationToken);
@@ -62,6 +70,29 @@ public class AssignTaskCommandHandler : ICommandHandler<AssignTaskCommand, TaskD
             {
                 errors.Add(TaskErrors.AssignedUserInactive);
                 return Result<TaskDto>.Failure(errors);
+            }
+
+            // Check manager-employee relationship (Admin can bypass)
+            if (assigner.Role != UserRole.Admin)
+            {
+                if (assigner.Role == UserRole.Manager)
+                {
+                    var isManager = await _userQueryRepository.IsManagerOfEmployeeAsync(
+                        request.AssignedById,
+                        userId,
+                        cancellationToken);
+                    if (!isManager)
+                    {
+                        errors.Add(TaskErrors.AssignerMustBeManagerOfAssignee);
+                        return Result<TaskDto>.Failure(errors);
+                    }
+                }
+                else
+                {
+                    // Employees cannot assign tasks
+                    errors.Add(TaskErrors.AssignerMustBeManagerOfAssignee);
+                    return Result<TaskDto>.Failure(errors);
+                }
             }
         }
 

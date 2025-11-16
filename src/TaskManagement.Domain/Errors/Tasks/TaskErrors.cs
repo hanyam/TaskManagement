@@ -29,6 +29,7 @@ public static class TaskErrors
     public static Error AssignedUserNotFound => Error.NotFound("Assigned user", "AssignedUserId");
     public static Error AssignedUserInactive => Error.Validation("Assigned user is inactive", "AssignedUserId");
     public static Error CannotAssignToSelf => Error.Validation("Cannot assign task to yourself", "AssignedUserId");
+    public static Error AssignerMustBeManagerOfAssignee => Error.Forbidden("You must be a manager of the assigned employee to assign tasks to them");
 
     // Task pagination errors
     public static Error InvalidPageNumber => Error.Validation("Page must be greater than 0", "Page");

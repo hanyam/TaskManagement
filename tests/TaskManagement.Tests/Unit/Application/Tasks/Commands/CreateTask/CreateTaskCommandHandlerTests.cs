@@ -47,17 +47,20 @@ public class CreateTaskCommandHandlerTests : InMemoryDatabaseTestBase
     [Fact]
     public async Task Handle_WhenUserExists_ShouldCreateTaskSuccessfully()
     {
-        // Arrange - Use a real test user from the database
-        var assignedUser = GetTestUser("john.doe@example.com"); // John Doe
+        // Arrange - Create manager and employee relationship
+        var manager = GetTestUserWithRole("john.doe@example.com", UserRole.Manager);
+        var employee = GetTestUser("jane.smith@example.com");
+        CreateManagerEmployeeRelationship(manager.Id, employee.Id);
+        
         var command = new CreateTaskCommand
         {
             Title = "Test Task",
             Description = "Test Description",
             Priority = TaskPriority.High,
             DueDate = DateTime.UtcNow.AddDays(7),
-            AssignedUserId = assignedUser.Id,
-            CreatedById = assignedUser.Id,
-            CreatedBy = assignedUser.Email
+            AssignedUserId = employee.Id,
+            CreatedById = manager.Id,
+            CreatedBy = manager.Email
         };
 
         // Act
@@ -71,13 +74,13 @@ public class CreateTaskCommandHandlerTests : InMemoryDatabaseTestBase
         result.Value.Description.Should().Be(command.Description);
         result.Value.Priority.Should().Be(command.Priority);
         result.Value.AssignedUserId.Should().Be(command.AssignedUserId);
-        result.Value.AssignedUserEmail.Should().Be(assignedUser.Email);
+        result.Value.AssignedUserEmail.Should().Be(employee.Email);
 
         // Verify that the task was actually added to the in-memory database
         var createdTask = await Context.Tasks.FindAsync(result.Value.Id);
         createdTask.Should().NotBeNull();
         createdTask!.Title.Should().Be(command.Title);
-        createdTask.AssignedUserId.Should().Be((Guid?)assignedUser.Id);
+        createdTask.AssignedUserId.Should().Be((Guid?)employee.Id);
     }
 
     [Fact]
@@ -182,17 +185,20 @@ public class CreateTaskCommandHandlerTests : InMemoryDatabaseTestBase
     [Fact]
     public async Task Handle_WithValidData_ShouldCreateTaskWithCorrectProperties()
     {
-        // Arrange
-        var assignedUser = GetTestUser("jane.smith@example.com"); // Jane Smith
+        // Arrange - Create manager and employee relationship
+        var manager = GetTestUserWithRole("john.doe@example.com", UserRole.Manager);
+        var employee = GetTestUser("jane.smith@example.com");
+        CreateManagerEmployeeRelationship(manager.Id, employee.Id);
+        
         var command = new CreateTaskCommand
         {
             Title = "New Valid Task",
             Description = "This is a new valid task description.",
             Priority = TaskPriority.Medium,
             DueDate = DateTime.UtcNow.AddDays(10),
-            AssignedUserId = assignedUser.Id,
-            CreatedById = assignedUser.Id,
-            CreatedBy = assignedUser.Email
+            AssignedUserId = employee.Id,
+            CreatedById = manager.Id,
+            CreatedBy = manager.Email
         };
 
         // Act
@@ -205,7 +211,7 @@ public class CreateTaskCommandHandlerTests : InMemoryDatabaseTestBase
         result.Value.Description.Should().Be(command.Description);
         result.Value.Priority.Should().Be(command.Priority);
         result.Value.AssignedUserId.Should().Be(command.AssignedUserId);
-        result.Value.AssignedUserEmail.Should().Be(assignedUser.Email);
+        result.Value.AssignedUserEmail.Should().Be(employee.Email);
         result.Value.Status.Should().Be(TaskStatus.Pending); // Default status
 
         var createdTask = await Context.Tasks.FindAsync(result.Value.Id);
@@ -268,5 +274,83 @@ public class CreateTaskCommandHandlerTests : InMemoryDatabaseTestBase
         var createdTask2 = await Context.Tasks.FindAsync(result2.Value!.Id);
         createdTask2.Should().NotBeNull();
         createdTask2!.Title.Should().Be(command2.Title);
+    }
+
+    [Fact]
+    public async Task Handle_WhenManagerAssignsToNonEmployee_ShouldReturnFailure()
+    {
+        // Arrange - Manager tries to assign to someone who is not their employee
+        var manager = GetTestUserWithRole("john.doe@example.com", UserRole.Manager);
+        var nonEmployee = GetTestUser("bob.wilson@example.com"); // Not in manager's team
+        
+        var command = new CreateTaskCommand
+        {
+            Title = "Test Task",
+            Description = "Test Description",
+            Priority = TaskPriority.High,
+            DueDate = DateTime.UtcNow.AddDays(7),
+            AssignedUserId = nonEmployee.Id,
+            CreatedById = manager.Id,
+            CreatedBy = manager.Email
+        };
+
+        // Act
+        var result = await _mediator.Send(command);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.ShouldContainError(TaskErrors.AssignerMustBeManagerOfAssignee);
+    }
+
+    [Fact]
+    public async Task Handle_WhenEmployeeTriesToAssign_ShouldReturnFailure()
+    {
+        // Arrange - Employee tries to assign task
+        var employee = GetTestUser("jane.smith@example.com");
+        var anotherEmployee = GetTestUser("bob.wilson@example.com");
+        
+        var command = new CreateTaskCommand
+        {
+            Title = "Test Task",
+            Description = "Test Description",
+            Priority = TaskPriority.High,
+            DueDate = DateTime.UtcNow.AddDays(7),
+            AssignedUserId = anotherEmployee.Id,
+            CreatedById = employee.Id,
+            CreatedBy = employee.Email
+        };
+
+        // Act
+        var result = await _mediator.Send(command);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.ShouldContainError(TaskErrors.AssignerMustBeManagerOfAssignee);
+    }
+
+    [Fact]
+    public async Task Handle_WhenAdminAssigns_ShouldSucceedWithoutManagerCheck()
+    {
+        // Arrange - Admin can assign to anyone
+        var admin = GetTestUserWithRole("john.doe@example.com", UserRole.Admin);
+        var employee = GetTestUser("jane.smith@example.com"); // No manager relationship needed
+        
+        var command = new CreateTaskCommand
+        {
+            Title = "Test Task",
+            Description = "Test Description",
+            Priority = TaskPriority.High,
+            DueDate = DateTime.UtcNow.AddDays(7),
+            AssignedUserId = employee.Id,
+            CreatedById = admin.Id,
+            CreatedBy = admin.Email
+        };
+
+        // Act
+        var result = await _mediator.Send(command);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().NotBeNull();
     }
 }

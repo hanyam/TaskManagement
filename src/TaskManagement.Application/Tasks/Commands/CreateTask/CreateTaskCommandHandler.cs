@@ -35,12 +35,42 @@ public class CreateTaskCommandHandler : ICommandHandler<CreateTaskCommand, TaskD
 
         // Validate that the assigned user exists only if AssignedUserId is provided (not a draft)
         User? assignedUser = null;
+        User? creator = null;
         if (request.AssignedUserId.HasValue && request.AssignedUserId.Value != Guid.Empty)
         {
             assignedUser = await _userQueryRepository.GetByIdAsync(request.AssignedUserId.Value, cancellationToken);
             if (assignedUser == null)
             {
                 errors.Add(TaskErrors.AssignedUserNotFound);
+            }
+            else
+            {
+                // Get creator to check role and manager relationship
+                creator = await _userQueryRepository.GetByIdAsync(request.CreatedById, cancellationToken);
+                if (creator == null)
+                {
+                    errors.Add(TaskErrors.CreatedByNotFound);
+                }
+                else if (creator.Role != UserRole.Admin)
+                {
+                    // Only Admin can bypass manager check. Managers must be manager of the assignee.
+                    if (creator.Role == UserRole.Manager)
+                    {
+                        var isManager = await _userQueryRepository.IsManagerOfEmployeeAsync(
+                            request.CreatedById,
+                            request.AssignedUserId.Value,
+                            cancellationToken);
+                        if (!isManager)
+                        {
+                            errors.Add(TaskErrors.AssignerMustBeManagerOfAssignee);
+                        }
+                    }
+                    else
+                    {
+                        // Employees cannot assign tasks
+                        errors.Add(TaskErrors.AssignerMustBeManagerOfAssignee);
+                    }
+                }
             }
         }
 

@@ -8,6 +8,7 @@
   "server": {
     "TaskErrors.AssignedUserNotFound": "المستخدم المحدد غير موجود.",
     "TaskErrors.AssignedUserInactive": "المستخدم المحدد غير نشط.",
+    "TaskErrors.AssignerMustBeManagerOfAssignee": "يجب أن تكون مديرًا للموظف المعين لتعيين المهام له.",
     "TaskErrors.AccessDenied": "ليست لديك صلاحية الوصول إلى هذه المهمة.",
     "TaskErrors.NotFound": "تعذر العثور على المهمة.",
     "VALIDATION_ERROR": "يرجى مراجعة الحقول المظللة."

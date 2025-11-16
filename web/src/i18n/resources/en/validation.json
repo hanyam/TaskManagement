@@ -8,6 +8,7 @@
   "server": {
     "TaskErrors.AssignedUserNotFound": "The selected user is no longer available.",
     "TaskErrors.AssignedUserInactive": "The selected user is inactive.",
+    "TaskErrors.AssignerMustBeManagerOfAssignee": "You must be a manager of the assigned employee to assign tasks to them.",
     "TaskErrors.AccessDenied": "You do not have permission to access this task.",
     "TaskErrors.NotFound": "The task could not be found.",
     "VALIDATION_ERROR": "Please review the highlighted fields."
