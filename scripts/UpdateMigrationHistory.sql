@@ -25,3 +25,4 @@ BEGIN
     PRINT 'Migration record already exists in history.';
 END
 
+

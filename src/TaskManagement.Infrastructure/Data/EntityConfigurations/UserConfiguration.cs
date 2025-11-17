@@ -30,7 +30,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .HasMaxLength(200);
 
         builder.Property(e => e.AzureAdObjectId)
-            .IsRequired()
+            .IsRequired(false)
             .HasMaxLength(100);
 
         builder.Property(e => e.Role)
@@ -47,7 +47,8 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .IsUnique();
 
         builder.HasIndex(e => e.AzureAdObjectId)
-            .IsUnique();
+            .IsUnique()
+            .HasFilter("[AzureAdObjectId] IS NOT NULL");
     }
 }
 

@@ -53,4 +53,14 @@ public class UserDapperRepositoryWrapper : UserDapperRepository
     {
         return await _efRepository.GetByEmailAsync(email, cancellationToken);
     }
+
+    public override async Task<bool> IsManagerAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        return await _efRepository.IsManagerAsync(userId, cancellationToken);
+    }
+
+    public override async Task<IEnumerable<User>> SearchManagedUsersAsync(Guid managerId, string searchQuery, CancellationToken cancellationToken = default)
+    {
+        return await _efRepository.SearchManagedUsersAsync(managerId, searchQuery, cancellationToken);
+    }
 }

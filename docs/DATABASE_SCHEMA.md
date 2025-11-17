@@ -26,7 +26,7 @@
 │  │ FirstName (NVARCHAR(100))                                 │   │
 │  │ LastName (NVARCHAR(100))                                   │   │
 │  │ DisplayName (NVARCHAR(200))                                │   │
-│  │ AzureAdObjectId (Unique, NVARCHAR(100))                    │   │
+│  │ AzureAdObjectId (Unique, NVARCHAR(100), nullable)         │   │
 │  │ IsActive (BIT)                                             │   │
 │  │ LastLoginAt (DATETIME2, nullable)                          │   │
 │  │ Role (INT)                                                 │   │
@@ -117,11 +117,11 @@ Stores user information with Azure AD integration and role-based access.
 
 **Unique Constraints:**
 - `Email`: Must be unique
-- `AzureAdObjectId`: Must be unique
+- `AzureAdObjectId`: Must be unique when provided (nullable, filtered unique index)
 
 **Indexes:**
 - Index on `Email` (unique)
-- Index on `AzureAdObjectId` (unique)
+- Index on `AzureAdObjectId` (unique, filtered to exclude nulls)
 
 **Relationships:**
 - One-to-many with `Tasks` (as creator)
@@ -265,10 +265,10 @@ Manages deadline extension requests with approval workflow.
 - Auto-generated from FirstName + LastName
 - Used for display purposes
 
-**AzureAdObjectId** (NVARCHAR(100), Unique, Non-nullable)
+**AzureAdObjectId** (NVARCHAR(100), Unique, Nullable)
 - Azure AD user identifier
 - Used for Azure AD token validation
-- Unique constraint enforced
+- Unique constraint enforced when provided (filtered index allows multiple nulls)
 
 **IsActive** (BIT, Non-nullable, Default: 1)
 - Whether user account is active

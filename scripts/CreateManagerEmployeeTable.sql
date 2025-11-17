@@ -36,3 +36,4 @@ END
 -- INSERT INTO [Tasks].[__EFMigrationsHistory] ([MigrationId], [ProductVersion])
 -- VALUES ('AddManagerEmployeeRelationship', '9.0.0');
 
+

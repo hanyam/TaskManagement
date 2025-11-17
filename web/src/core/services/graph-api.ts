@@ -9,9 +9,10 @@ export interface GraphUser {
 }
 
 /**
- * Search for users in Azure AD via backend API proxy
- * @param searchQuery - Search term (email, name, or username)
- * @returns List of matching users
+ * Search for users managed by the current user (manager-employee relationship).
+ * Searches employees from database filtered by ManagerEmployee table.
+ * @param searchQuery - Search term (DisplayName or Email)
+ * @returns List of matching managed users
  */
 export async function searchGraphUsers(searchQuery: string): Promise<GraphUser[]> {
   if (!searchQuery || searchQuery.trim().length < 2) {

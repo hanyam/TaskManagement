@@ -73,18 +73,42 @@ public class AuthenticateUserCommandHandler : ICommandHandler<AuthenticateUserCo
             var lastName = claimsPrincipal.FindFirst(ClaimTypes.Surname)?.Value ??
                            claimsPrincipal.FindFirst("family_name")?.Value ?? string.Empty;
             var objectId = claimsPrincipal.FindFirst("oid")?.Value ??
-                           claimsPrincipal.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+                           claimsPrincipal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-                user = new User(email!, firstName, lastName, objectId);
+            user = new User(email!, firstName, lastName, objectId);
             user.SetCreatedBy(email!);
 
             await _userCommandRepository.AddAsync(user, cancellationToken);
             await _context.SaveChangesAsync(cancellationToken);
+
+            // Check if user is a manager and update role accordingly
+            var isManager = await _userQueryRepository.IsManagerAsync(user.Id, cancellationToken);
+            if (isManager && user.Role == UserRole.Employee)
+            {
+                user.UpdateRole(UserRole.Manager);
+                await _userCommandRepository.UpdateAsync(user, cancellationToken);
+                await _context.SaveChangesAsync(cancellationToken);
+            }
         }
         else
         {
             // Update last login using EF Core (for change tracking)
             user.RecordLogin();
+
+            // Check if user is a manager and update role accordingly (role may have changed in database)
+            var isManager = await _userQueryRepository.IsManagerAsync(user.Id, cancellationToken);
+            if (isManager && user.Role == UserRole.Employee)
+            {
+                // User is a manager but role is Employee - update to Manager
+                user.UpdateRole(UserRole.Manager);
+            }
+            else if (!isManager && user.Role == UserRole.Manager)
+            {
+                // User is no longer a manager - revert to Employee (unless Admin)
+                // Note: Admin role should be set manually and not changed automatically
+                user.UpdateRole(UserRole.Employee);
+            }
+
             await _userCommandRepository.UpdateAsync(user, cancellationToken);
             await _context.SaveChangesAsync(cancellationToken);
         }

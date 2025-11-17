@@ -12,8 +12,8 @@ using TaskManagement.Infrastructure.Data;
 namespace TaskManagement.Infrastructure.Migrations.TaskManagement
 {
     [DbContext(typeof(TaskManagementDbContext))]
-    [Migration("20251116000000_AddManagerEmployeeRelationship")]
-    partial class AddManagerEmployeeRelationship
+    [Migration("20251117060232_FixManagerEmployeeColumnLengths")]
+    partial class FixManagerEmployeeColumnLengths
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -26,11 +26,14 @@ namespace TaskManagement.Infrastructure.Migrations.TaskManagement
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            // Note: This Designer file is minimal since we're using raw SQL in the migration
-            // The actual table creation is handled by the SQL script in the Up() method
+            // Copy the model from the previous migration's Designer
+            // This migration only alters column types in the database
+            // The model structure remains the same as MakeAzureAdObjectIdNullable
+            
+            // Note: The actual model snapshot (TaskManagementDbContextModelSnapshot.cs) 
+            // reflects the current state with nvarchar(256) for ManagerEmployee columns
 #pragma warning restore 612, 618
         }
     }
 }
-
 

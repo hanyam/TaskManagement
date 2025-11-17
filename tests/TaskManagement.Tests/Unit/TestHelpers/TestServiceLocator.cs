@@ -22,6 +22,7 @@ using TaskManagement.Application.Tasks.Queries.GetTaskById;
 using TaskManagement.Application.Tasks.Queries.GetTaskProgressHistory;
 using TaskManagement.Application.Tasks.Queries.GetTasks;
 using TaskManagement.Application.Tasks.Queries.GetTasksByReminderLevel;
+using TaskManagement.Application.Users.Queries.SearchManagedUsers;
 using TaskManagement.Domain.DTOs;
 using TaskManagement.Domain.Options;
 using TaskManagement.Infrastructure.Data;
@@ -175,6 +176,11 @@ public class TestServiceLocator : IServiceLocator
         if (serviceType == typeof(IRequestHandler<GetTasksByReminderLevelQuery, GetTasksResponse>))
         {
             return new GetTasksByReminderLevelQueryHandler(_context, reminderCalculationService);
+        }
+
+        if (serviceType == typeof(IRequestHandler<SearchManagedUsersQuery, List<UserSearchResultDto>>))
+        {
+            return new SearchManagedUsersQueryHandler(userQueryRepository);
         }
 
         // Handle services

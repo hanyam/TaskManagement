@@ -28,6 +28,14 @@ public class ManagerEmployeeConfiguration : IEntityTypeConfiguration<ManagerEmpl
         builder.HasIndex(e => new { e.ManagerId, e.EmployeeId })
             .IsUnique();
 
+        // Configure BaseEntity properties
+        builder.Property(e => e.CreatedBy)
+            .IsRequired()
+            .HasMaxLength(256);
+
+        builder.Property(e => e.UpdatedBy)
+            .HasMaxLength(256);
+
         // Prevent self-referencing (manager cannot be their own employee)
         builder.ToTable("ManagerEmployees", "Tasks", t => t.HasCheckConstraint(
             "CK_ManagerEmployee_NotSelf",

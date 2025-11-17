@@ -98,7 +98,7 @@ public string Email { get; private set; }              // Required, unique, max 
 public string FirstName { get; private set; }          // Required, max 100 chars
 public string LastName { get; private set; }            // Required, max 100 chars
 public string DisplayName { get; private set; }         // Auto-generated, max 200 chars
-public string AzureAdObjectId { get; private set; }     // Required, unique, max 100 chars
+public string? AzureAdObjectId { get; private set; }    // Optional, unique when provided, max 100 chars
 public bool IsActive { get; private set; }              // Active status
 public DateTime? LastLoginAt { get; private set; }      // Last login timestamp
 public UserRole Role { get; private set; }              // User role (enum)
@@ -106,7 +106,7 @@ public UserRole Role { get; private set; }              // User role (enum)
 
 **Constructor:**
 ```csharp
-public User(string email, string firstName, string lastName, string azureAdObjectId)
+public User(string email, string firstName, string lastName, string? azureAdObjectId)
 ```
 
 **Business Methods:**
@@ -118,7 +118,7 @@ public User(string email, string firstName, string lastName, string azureAdObjec
 
 **Business Rules:**
 - Email must be unique
-- AzureAdObjectId must be unique
+- AzureAdObjectId must be unique when provided (nullable, allows multiple nulls)
 - DisplayName is auto-generated from FirstName and LastName
 - Default role is `Employee`
 

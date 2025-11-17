@@ -11,7 +11,7 @@ public class User : BaseEntity
     {
     }
 
-    public User(string email, string firstName, string lastName, string azureAdObjectId)
+    public User(string email, string firstName, string lastName, string? azureAdObjectId)
     {
         Email = email;
         FirstName = firstName;
@@ -24,7 +24,7 @@ public class User : BaseEntity
     public string FirstName { get; private set; } = string.Empty;
     public string LastName { get; private set; } = string.Empty;
     public string DisplayName { get; private set; } = string.Empty;
-    public string AzureAdObjectId { get; private set; } = string.Empty;
+    public string? AzureAdObjectId { get; private set; }
     public bool IsActive { get; private set; } = true;
     public DateTime? LastLoginAt { get; private set; }
     public UserRole Role { get; private set; } = UserRole.Employee;

@@ -9,11 +9,11 @@ using TaskManagement.Infrastructure.Data;
 
 #nullable disable
 
-namespace TaskManagement.Infrastructure.src.TaskManagement.Infrastructure.Migrations.TaskManagement
+namespace TaskManagement.Infrastructure.Migrations.TaskManagement
 {
     [DbContext(typeof(TaskManagementDbContext))]
-    [Migration("20251114152130_AddManagerReviewWorkflow")]
-    partial class AddManagerReviewWorkflow
+    [Migration("20251117060231_MakeAzureAdObjectIdNullable")]
+    partial class MakeAzureAdObjectIdNullable
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -85,6 +85,44 @@ namespace TaskManagement.Infrastructure.src.TaskManagement.Infrastructure.Migrat
                     b.ToTable("DeadlineExtensionRequests", "Tasks");
                 });
 
+            modelBuilder.Entity("TaskManagement.Domain.Entities.ManagerEmployee", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ManagerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("ManagerId", "EmployeeId")
+                        .IsUnique();
+
+                    b.ToTable("ManagerEmployees", "Tasks", t =>
+                        {
+                            t.HasCheckConstraint("CK_ManagerEmployee_NotSelf", "[ManagerId] != [EmployeeId]");
+                        });
+                });
+
             modelBuilder.Entity("TaskManagement.Domain.Entities.Task", b =>
                 {
                     b.Property<Guid>("Id")
@@ -116,7 +154,8 @@ namespace TaskManagement.Infrastructure.src.TaskManagement.Infrastructure.Migrat
                         .HasColumnType("datetime2");
 
                     b.Property<string>("ManagerFeedback")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<int?>("ManagerRating")
                         .HasColumnType("int");
@@ -261,7 +300,6 @@ namespace TaskManagement.Infrastructure.src.TaskManagement.Infrastructure.Migrat
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("AzureAdObjectId")
-                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
@@ -312,7 +350,8 @@ namespace TaskManagement.Infrastructure.src.TaskManagement.Infrastructure.Migrat
                     b.HasKey("Id");
 
                     b.HasIndex("AzureAdObjectId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[AzureAdObjectId] IS NOT NULL");
 
                     b.HasIndex("Email")
                         .IsUnique();
@@ -344,6 +383,25 @@ namespace TaskManagement.Infrastructure.src.TaskManagement.Infrastructure.Migrat
                     b.Navigation("ReviewedBy");
 
                     b.Navigation("Task");
+                });
+
+            modelBuilder.Entity("TaskManagement.Domain.Entities.ManagerEmployee", b =>
+                {
+                    b.HasOne("TaskManagement.Domain.Entities.User", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TaskManagement.Domain.Entities.User", "Manager")
+                        .WithMany()
+                        .HasForeignKey("ManagerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("Manager");
                 });
 
             modelBuilder.Entity("TaskManagement.Domain.Entities.Task", b =>

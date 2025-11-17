@@ -2,12 +2,16 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Graph;
 using Microsoft.Graph.Models;
+using System.Security.Claims;
+using TaskManagement.Application.Common.Interfaces;
+using TaskManagement.Application.Infrastructure.Data.Repositories;
+using TaskManagement.Application.Users.Queries.SearchManagedUsers;
 using TaskManagement.Domain.Common;
 
 namespace TaskManagement.Api.Controllers;
 
 /// <summary>
-///     Controller for user operations (Azure AD integration).
+///     Controller for user operations (Database-based user search with manager-employee relationship).
 /// </summary>
 [ApiController]
 [Route("users")]
@@ -16,20 +20,102 @@ public class UsersController : ControllerBase
 {
     private readonly GraphServiceClient? _graphClient;
     private readonly ILogger<UsersController> _logger;
+    private readonly IRequestMediator _requestMediator;
+    private readonly UserDapperRepository _userRepository;
 
-    public UsersController(GraphServiceClient? graphClient, ILogger<UsersController> logger)
+    public UsersController(
+        GraphServiceClient? graphClient, 
+        ILogger<UsersController> logger,
+        IRequestMediator requestMediator,
+        UserDapperRepository userRepository)
     {
         _graphClient = graphClient;
         _logger = logger;
+        _requestMediator = requestMediator;
+        _userRepository = userRepository;
     }
 
     /// <summary>
-    ///     Searches for users in Azure AD.
+    ///     Searches for users managed by the current user (manager-employee relationship).
+    ///     Searches only employees from Tasks.Users table filtered by ManagerEmployee table.
     /// </summary>
-    /// <param name="query">Search query (name, email, or username).</param>
+    /// <param name="query">Search query (DisplayName).</param>
     /// <returns>List of matching users.</returns>
     [HttpGet("search")]
     public async Task<IActionResult> SearchUsers([FromQuery] string query)
+    {
+        if (string.IsNullOrWhiteSpace(query) || query.Length < 2)
+        {
+            return Ok(ApiResponse<List<UserSearchResult>>.SuccessResponse(new List<UserSearchResult>()));
+        }
+
+        try
+        {
+            // Get current user's email from JWT claims
+            var userEmail = User.FindFirst(ClaimTypes.Email)?.Value ?? 
+                           User.FindFirst("email")?.Value;
+
+            if (string.IsNullOrEmpty(userEmail))
+            {
+                _logger.LogWarning("User email not found in token claims.");
+                return Ok(ApiResponse<List<UserSearchResult>>.SuccessResponse(new List<UserSearchResult>()));
+            }
+
+            // Find current user by email to get their ID
+            var currentUser = await _userRepository.GetByEmailAsync(userEmail, CancellationToken.None);
+            if (currentUser == null)
+            {
+                _logger.LogWarning("Current user not found in database: {Email}", userEmail);
+                return Ok(ApiResponse<List<UserSearchResult>>.SuccessResponse(new List<UserSearchResult>()));
+            }
+
+            // Search for managed users using the new query
+            var searchQuery = new SearchManagedUsersQuery
+            {
+                ManagerId = currentUser.Id,
+                SearchQuery = query
+            };
+
+            var result = await _requestMediator.Send(searchQuery);
+            
+            if (result.IsFailure)
+            {
+                _logger.LogError("Error searching managed users: {Error}", result.Error?.Message);
+                return StatusCode(500, ApiResponse<List<UserSearchResult>>.ErrorResponse(
+                    "An error occurred while searching users", 
+                    HttpContext.TraceIdentifier));
+            }
+
+            // Map DTOs to UserSearchResult (for frontend compatibility)
+            var results = result.Value!.Select(u => new UserSearchResult
+            {
+                Id = u.Id,
+                DisplayName = u.DisplayName,
+                Mail = u.Mail,
+                UserPrincipalName = u.UserPrincipalName,
+                JobTitle = u.JobTitle
+            }).ToList();
+
+            return Ok(ApiResponse<List<UserSearchResult>>.SuccessResponse(results));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error searching users with query: {Query}", query);
+            return StatusCode(500, ApiResponse<List<UserSearchResult>>.ErrorResponse(
+                "An error occurred while searching users", 
+                HttpContext.TraceIdentifier));
+        }
+    }
+
+    // ============================================================================
+    // OLD AZURE AD IMPLEMENTATION (KEPT FOR FUTURE USE)
+    // Uncomment and replace the SearchUsers method above if you need to use Azure AD Graph API
+    // ============================================================================
+    /*
+    /// <summary>
+    ///     Searches for users in Azure AD (OLD IMPLEMENTATION - KEPT FOR FUTURE USE).
+    /// </summary>
+    private async Task<IActionResult> SearchUsersAzureAd([FromQuery] string query)
     {
         if (string.IsNullOrWhiteSpace(query) || query.Length < 2)
         {
@@ -76,6 +162,7 @@ public class UsersController : ControllerBase
                 HttpContext.TraceIdentifier));
         }
     }
+    */
 
     /// <summary>
     ///     Gets a specific user by ID.

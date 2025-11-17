@@ -157,7 +157,7 @@ public abstract class InMemoryDatabaseTestBase : IDisposable
     /// <summary>
     /// Creates a new user for testing.
     /// </summary>
-    protected User CreateTestUser(string email, string firstName, string lastName, string azureAdObjectId)
+    protected User CreateTestUser(string email, string firstName, string lastName, string? azureAdObjectId = null)
     {
         var user = new User(email, firstName, lastName, azureAdObjectId);
         user.SetCreatedBy("test@example.com");

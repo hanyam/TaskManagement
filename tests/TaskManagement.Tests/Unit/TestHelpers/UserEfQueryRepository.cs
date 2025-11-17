@@ -1,8 +1,9 @@
 using Microsoft.EntityFrameworkCore;
-using TaskManagement.Domain.Entities;
-using TaskManagement.Domain.Common;
-using TaskManagement.Infrastructure.Data;
 using TaskManagement.Application.Infrastructure.Data.Repositories;
+using TaskManagement.Domain.Common;
+using TaskManagement.Domain.Entities;
+using TaskManagement.Infrastructure.Data;
+using ManagerEmployee = TaskManagement.Domain.Entities.ManagerEmployee;
 
 namespace TaskManagement.Tests.Unit.TestHelpers;
 
@@ -53,5 +54,35 @@ public class UserEfQueryRepository : IQueryRepository<User>
     public async Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
     {
         return await _context.Users.FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
+    }
+
+    public async Task<bool> IsManagerAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        var count = await _context.Set<ManagerEmployee>()
+            .CountAsync(me => me.ManagerId == userId, cancellationToken);
+        return count > 0;
+    }
+
+    public async Task<IEnumerable<User>> SearchManagedUsersAsync(Guid managerId, string searchQuery, CancellationToken cancellationToken = default)
+    {
+        // For in-memory database, use case-insensitive comparison
+        // Note: In-memory database doesn't support ToLower() in LINQ queries, so we filter in memory
+        var allManagedUsers = await _context.Set<ManagerEmployee>()
+            .Where(me => me.ManagerId == managerId)
+            .Join(
+                _context.Users.Where(u => u.IsActive),
+                me => me.EmployeeId,
+                u => u.Id,
+                (me, u) => u)
+            .ToListAsync(cancellationToken);
+
+        var searchQueryLower = searchQuery.ToLowerInvariant();
+        return allManagedUsers
+            .Where(u =>
+                u.DisplayName.ToLower().Contains(searchQueryLower) ||
+                u.Email.ToLower().Contains(searchQueryLower))
+            .OrderBy(u => u.DisplayName)
+            .Take(10)
+            .ToList();
     }
 }
