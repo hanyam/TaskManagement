@@ -20,4 +20,3 @@ public class ApiActionLink
     /// </summary>
     public string Method { get; set; } = string.Empty;
 }
-

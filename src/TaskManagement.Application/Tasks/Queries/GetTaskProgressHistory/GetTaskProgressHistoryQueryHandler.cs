@@ -20,32 +20,21 @@ public class GetTaskProgressHistoryQueryHandler : IRequestHandler<GetTaskProgres
         _context = context;
     }
 
-    public async Task<Result<List<TaskProgressDto>>> Handle(GetTaskProgressHistoryQuery request, CancellationToken cancellationToken)
+    public async Task<Result<List<TaskProgressDto>>> Handle(GetTaskProgressHistoryQuery request,
+        CancellationToken cancellationToken)
     {
         var errors = new List<Error>();
 
         // Validate pagination
-        if (request.Page < 1)
-        {
-            errors.Add(TaskErrors.InvalidPageNumber);
-        }
+        if (request.Page < 1) errors.Add(TaskErrors.InvalidPageNumber);
 
-        if (request.PageSize < 1 || request.PageSize > 100)
-        {
-            errors.Add(TaskErrors.InvalidPageSize);
-        }
+        if (request.PageSize < 1 || request.PageSize > 100) errors.Add(TaskErrors.InvalidPageSize);
 
         // Validate task exists
         var taskExists = await _context.Tasks.AnyAsync(t => t.Id == request.TaskId, cancellationToken);
-        if (!taskExists)
-        {
-            errors.Add(TaskErrors.NotFoundById(request.TaskId));
-        }
+        if (!taskExists) errors.Add(TaskErrors.NotFoundById(request.TaskId));
 
-        if (errors.Any())
-        {
-            return Result<List<TaskProgressDto>>.Failure(errors);
-        }
+        if (errors.Any()) return Result<List<TaskProgressDto>>.Failure(errors);
 
         var progressHistory = await _context.Set<TaskProgressHistory>()
             .Include(ph => ph.UpdatedByUser)
@@ -73,4 +62,3 @@ public class GetTaskProgressHistoryQueryHandler : IRequestHandler<GetTaskProgres
         return progressHistory;
     }
 }
-

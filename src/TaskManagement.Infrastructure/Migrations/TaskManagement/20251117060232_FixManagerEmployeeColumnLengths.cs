@@ -1,18 +1,18 @@
-using Microsoft.EntityFrameworkCore.Migrations;
-
 #nullable disable
 
-namespace TaskManagement.Infrastructure.Migrations.TaskManagement
+using Microsoft.EntityFrameworkCore.Migrations;
+
+namespace TaskManagement.Infrastructure.Migrations.TaskManagement;
+
+/// <inheritdoc />
+public partial class FixManagerEmployeeColumnLengths : Migration
 {
     /// <inheritdoc />
-    public partial class FixManagerEmployeeColumnLengths : Migration
+    protected override void Up(MigrationBuilder migrationBuilder)
     {
-        /// <inheritdoc />
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
-            // Alter columns only if they are currently nvarchar(max)
-            // This migration is safe to run even if columns are already nvarchar(256)
-            migrationBuilder.Sql(@"
+        // Alter columns only if they are currently nvarchar(max)
+        // This migration is safe to run even if columns are already nvarchar(256)
+        migrationBuilder.Sql(@"
                 IF EXISTS (SELECT * FROM sys.tables WHERE name = 'ManagerEmployees' AND schema_id = SCHEMA_ID('Tasks'))
                 BEGIN
                     -- Check if CreatedBy is nvarchar(max) and alter it
@@ -44,13 +44,13 @@ namespace TaskManagement.Infrastructure.Migrations.TaskManagement
                     END
                 END
             ");
-        }
+    }
 
-        /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
-            // Revert to nvarchar(max) if needed (usually not necessary)
-            migrationBuilder.Sql(@"
+    /// <inheritdoc />
+    protected override void Down(MigrationBuilder migrationBuilder)
+    {
+        // Revert to nvarchar(max) if needed (usually not necessary)
+        migrationBuilder.Sql(@"
                 IF EXISTS (SELECT * FROM sys.tables WHERE name = 'ManagerEmployees' AND schema_id = SCHEMA_ID('Tasks'))
                 BEGIN
                     ALTER TABLE [Tasks].[ManagerEmployees]
@@ -60,7 +60,5 @@ namespace TaskManagement.Infrastructure.Migrations.TaskManagement
                     ALTER COLUMN [UpdatedBy] nvarchar(max) NULL;
                 END
             ");
-        }
     }
 }
-

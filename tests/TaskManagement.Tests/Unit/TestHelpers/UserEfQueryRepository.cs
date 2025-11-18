@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using TaskManagement.Application.Infrastructure.Data.Repositories;
-using TaskManagement.Domain.Common;
 using TaskManagement.Domain.Entities;
 using TaskManagement.Infrastructure.Data;
 using ManagerEmployee = TaskManagement.Domain.Entities.ManagerEmployee;
@@ -8,7 +7,7 @@ using ManagerEmployee = TaskManagement.Domain.Entities.ManagerEmployee;
 namespace TaskManagement.Tests.Unit.TestHelpers;
 
 /// <summary>
-/// EF-based user query repository for testing purposes.
+///     EF-based user query repository for testing purposes.
 /// </summary>
 public class UserEfQueryRepository : IQueryRepository<User>
 {
@@ -29,14 +28,16 @@ public class UserEfQueryRepository : IQueryRepository<User>
         return await _context.Users.ToListAsync(cancellationToken);
     }
 
-    public async Task<IEnumerable<User>> FindAsync(string sql, object? param = null, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<User>> FindAsync(string sql, object? param = null,
+        CancellationToken cancellationToken = default)
     {
         // For testing purposes, we'll just return all users
         // In a real scenario, you'd parse the SQL and convert it to EF queries
         return await _context.Users.ToListAsync(cancellationToken);
     }
 
-    public async Task<User?> FirstOrDefaultAsync(string sql, object? param = null, CancellationToken cancellationToken = default)
+    public async Task<User?> FirstOrDefaultAsync(string sql, object? param = null,
+        CancellationToken cancellationToken = default)
     {
         // For testing purposes, we'll just return the first user
         // In a real scenario, you'd parse the SQL and convert it to EF queries
@@ -63,7 +64,8 @@ public class UserEfQueryRepository : IQueryRepository<User>
         return count > 0;
     }
 
-    public async Task<IEnumerable<User>> SearchManagedUsersAsync(Guid managerId, string searchQuery, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<User>> SearchManagedUsersAsync(Guid managerId, string searchQuery,
+        CancellationToken cancellationToken = default)
     {
         // For in-memory database, use case-insensitive comparison
         // Note: In-memory database doesn't support ToLower() in LINQ queries, so we filter in memory

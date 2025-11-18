@@ -6,7 +6,7 @@ using TaskManagement.Domain.Common;
 namespace TaskManagement.Application.Common;
 
 /// <summary>
-/// Command mediator implementation that handles commands with pipeline behaviors.
+///     Command mediator implementation that handles commands with pipeline behaviors.
 /// </summary>
 public class CommandMediator : ICommandMediator
 {
@@ -20,7 +20,8 @@ public class CommandMediator : ICommandMediator
     }
 
     /// <inheritdoc />
-    public async Task<Result<TResponse>> Send<TResponse>(ICommand<TResponse> command, CancellationToken cancellationToken = default)
+    public async Task<Result<TResponse>> Send<TResponse>(ICommand<TResponse> command,
+        CancellationToken cancellationToken = default)
     {
         try
         {
@@ -39,14 +40,16 @@ public class CommandMediator : ICommandMediator
             if (result.IsSuccess)
                 _logger.LogInformation("Command of type {CommandType} processed successfully", command.GetType().Name);
             else
-                _logger.LogWarning("Command of type {CommandType} failed: {Error}", command.GetType().Name, result.Error);
+                _logger.LogWarning("Command of type {CommandType} failed: {Error}", command.GetType().Name,
+                    result.Error);
 
             return result;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error processing command of type {CommandType}", command.GetType().Name);
-            return Result<TResponse>.Failure(Error.Internal($"An error occurred while processing the command: {ex.Message}"));
+            return Result<TResponse>.Failure(
+                Error.Internal($"An error occurred while processing the command: {ex.Message}"));
         }
     }
 
@@ -70,7 +73,8 @@ public class CommandMediator : ICommandMediator
             if (result.IsSuccess)
                 _logger.LogInformation("Command of type {CommandType} processed successfully", command.GetType().Name);
             else
-                _logger.LogWarning("Command of type {CommandType} failed: {Error}", command.GetType().Name, result.Error);
+                _logger.LogWarning("Command of type {CommandType} failed: {Error}", command.GetType().Name,
+                    result.Error);
 
             return result;
         }
@@ -81,7 +85,8 @@ public class CommandMediator : ICommandMediator
         }
     }
 
-    private Func<Task<Result<TResponse>>> BuildPipeline<TCommand, TResponse>(TCommand command, object handler, CancellationToken cancellationToken)
+    private Func<Task<Result<TResponse>>> BuildPipeline<TCommand, TResponse>(TCommand command, object handler,
+        CancellationToken cancellationToken)
         where TCommand : ICommand<TResponse>
     {
         // Get the handle method
@@ -92,7 +97,8 @@ public class CommandMediator : ICommandMediator
         // Create the base handler function
         Func<Task<Result<TResponse>>> handlerFunc = async () =>
         {
-            var task = (Task<Result<TResponse>>)handleMethod.Invoke(handler, new object[] { command, cancellationToken })!;
+            var task = (Task<Result<TResponse>>)handleMethod.Invoke(handler,
+                new object[] { command, cancellationToken })!;
             return await task;
         };
 
@@ -111,7 +117,8 @@ public class CommandMediator : ICommandMediator
         return pipeline;
     }
 
-    private Func<Task<Result>> BuildPipeline<TCommand>(TCommand command, object handler, CancellationToken cancellationToken)
+    private Func<Task<Result>> BuildPipeline<TCommand>(TCommand command, object handler,
+        CancellationToken cancellationToken)
         where TCommand : ICommand
     {
         // Get the handle method
@@ -141,31 +148,36 @@ public class CommandMediator : ICommandMediator
         return pipeline;
     }
 
-    private Func<Task<Result<TResponse>>> WrapWithLogging<TCommand, TResponse>(TCommand command, Func<Task<Result<TResponse>>> next, CancellationToken cancellationToken)
+    private Func<Task<Result<TResponse>>> WrapWithLogging<TCommand, TResponse>(TCommand command,
+        Func<Task<Result<TResponse>>> next, CancellationToken cancellationToken)
         where TCommand : ICommand<TResponse>
     {
         return async () =>
         {
             _logger.LogInformation("Executing {CommandType} with {Command}", typeof(TCommand).Name, command);
             var result = await next();
-            _logger.LogInformation("Executed {CommandType} with result: {IsSuccess}", typeof(TCommand).Name, result.IsSuccess);
+            _logger.LogInformation("Executed {CommandType} with result: {IsSuccess}", typeof(TCommand).Name,
+                result.IsSuccess);
             return result;
         };
     }
 
-    private Func<Task<Result>> WrapWithLogging<TCommand>(TCommand command, Func<Task<Result>> next, CancellationToken cancellationToken)
+    private Func<Task<Result>> WrapWithLogging<TCommand>(TCommand command, Func<Task<Result>> next,
+        CancellationToken cancellationToken)
         where TCommand : ICommand
     {
         return async () =>
         {
             _logger.LogInformation("Executing {CommandType} with {Command}", typeof(TCommand).Name, command);
             var result = await next();
-            _logger.LogInformation("Executed {CommandType} with result: {IsSuccess}", typeof(TCommand).Name, result.IsSuccess);
+            _logger.LogInformation("Executed {CommandType} with result: {IsSuccess}", typeof(TCommand).Name,
+                result.IsSuccess);
             return result;
         };
     }
 
-    private Func<Task<Result<TResponse>>> WrapWithValidation<TCommand, TResponse>(TCommand command, Func<Task<Result<TResponse>>> next, CancellationToken cancellationToken)
+    private Func<Task<Result<TResponse>>> WrapWithValidation<TCommand, TResponse>(TCommand command,
+        Func<Task<Result<TResponse>>> next, CancellationToken cancellationToken)
         where TCommand : ICommand<TResponse>
     {
         return async () =>
@@ -177,9 +189,10 @@ public class CommandMediator : ICommandMediator
             if (validators.Any())
             {
                 _logger.LogDebug("Validating command of type {CommandType}", typeof(TCommand).Name);
-                
+
                 var context = new ValidationContext<TCommand>(command);
-                var validationResults = await Task.WhenAll(validators.Select(v => v.ValidateAsync(context, cancellationToken)));
+                var validationResults =
+                    await Task.WhenAll(validators.Select(v => v.ValidateAsync(context, cancellationToken)));
                 var failures = validationResults.SelectMany(r => r.Errors).Where(f => f != null).ToList();
 
                 if (failures.Any())
@@ -199,7 +212,8 @@ public class CommandMediator : ICommandMediator
         };
     }
 
-    private Func<Task<Result>> WrapWithValidation<TCommand>(TCommand command, Func<Task<Result>> next, CancellationToken cancellationToken)
+    private Func<Task<Result>> WrapWithValidation<TCommand>(TCommand command, Func<Task<Result>> next,
+        CancellationToken cancellationToken)
         where TCommand : ICommand
     {
         return async () =>
@@ -211,9 +225,10 @@ public class CommandMediator : ICommandMediator
             if (validators.Any())
             {
                 _logger.LogDebug("Validating command of type {CommandType}", typeof(TCommand).Name);
-                
+
                 var context = new ValidationContext<TCommand>(command);
-                var validationResults = await Task.WhenAll(validators.Select(v => v.ValidateAsync(context, cancellationToken)));
+                var validationResults =
+                    await Task.WhenAll(validators.Select(v => v.ValidateAsync(context, cancellationToken)));
                 var failures = validationResults.SelectMany(r => r.Errors).Where(f => f != null).ToList();
 
                 if (failures.Any())
@@ -233,7 +248,8 @@ public class CommandMediator : ICommandMediator
         };
     }
 
-    private Func<Task<Result<TResponse>>> WrapWithExceptionHandling<TCommand, TResponse>(TCommand command, Func<Task<Result<TResponse>>> next, CancellationToken cancellationToken)
+    private Func<Task<Result<TResponse>>> WrapWithExceptionHandling<TCommand, TResponse>(TCommand command,
+        Func<Task<Result<TResponse>>> next, CancellationToken cancellationToken)
         where TCommand : ICommand<TResponse>
     {
         return async () =>
@@ -245,12 +261,14 @@ public class CommandMediator : ICommandMediator
             catch (Exception ex)
             {
                 _logger.LogError(ex, "An error occurred while processing {CommandType}", typeof(TCommand).Name);
-                return Result<TResponse>.Failure(Error.Internal($"An error occurred while processing the command: {ex.Message}"));
+                return Result<TResponse>.Failure(
+                    Error.Internal($"An error occurred while processing the command: {ex.Message}"));
             }
         };
     }
 
-    private Func<Task<Result>> WrapWithExceptionHandling<TCommand>(TCommand command, Func<Task<Result>> next, CancellationToken cancellationToken)
+    private Func<Task<Result>> WrapWithExceptionHandling<TCommand>(TCommand command, Func<Task<Result>> next,
+        CancellationToken cancellationToken)
         where TCommand : ICommand
     {
         return async () =>

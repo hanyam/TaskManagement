@@ -2,10 +2,8 @@ using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using TaskManagement.Application.Common;
-using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Application.Tasks.Commands.CreateTask;
 using TaskManagement.Domain.Entities;
-using TaskManagement.Domain.DTOs;
 using TaskManagement.Tests.Unit.TestHelpers;
 using Xunit;
 using Task = System.Threading.Tasks.Task;
@@ -13,13 +11,13 @@ using Task = System.Threading.Tasks.Task;
 namespace TaskManagement.Tests.Unit.Application.Common;
 
 /// <summary>
-/// Tests for PipelineMediator to verify pipeline behaviors are applied correctly using real services.
+///     Tests for PipelineMediator to verify pipeline behaviors are applied correctly using real services.
 /// </summary>
 public class PipelineMediatorTests : InMemoryDatabaseTestBase
 {
+    private readonly ILogger<PipelineMediator> _logger;
     private readonly PipelineMediator _mediator;
     private readonly TestServiceLocator _serviceLocator;
-    private readonly ILogger<PipelineMediator> _logger;
 
     public PipelineMediatorTests()
     {
@@ -27,14 +25,14 @@ public class PipelineMediatorTests : InMemoryDatabaseTestBase
         var services = new ServiceCollection();
         services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
         var serviceProvider = services.BuildServiceProvider();
-        
+
         // Create real service locator that provides actual services
         _serviceLocator = new TestServiceLocator(serviceProvider, Context);
-        
+
         // Create real logger
         var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
         _logger = loggerFactory.CreateLogger<PipelineMediator>();
-        
+
         // Create real mediator with real services
         _mediator = new PipelineMediator(_serviceLocator, _logger);
     }
@@ -85,26 +83,20 @@ public class PipelineMediatorTests : InMemoryDatabaseTestBase
         // Assert
         result.Should().NotBeNull();
         result.IsSuccess.Should().BeFalse();
-        
+
         // Debug: Let's see what we actually get
         Console.WriteLine($"Result IsSuccess: {result.IsSuccess}");
         Console.WriteLine($"Result Errors Count: {result.Errors?.Count ?? 0}");
-        
+
         if (result.Errors != null && result.Errors.Any())
-        {
             foreach (var error in result.Errors)
-            {
                 Console.WriteLine($"Error: Code={error.Code}, Message={error.Message}, Field={error.Field}");
-            }
-        }
         else
-        {
             Console.WriteLine("No errors found in result.Errors");
-        }
-        
+
         result.Errors.Should().NotBeEmpty();
         result.Errors.Should().HaveCount(2); // Expecting 2 validation errors (Title and DueDate)
-        
+
         // Verify specific validation errors
         result.Errors.Should().Contain(e => e.Code == "VALIDATION_ERROR" && e.Field == "Title");
         result.Errors.Should().Contain(e => e.Code == "VALIDATION_ERROR" && e.Field == "DueDate");

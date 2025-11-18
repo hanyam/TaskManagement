@@ -6,7 +6,7 @@ using Xunit;
 namespace TaskManagement.Tests.Unit.Domain.Options;
 
 /// <summary>
-/// Unit tests for JwtOptions configuration.
+///     Unit tests for JwtOptions configuration.
 /// </summary>
 public class JwtOptionsTests
 {

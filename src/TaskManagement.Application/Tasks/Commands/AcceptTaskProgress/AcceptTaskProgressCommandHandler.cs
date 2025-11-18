@@ -39,7 +39,8 @@ public class AcceptTaskProgressCommandHandler : ICommandHandler<AcceptTaskProgre
 
         // Get progress history entry
         var progressHistory = await _context.Set<TaskProgressHistory>()
-            .FirstOrDefaultAsync(ph => ph.Id == request.ProgressHistoryId && ph.TaskId == request.TaskId, cancellationToken);
+            .FirstOrDefaultAsync(ph => ph.Id == request.ProgressHistoryId && ph.TaskId == request.TaskId,
+                cancellationToken);
 
         if (progressHistory == null)
         {
@@ -68,4 +69,3 @@ public class AcceptTaskProgressCommandHandler : ICommandHandler<AcceptTaskProgre
         return Result.Success();
     }
 }
-

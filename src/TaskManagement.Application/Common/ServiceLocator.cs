@@ -4,7 +4,7 @@ using TaskManagement.Application.Common.Interfaces;
 namespace TaskManagement.Application.Common;
 
 /// <summary>
-/// Service locator implementation that wraps IServiceProvider.
+///     Service locator implementation that wraps IServiceProvider.
 /// </summary>
 public class ServiceLocator : IServiceLocator
 {

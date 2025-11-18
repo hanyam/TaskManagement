@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using TaskManagement.Domain.Entities;
-using TaskManagement.Infrastructure.Data.EntityConfigurations;
 using Task = TaskManagement.Domain.Entities.Task;
 
 namespace TaskManagement.Infrastructure.Data;

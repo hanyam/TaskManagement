@@ -74,5 +74,3 @@ public class TaskConfiguration : IEntityTypeConfiguration<Task>
             .OnDelete(DeleteBehavior.Cascade);
     }
 }
-
-

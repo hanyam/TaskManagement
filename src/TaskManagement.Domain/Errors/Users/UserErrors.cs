@@ -3,14 +3,12 @@ using TaskManagement.Domain.Common;
 namespace TaskManagement.Domain.Errors.Users;
 
 /// <summary>
-/// Centralized error definitions for User-related operations.
+///     Centralized error definitions for User-related operations.
 /// </summary>
 public static class UserErrors
 {
     // User not found errors
     public static Error NotFound => Error.NotFound("User", "Id");
-    public static Error NotFoundById(Guid id) => Error.NotFound($"User with ID '{id}'", "Id");
-    public static Error NotFoundByEmail(string email) => Error.NotFound($"User with email '{email}'", "Email");
 
     // User validation errors
     public static Error EmailRequired => Error.Validation("Email is required", "Email");
@@ -20,7 +18,9 @@ public static class UserErrors
     public static Error FirstNameTooLong => Error.Validation("First name cannot exceed 50 characters", "FirstName");
     public static Error LastNameRequired => Error.Validation("Last name is required", "LastName");
     public static Error LastNameTooLong => Error.Validation("Last name cannot exceed 50 characters", "LastName");
-    public static Error DisplayNameTooLong => Error.Validation("Display name cannot exceed 100 characters", "DisplayName");
+
+    public static Error DisplayNameTooLong =>
+        Error.Validation("Display name cannot exceed 100 characters", "DisplayName");
 
     // User business logic errors
     public static Error UserInactive => Error.Validation("User account is inactive", "IsActive");
@@ -36,8 +36,12 @@ public static class UserErrors
     public static Error TooManyFailedAttempts => Error.Forbidden("Too many failed login attempts");
 
     // User creation errors
-    public static Error AzureAdObjectIdRequired => Error.Validation("Azure AD Object ID is required", "AzureAdObjectId");
-    public static Error AzureAdObjectIdTooLong => Error.Validation("Azure AD Object ID cannot exceed 100 characters", "AzureAdObjectId");
+    public static Error AzureAdObjectIdRequired =>
+        Error.Validation("Azure AD Object ID is required", "AzureAdObjectId");
+
+    public static Error AzureAdObjectIdTooLong =>
+        Error.Validation("Azure AD Object ID cannot exceed 100 characters", "AzureAdObjectId");
+
     public static Error CreatedByRequired => Error.Validation("Created by user is required", "CreatedBy");
 
     // User update errors
@@ -48,4 +52,14 @@ public static class UserErrors
     public static Error InvalidUserId => Error.Validation("User ID is required", "Id");
     public static Error InvalidEmail => Error.Validation("Email is required", "Email");
     public static Error InvalidSearchParameters => Error.Validation("Invalid search parameters provided", "Search");
+
+    public static Error NotFoundById(Guid id)
+    {
+        return Error.NotFound($"User with ID '{id}'", "Id");
+    }
+
+    public static Error NotFoundByEmail(string email)
+    {
+        return Error.NotFound($"User with email '{email}'", "Email");
+    }
 }

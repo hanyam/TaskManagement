@@ -1,6 +1,5 @@
 using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Application.Tasks.Queries.GetTasks;
-using TaskManagement.Domain.DTOs;
 using TaskManagement.Domain.Entities;
 
 namespace TaskManagement.Application.Tasks.Queries.GetTasksByReminderLevel;
@@ -15,4 +14,3 @@ public record GetTasksByReminderLevelQuery : IQuery<GetTasksResponse>
     public int Page { get; init; } = 1;
     public int PageSize { get; init; } = 10;
 }
-

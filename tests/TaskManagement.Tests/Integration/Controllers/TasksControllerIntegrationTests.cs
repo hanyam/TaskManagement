@@ -1,10 +1,8 @@
-using System.Collections.Generic;
 using System.Net;
 using System.Net.Http.Json;
 using System.Reflection;
 using System.Text.Json;
 using FluentAssertions;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using TaskManagement.Domain.DTOs;
@@ -23,9 +21,9 @@ namespace TaskManagement.Tests.Integration.Controllers;
 public class TasksControllerIntegrationTests : IClassFixture<TestWebApplicationFactory>
 {
     private readonly HttpClient _client;
-    private readonly TestWebApplicationFactory _factory;
-    private readonly Guid _existingUserId;
     private readonly Guid _existingTaskId;
+    private readonly Guid _existingUserId;
+    private readonly TestWebApplicationFactory _factory;
 
     public TasksControllerIntegrationTests(TestWebApplicationFactory factory)
     {

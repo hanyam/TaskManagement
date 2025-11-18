@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Application.Infrastructure.Data.Repositories;
 using TaskManagement.Domain.Common;
@@ -5,7 +6,6 @@ using TaskManagement.Domain.DTOs;
 using TaskManagement.Domain.Entities;
 using TaskManagement.Domain.Errors.Tasks;
 using TaskManagement.Infrastructure.Data;
-using Microsoft.EntityFrameworkCore;
 using Task = TaskManagement.Domain.Entities.Task;
 
 namespace TaskManagement.Application.Tasks.Commands.ReassignTask;
@@ -70,10 +70,7 @@ public class ReassignTaskCommandHandler : ICommandHandler<ReassignTaskCommand, T
             .Where(ta => ta.TaskId == request.TaskId)
             .ToListAsync(cancellationToken);
 
-        foreach (var assignment in existingAssignments)
-        {
-            _context.Set<TaskAssignment>().Remove(assignment);
-        }
+        foreach (var assignment in existingAssignments) _context.Set<TaskAssignment>().Remove(assignment);
 
         // Create new assignments
         var primaryAssigned = true;
@@ -101,9 +98,7 @@ public class ReassignTaskCommandHandler : ICommandHandler<ReassignTaskCommand, T
         // Get assigned users for DTO
         User? assignedUser = null;
         if (task.AssignedUserId.HasValue)
-        {
             assignedUser = await _userQueryRepository.GetByIdAsync(task.AssignedUserId.Value, cancellationToken);
-        }
 
         return new TaskDto
         {
@@ -126,4 +121,3 @@ public class ReassignTaskCommandHandler : ICommandHandler<ReassignTaskCommand, T
         };
     }
 }
-

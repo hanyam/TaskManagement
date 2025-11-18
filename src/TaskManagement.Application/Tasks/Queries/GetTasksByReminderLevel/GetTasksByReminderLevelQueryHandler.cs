@@ -5,9 +5,7 @@ using TaskManagement.Application.Tasks.Queries.GetTasks;
 using TaskManagement.Domain.Common;
 using TaskManagement.Domain.DTOs;
 using TaskManagement.Domain.Errors.Tasks;
-using TaskManagement.Domain.Entities;
 using TaskManagement.Infrastructure.Data;
-using Task = TaskManagement.Domain.Entities.Task;
 using TaskStatus = TaskManagement.Domain.Entities.TaskStatus;
 
 namespace TaskManagement.Application.Tasks.Queries.GetTasksByReminderLevel;
@@ -28,25 +26,17 @@ public class GetTasksByReminderLevelQueryHandler : IRequestHandler<GetTasksByRem
         _reminderCalculationService = reminderCalculationService;
     }
 
-    public async Task<Result<GetTasksResponse>> Handle(GetTasksByReminderLevelQuery request, CancellationToken cancellationToken)
+    public async Task<Result<GetTasksResponse>> Handle(GetTasksByReminderLevelQuery request,
+        CancellationToken cancellationToken)
     {
         var errors = new List<Error>();
 
         // Validate pagination
-        if (request.Page < 1)
-        {
-            errors.Add(TaskErrors.InvalidPageNumber);
-        }
+        if (request.Page < 1) errors.Add(TaskErrors.InvalidPageNumber);
 
-        if (request.PageSize < 1 || request.PageSize > 100)
-        {
-            errors.Add(TaskErrors.InvalidPageSize);
-        }
+        if (request.PageSize < 1 || request.PageSize > 100) errors.Add(TaskErrors.InvalidPageSize);
 
-        if (errors.Any())
-        {
-            return Result<GetTasksResponse>.Failure(errors);
-        }
+        if (errors.Any()) return Result<GetTasksResponse>.Failure(errors);
 
         var query = _context.Tasks
             .Include(t => t.AssignedUser)
@@ -55,11 +45,9 @@ public class GetTasksByReminderLevelQueryHandler : IRequestHandler<GetTasksByRem
 
         // Filter by user if provided
         if (request.UserId.HasValue)
-        {
             query = query.Where(t => t.AssignedUserId == request.UserId.Value ||
-                                   t.CreatedById == request.UserId.Value ||
-                                   t.Assignments.Any(a => a.UserId == request.UserId.Value));
-        }
+                                     t.CreatedById == request.UserId.Value ||
+                                     t.Assignments.Any(a => a.UserId == request.UserId.Value));
 
         // Get tasks and calculate reminder levels
         var tasks = await query
@@ -113,4 +101,3 @@ public class GetTasksByReminderLevelQueryHandler : IRequestHandler<GetTasksByRem
         };
     }
 }
-

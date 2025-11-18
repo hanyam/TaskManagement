@@ -1,11 +1,13 @@
 using System.Reflection;
 using FluentValidation;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using TaskManagement.Application.Common;
 using TaskManagement.Application.Common.Behaviors;
 using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Application.Common.Services;
 using TaskManagement.Application.Infrastructure.Data.Repositories;
+using TaskManagement.Application.Tasks.Services;
 using TaskManagement.Domain.Options;
 
 namespace TaskManagement.Application;
@@ -23,7 +25,7 @@ public static class DependencyInjection
     /// <returns>The service collection for chaining.</returns>
     public static IServiceCollection AddApplication(
         this IServiceCollection services,
-        Microsoft.Extensions.Configuration.IConfiguration configuration)
+        IConfiguration configuration)
     {
         var assembly = typeof(AssemblyReference).Assembly;
 
@@ -61,8 +63,8 @@ public static class DependencyInjection
 
         // Register business services
         services.AddScoped<IReminderCalculationService, ReminderCalculationService>();
-        services.AddScoped<TaskManagement.Application.Tasks.Services.ITaskActionService, 
-            TaskManagement.Application.Tasks.Services.TaskActionService>();
+        services.AddScoped<ITaskActionService,
+            TaskActionService>();
 
         return services;
     }
@@ -77,24 +79,21 @@ public static class DependencyInjection
             .Where(t => t.IsClass && !t.IsAbstract)
             .Where(t => t.GetInterfaces()
                 .Any(i => i.IsGenericType &&
-                         (i.GetGenericTypeDefinition() == typeof(ICommandHandler<,>) ||
-                          i.GetGenericTypeDefinition() == typeof(ICommandHandler<>))));
+                          (i.GetGenericTypeDefinition() == typeof(ICommandHandler<,>) ||
+                           i.GetGenericTypeDefinition() == typeof(ICommandHandler<>))));
 
         foreach (var handlerType in commandHandlerTypes)
         {
             // Get all interfaces implemented by this handler
             var interfaces = handlerType.GetInterfaces()
                 .Where(i => i.IsGenericType &&
-                           (i.GetGenericTypeDefinition() == typeof(ICommandHandler<,>) ||
-                            i.GetGenericTypeDefinition() == typeof(ICommandHandler<>) ||
-                            i.GetGenericTypeDefinition() == typeof(IRequestHandler<,>) ||
-                            i.GetGenericTypeDefinition() == typeof(IRequestHandler<>)))
+                            (i.GetGenericTypeDefinition() == typeof(ICommandHandler<,>) ||
+                             i.GetGenericTypeDefinition() == typeof(ICommandHandler<>) ||
+                             i.GetGenericTypeDefinition() == typeof(IRequestHandler<,>) ||
+                             i.GetGenericTypeDefinition() == typeof(IRequestHandler<>)))
                 .ToList();
 
-            foreach (var interfaceType in interfaces)
-            {
-                services.AddScoped(interfaceType, handlerType);
-            }
+            foreach (var interfaceType in interfaces) services.AddScoped(interfaceType, handlerType);
         }
     }
 
@@ -110,8 +109,8 @@ public static class DependencyInjection
                 .Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRequestHandler<,>)))
             .Where(t => !t.GetInterfaces()
                 .Any(i => i.IsGenericType &&
-                         (i.GetGenericTypeDefinition() == typeof(ICommandHandler<,>) ||
-                          i.GetGenericTypeDefinition() == typeof(ICommandHandler<>))));
+                          (i.GetGenericTypeDefinition() == typeof(ICommandHandler<,>) ||
+                           i.GetGenericTypeDefinition() == typeof(ICommandHandler<>))));
 
         foreach (var handlerType in queryHandlerTypes)
         {
@@ -120,14 +119,9 @@ public static class DependencyInjection
                 .ToList();
 
             foreach (var interfaceType in interfaces)
-            {
                 // Only register if not already registered (shouldn't happen for pure query handlers)
                 if (!services.Any(s => s.ServiceType == interfaceType && s.ImplementationType == handlerType))
-                {
                     services.AddScoped(interfaceType, handlerType);
-                }
-            }
         }
     }
 }
-

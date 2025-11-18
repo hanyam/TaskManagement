@@ -11,7 +11,8 @@ public class Task : BaseEntity
     {
     }
 
-    public Task(string title, string? description, TaskPriority priority, DateTime? dueDate, Guid? assignedUserId, TaskType type, Guid createdById)
+    public Task(string title, string? description, TaskPriority priority, DateTime? dueDate, Guid? assignedUserId,
+        TaskType type, Guid createdById)
     {
         Title = title;
         Description = description;
@@ -35,18 +36,20 @@ public class Task : BaseEntity
     public DateTime? ExtendedDueDate { get; private set; }
     public Guid? AssignedUserId { get; private set; }
     public User? AssignedUser { get; private set; }
-    public TaskType Type { get; private set; }
+    public TaskType Type { get; }
     public ReminderLevel ReminderLevel { get; private set; }
     public int? ProgressPercentage { get; private set; }
     public Guid CreatedById { get; private set; }
     public User? CreatedByUser { get; private set; }
     public int? ManagerRating { get; private set; }
     public string? ManagerFeedback { get; private set; }
-    
+
     // Navigation properties
     public ICollection<TaskAssignment> Assignments { get; private set; } = new List<TaskAssignment>();
     public ICollection<TaskProgressHistory> ProgressHistory { get; private set; } = new List<TaskProgressHistory>();
-    public ICollection<DeadlineExtensionRequest> ExtensionRequests { get; private set; } = new List<DeadlineExtensionRequest>();
+
+    public ICollection<DeadlineExtensionRequest> ExtensionRequests { get; private set; } =
+        new List<DeadlineExtensionRequest>();
 
     public void UpdateTitle(string title)
     {
@@ -133,10 +136,8 @@ public class Task : BaseEntity
         ProgressPercentage = percentage;
 
         if (!requiresAcceptance && Type == TaskType.WithAcceptedProgress)
-        {
             // If it's a task with accepted progress but no acceptance required, it's still pending
             SetUnderReview();
-        }
     }
 
     public void AcceptProgress()
@@ -177,11 +178,8 @@ public class Task : BaseEntity
             throw new InvalidOperationException("Cannot complete a cancelled task");
 
         Status = TaskStatus.Completed;
-        
-        if (Type == TaskType.WithProgress || Type == TaskType.WithAcceptedProgress)
-        {
-            ProgressPercentage = 100;
-        }
+
+        if (Type == TaskType.WithProgress || Type == TaskType.WithAcceptedProgress) ProgressPercentage = 100;
     }
 
     public void MarkCompletedByEmployee()
@@ -193,11 +191,8 @@ public class Task : BaseEntity
             throw new InvalidOperationException("Cannot complete a cancelled task");
 
         Status = TaskStatus.PendingManagerReview;
-        
-        if (Type == TaskType.WithProgress || Type == TaskType.WithAcceptedProgress)
-        {
-            ProgressPercentage = 100;
-        }
+
+        if (Type == TaskType.WithProgress || Type == TaskType.WithAcceptedProgress) ProgressPercentage = 100;
     }
 
     public void ReviewByManager(bool accepted, int? rating, string? feedback, bool sendBackForRework = false)
@@ -218,17 +213,11 @@ public class Task : BaseEntity
         ManagerFeedback = feedback;
 
         if (sendBackForRework)
-        {
             Status = TaskStatus.Assigned;
-        }
         else if (accepted)
-        {
             Status = TaskStatus.Accepted;
-        }
         else
-        {
             Status = TaskStatus.RejectedByManager;
-        }
     }
 }
 
@@ -246,6 +235,7 @@ public enum TaskStatus
     Cancelled = 6,
     PendingManagerReview = 7,
     RejectedByManager = 8,
+
     // Legacy statuses for backward compatibility
     Pending = 0, // Maps to Created
     InProgress = 1 // Maps to Assigned

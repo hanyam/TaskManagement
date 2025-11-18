@@ -1,5 +1,4 @@
 using TaskManagement.Domain.Common;
-using TaskManagement.Domain.Entities;
 
 namespace TaskManagement.Domain.Entities;
 
@@ -51,4 +50,3 @@ public class DeadlineExtensionRequest : BaseEntity
         ReviewNotes = reviewNotes;
     }
 }
-

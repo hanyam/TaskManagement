@@ -1,6 +1,5 @@
 using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Application.Tasks.Queries.GetTasks;
-using TaskManagement.Domain.DTOs;
 using TaskStatus = TaskManagement.Domain.Entities.TaskStatus;
 
 namespace TaskManagement.Application.Tasks.Queries.GetAssignedTasks;
@@ -15,4 +14,3 @@ public record GetAssignedTasksQuery : IQuery<GetTasksResponse>
     public int Page { get; init; } = 1;
     public int PageSize { get; init; } = 10;
 }
-

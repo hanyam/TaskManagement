@@ -49,7 +49,8 @@ public class DapperQueryRepository<T> : IQueryRepository<T> where T : BaseEntity
             cancellationToken: cancellationToken));
     }
 
-    public virtual async Task<int> CountAsync(string sql, object? param = null, CancellationToken cancellationToken = default)
+    public virtual async Task<int> CountAsync(string sql, object? param = null,
+        CancellationToken cancellationToken = default)
     {
         using var connection = CreateConnection();
         return await connection.ExecuteScalarAsync<int>(new CommandDefinition(sql, param,

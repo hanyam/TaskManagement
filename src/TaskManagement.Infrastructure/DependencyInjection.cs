@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using TaskManagement.Domain.Interfaces;
 using TaskManagement.Infrastructure.Authentication;
 using TaskManagement.Infrastructure.Data;
@@ -26,15 +25,13 @@ public static class DependencyInjection
     {
         // Register Entity Framework DbContext
         // Skip SQL Server registration if DbContext is already registered (e.g., in tests with InMemory)
-        var dbContextRegistered = services.Any(s => 
+        var dbContextRegistered = services.Any(s =>
             s.ServiceType == typeof(TaskManagementDbContext) ||
             s.ServiceType == typeof(DbContextOptions<TaskManagementDbContext>));
-        
+
         if (!dbContextRegistered)
-        {
             services.AddDbContext<TaskManagementDbContext>(options =>
                 options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
-        }
 
         // Register repositories
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
@@ -49,4 +46,3 @@ public static class DependencyInjection
         return services;
     }
 }
-

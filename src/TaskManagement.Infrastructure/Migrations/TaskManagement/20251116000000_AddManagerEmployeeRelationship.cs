@@ -1,17 +1,17 @@
-using Microsoft.EntityFrameworkCore.Migrations;
-
 #nullable disable
 
-namespace TaskManagement.Infrastructure.Migrations.TaskManagement
+using Microsoft.EntityFrameworkCore.Migrations;
+
+namespace TaskManagement.Infrastructure.Migrations.TaskManagement;
+
+/// <inheritdoc />
+public partial class AddManagerEmployeeRelationship : Migration
 {
     /// <inheritdoc />
-    public partial class AddManagerEmployeeRelationship : Migration
+    protected override void Up(MigrationBuilder migrationBuilder)
     {
-        /// <inheritdoc />
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
-            // Create table only if it doesn't exist (for existing databases)
-            migrationBuilder.Sql(@"
+        // Create table only if it doesn't exist (for existing databases)
+        migrationBuilder.Sql(@"
                 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'ManagerEmployees' AND schema_id = SCHEMA_ID('Tasks'))
                 BEGIN
                     CREATE TABLE [Tasks].[ManagerEmployees] (
@@ -33,19 +33,16 @@ namespace TaskManagement.Infrastructure.Migrations.TaskManagement
                     CREATE UNIQUE INDEX [IX_ManagerEmployees_ManagerId_EmployeeId] ON [Tasks].[ManagerEmployees] ([ManagerId], [EmployeeId]);
                 END
             ");
-        }
+    }
 
-        /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
-            migrationBuilder.Sql(@"
+    /// <inheritdoc />
+    protected override void Down(MigrationBuilder migrationBuilder)
+    {
+        migrationBuilder.Sql(@"
                 IF EXISTS (SELECT * FROM sys.tables WHERE name = 'ManagerEmployees' AND schema_id = SCHEMA_ID('Tasks'))
                 BEGIN
                     DROP TABLE [Tasks].[ManagerEmployees];
                 END
             ");
-        }
     }
 }
-
-

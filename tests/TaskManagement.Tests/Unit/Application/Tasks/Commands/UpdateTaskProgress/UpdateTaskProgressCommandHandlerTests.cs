@@ -1,15 +1,11 @@
 using FluentAssertions;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using TaskManagement.Application.Common;
-using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Application.Tasks.Commands.UpdateTaskProgress;
 using TaskManagement.Domain.Entities;
-using TaskManagement.Domain.Common;
 using TaskManagement.Domain.Errors.Tasks;
 using TaskManagement.Tests.Unit.TestHelpers;
-using static TaskManagement.Tests.Unit.TestHelpers.ErrorAssertionExtensions;
 using Xunit;
 using Task = System.Threading.Tasks.Task;
 
@@ -28,12 +24,12 @@ public class UpdateTaskProgressCommandHandlerTests : InMemoryDatabaseTestBase
         var services = new ServiceCollection();
         services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
         var serviceProvider = services.BuildServiceProvider();
-        
+
         _serviceLocator = new TestServiceLocator(serviceProvider, Context);
-        
+
         var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
         var logger = loggerFactory.CreateLogger<PipelineMediator>();
-        
+
         _mediator = new PipelineMediator(_serviceLocator, logger);
     }
 
@@ -42,8 +38,9 @@ public class UpdateTaskProgressCommandHandlerTests : InMemoryDatabaseTestBase
     {
         // Arrange
         var employee = GetTestUser("john.doe@example.com");
-        var task = CreateTestTask("Test Task", "Description", TaskPriority.High, DateTime.UtcNow.AddDays(7), employee.Id, TaskType.WithProgress, employee.Id);
-        
+        var task = CreateTestTask("Test Task", "Description", TaskPriority.High, DateTime.UtcNow.AddDays(7),
+            employee.Id, TaskType.WithProgress, employee.Id);
+
         var command = new UpdateTaskProgressCommand
         {
             TaskId = task.Id,
@@ -61,11 +58,11 @@ public class UpdateTaskProgressCommandHandlerTests : InMemoryDatabaseTestBase
         result.Value.Should().NotBeNull();
         result.Value!.ProgressPercentage.Should().Be(50);
         result.Value.Notes.Should().Be("Halfway complete");
-        
+
         // Verify task progress updated
         var updatedTask = await Context.Tasks.FindAsync(task.Id);
         updatedTask!.ProgressPercentage.Should().Be(50);
-        
+
         // Verify progress history created
         var progressHistory = await Context.Set<TaskProgressHistory>()
             .FirstOrDefaultAsync(ph => ph.TaskId == task.Id);
@@ -79,7 +76,7 @@ public class UpdateTaskProgressCommandHandlerTests : InMemoryDatabaseTestBase
         // Arrange
         var employee = GetTestUser("john.doe@example.com");
         var nonExistentTaskId = Guid.NewGuid();
-        
+
         var command = new UpdateTaskProgressCommand
         {
             TaskId = nonExistentTaskId,
@@ -100,8 +97,9 @@ public class UpdateTaskProgressCommandHandlerTests : InMemoryDatabaseTestBase
     {
         // Arrange
         var employee = GetTestUser("john.doe@example.com");
-        var task = CreateTestTask("Test Task", "Description", TaskPriority.High, DateTime.UtcNow.AddDays(7), employee.Id, TaskType.WithProgress, employee.Id);
-        
+        var task = CreateTestTask("Test Task", "Description", TaskPriority.High, DateTime.UtcNow.AddDays(7),
+            employee.Id, TaskType.WithProgress, employee.Id);
+
         var command = new UpdateTaskProgressCommand
         {
             TaskId = task.Id,
@@ -122,8 +120,9 @@ public class UpdateTaskProgressCommandHandlerTests : InMemoryDatabaseTestBase
     {
         // Arrange
         var employee = GetTestUser("john.doe@example.com");
-        var task = CreateTestTask("Test Task", "Description", TaskPriority.High, DateTime.UtcNow.AddDays(7), employee.Id, TaskType.Simple, employee.Id);
-        
+        var task = CreateTestTask("Test Task", "Description", TaskPriority.High, DateTime.UtcNow.AddDays(7),
+            employee.Id, TaskType.Simple, employee.Id);
+
         var command = new UpdateTaskProgressCommand
         {
             TaskId = task.Id,
@@ -144,8 +143,9 @@ public class UpdateTaskProgressCommandHandlerTests : InMemoryDatabaseTestBase
     {
         // Arrange
         var employee = GetTestUser("john.doe@example.com");
-        var task = CreateTestTask("Test Task", "Description", TaskPriority.High, DateTime.UtcNow.AddDays(7), employee.Id, TaskType.WithProgress, employee.Id);
-        
+        var task = CreateTestTask("Test Task", "Description", TaskPriority.High, DateTime.UtcNow.AddDays(7),
+            employee.Id, TaskType.WithProgress, employee.Id);
+
         var command = new UpdateTaskProgressCommand
         {
             TaskId = task.Id,
@@ -159,12 +159,12 @@ public class UpdateTaskProgressCommandHandlerTests : InMemoryDatabaseTestBase
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        
+
         var progressHistory = await Context.Set<TaskProgressHistory>()
             .Where(ph => ph.TaskId == task.Id)
             .OrderByDescending(ph => ph.CreatedAt)
             .FirstOrDefaultAsync();
-        
+
         progressHistory.Should().NotBeNull();
         progressHistory!.ProgressPercentage.Should().Be(75);
         progressHistory.Notes.Should().Be("Making good progress");
@@ -172,4 +172,3 @@ public class UpdateTaskProgressCommandHandlerTests : InMemoryDatabaseTestBase
         progressHistory.Status.Should().Be(ProgressStatus.Pending);
     }
 }
-

@@ -1,6 +1,6 @@
+using Microsoft.Extensions.Options;
 using TaskManagement.Domain.Entities;
 using TaskManagement.Domain.Options;
-using Microsoft.Extensions.Options;
 
 namespace TaskManagement.Application.Common.Services;
 
@@ -26,30 +26,18 @@ public class ReminderCalculationService : IReminderCalculationService
 
     public ReminderLevel CalculateReminderLevel(DateTime? dueDate, DateTime? createdAt)
     {
-        if (!dueDate.HasValue)
-        {
-            return ReminderLevel.None;
-        }
+        if (!dueDate.HasValue) return ReminderLevel.None;
 
         var now = DateTime.UtcNow;
         var dueDateUtc = dueDate.Value;
 
         // If due date has passed, it's critical
-        if (dueDateUtc < now)
-        {
-            return ReminderLevel.Critical;
-        }
+        if (dueDateUtc < now) return ReminderLevel.Critical;
 
-        if (_options.UseDayThresholds && _options.DayThresholds.Any())
-        {
-            return CalculateByDayThresholds(dueDateUtc, now);
-        }
+        if (_options.UseDayThresholds && _options.DayThresholds.Any()) return CalculateByDayThresholds(dueDateUtc, now);
 
         // Calculate by percentage if created date is available
-        if (createdAt.HasValue)
-        {
-            return CalculateByPercentage(dueDateUtc, createdAt.Value, now);
-        }
+        if (createdAt.HasValue) return CalculateByPercentage(dueDateUtc, createdAt.Value, now);
 
         // Fallback to day thresholds if no created date
         return CalculateByDayThresholds(dueDateUtc, now);
@@ -102,4 +90,3 @@ public class ReminderCalculationService : IReminderCalculationService
         return ReminderLevel.None;
     }
 }
-

@@ -17,10 +17,7 @@ public static class DatabaseExtensions
     public static WebApplication ApplyMigrations(this WebApplication app)
     {
         // Skip in test environment
-        if (app.Environment.IsEnvironment("Testing"))
-        {
-            return app;
-        }
+        if (app.Environment.IsEnvironment("Testing")) return app;
 
         using var scope = app.Services.CreateScope();
         var services = scope.ServiceProvider;
@@ -57,4 +54,3 @@ public static class DatabaseExtensions
         return app;
     }
 }
-

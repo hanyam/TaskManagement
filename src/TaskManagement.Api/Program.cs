@@ -1,4 +1,3 @@
-using Microsoft.EntityFrameworkCore;
 using Serilog;
 using TaskManagement.Api;
 using TaskManagement.Api.Extensions;
@@ -20,8 +19,8 @@ Log.Logger = new LoggerConfiguration()
 builder.Host.UseSerilog();
 
 // Register services by layer
-builder.Services.AddPresentation(builder.Configuration);  // API/Presentation layer
-builder.Services.AddApplication(builder.Configuration);    // Application layer
+builder.Services.AddPresentation(builder.Configuration); // API/Presentation layer
+builder.Services.AddApplication(builder.Configuration); // Application layer
 builder.Services.AddInfrastructure(builder.Configuration); // Infrastructure layer
 
 // Add health checks

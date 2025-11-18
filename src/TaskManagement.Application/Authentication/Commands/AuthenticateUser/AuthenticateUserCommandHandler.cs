@@ -5,7 +5,6 @@ using TaskManagement.Domain.Common;
 using TaskManagement.Domain.DTOs;
 using TaskManagement.Domain.Entities;
 using TaskManagement.Domain.Errors.Authentication;
-using TaskManagement.Domain.Errors.Users;
 using TaskManagement.Domain.Interfaces;
 using TaskManagement.Infrastructure.Data;
 
@@ -41,16 +40,10 @@ public class AuthenticateUserCommandHandler : ICommandHandler<AuthenticateUserCo
         // Validate Azure AD token
         var validationResult =
             await _authenticationService.ValidateAzureAdTokenAsync(request.AzureAdToken, cancellationToken);
-        if (validationResult.IsFailure)
-        {
-            errors.Add(validationResult.Error ?? AuthenticationErrors.InvalidAzureAdToken);
-        }
+        if (validationResult.IsFailure) errors.Add(validationResult.Error ?? AuthenticationErrors.InvalidAzureAdToken);
 
         // If there are any validation errors, return them all
-        if (errors.Any())
-        {
-            return Result<AuthenticationResponse>.Failure(errors);
-        }
+        if (errors.Any()) return Result<AuthenticationResponse>.Failure(errors);
 
         var claimsPrincipal = validationResult.Value!;
         var email = claimsPrincipal.FindFirst(ClaimTypes.Email)?.Value ??
@@ -98,16 +91,12 @@ public class AuthenticateUserCommandHandler : ICommandHandler<AuthenticateUserCo
             // Check if user is a manager and update role accordingly (role may have changed in database)
             var isManager = await _userQueryRepository.IsManagerAsync(user.Id, cancellationToken);
             if (isManager && user.Role == UserRole.Employee)
-            {
                 // User is a manager but role is Employee - update to Manager
                 user.UpdateRole(UserRole.Manager);
-            }
             else if (!isManager && user.Role == UserRole.Manager)
-            {
                 // User is no longer a manager - revert to Employee (unless Admin)
                 // Note: Admin role should be set manually and not changed automatically
                 user.UpdateRole(UserRole.Employee);
-            }
 
             await _userCommandRepository.UpdateAsync(user, cancellationToken);
             await _context.SaveChangesAsync(cancellationToken);

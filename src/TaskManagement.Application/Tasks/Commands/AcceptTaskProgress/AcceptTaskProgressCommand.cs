@@ -11,4 +11,3 @@ public record AcceptTaskProgressCommand : ICommand
     public Guid ProgressHistoryId { get; init; }
     public Guid AcceptedById { get; init; }
 }
-

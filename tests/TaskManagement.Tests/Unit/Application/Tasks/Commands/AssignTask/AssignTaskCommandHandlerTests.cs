@@ -1,15 +1,11 @@
 using FluentAssertions;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using TaskManagement.Application.Common;
-using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Application.Tasks.Commands.AssignTask;
 using TaskManagement.Domain.Entities;
-using TaskManagement.Domain.Common;
 using TaskManagement.Domain.Errors.Tasks;
 using TaskManagement.Tests.Unit.TestHelpers;
-using static TaskManagement.Tests.Unit.TestHelpers.ErrorAssertionExtensions;
 using Xunit;
 using Task = System.Threading.Tasks.Task;
 using TaskStatus = TaskManagement.Domain.Entities.TaskStatus;
@@ -30,14 +26,14 @@ public class AssignTaskCommandHandlerTests : InMemoryDatabaseTestBase
         var services = new ServiceCollection();
         services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
         var serviceProvider = services.BuildServiceProvider();
-        
+
         // Create real service locator that provides actual services
         _serviceLocator = new TestServiceLocator(serviceProvider, Context);
-        
+
         // Create real logger
         var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
         var logger = loggerFactory.CreateLogger<PipelineMediator>();
-        
+
         // Create real mediator with real services
         _mediator = new PipelineMediator(_serviceLocator, logger);
     }
@@ -49,8 +45,9 @@ public class AssignTaskCommandHandlerTests : InMemoryDatabaseTestBase
         var manager = GetTestUserWithRole("john.doe@example.com", UserRole.Manager);
         var employee1 = GetTestUser("jane.smith@example.com");
         CreateManagerEmployeeRelationship(manager.Id, employee1.Id);
-        var task = CreateTestTask("Test Task", "Description", TaskPriority.High, DateTime.UtcNow.AddDays(7), manager.Id, TaskType.Simple, manager.Id);
-        
+        var task = CreateTestTask("Test Task", "Description", TaskPriority.High, DateTime.UtcNow.AddDays(7), manager.Id,
+            TaskType.Simple, manager.Id);
+
         var command = new AssignTaskCommand
         {
             TaskId = task.Id,
@@ -66,12 +63,12 @@ public class AssignTaskCommandHandlerTests : InMemoryDatabaseTestBase
         result.IsSuccess.Should().BeTrue();
         result.Value.Should().NotBeNull();
         result.Value!.AssignedUserId.Should().Be(employee1.Id);
-        
+
         // Verify task status
         var updatedTask = await Context.Tasks.FindAsync(task.Id);
         updatedTask.Should().NotBeNull();
         updatedTask!.Status.Should().Be(TaskStatus.Assigned);
-        
+
         // Verify assignment created
         var assignment = await Context.Set<TaskAssignment>()
             .FirstOrDefaultAsync(ta => ta.TaskId == task.Id && ta.UserId == employee1.Id);
@@ -88,8 +85,9 @@ public class AssignTaskCommandHandlerTests : InMemoryDatabaseTestBase
         var employee2 = GetTestUser("bob.wilson@example.com");
         CreateManagerEmployeeRelationship(manager.Id, employee1.Id);
         CreateManagerEmployeeRelationship(manager.Id, employee2.Id);
-        var task = CreateTestTask("Test Task", "Description", TaskPriority.High, DateTime.UtcNow.AddDays(7), manager.Id, TaskType.Simple, manager.Id);
-        
+        var task = CreateTestTask("Test Task", "Description", TaskPriority.High, DateTime.UtcNow.AddDays(7), manager.Id,
+            TaskType.Simple, manager.Id);
+
         var command = new AssignTaskCommand
         {
             TaskId = task.Id,
@@ -102,17 +100,17 @@ public class AssignTaskCommandHandlerTests : InMemoryDatabaseTestBase
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        
+
         // Verify both assignments created
         var assignments = await Context.Set<TaskAssignment>()
             .Where(ta => ta.TaskId == task.Id)
             .ToListAsync();
         assignments.Should().HaveCount(2);
-        
+
         // First user should be primary
         var primaryAssignment = assignments.First(ta => ta.UserId == employee1.Id);
         primaryAssignment.IsPrimary.Should().BeTrue();
-        
+
         // Second user should not be primary
         var secondaryAssignment = assignments.First(ta => ta.UserId == employee2.Id);
         secondaryAssignment.IsPrimary.Should().BeFalse();
@@ -124,7 +122,7 @@ public class AssignTaskCommandHandlerTests : InMemoryDatabaseTestBase
         // Arrange
         var manager = GetTestUserWithRole("john.doe@example.com", UserRole.Manager);
         var nonExistentTaskId = Guid.NewGuid();
-        
+
         var command = new AssignTaskCommand
         {
             TaskId = nonExistentTaskId,
@@ -145,9 +143,10 @@ public class AssignTaskCommandHandlerTests : InMemoryDatabaseTestBase
     {
         // Arrange
         var manager = GetTestUserWithRole("john.doe@example.com", UserRole.Manager);
-        var task = CreateTestTask("Test Task", "Description", TaskPriority.High, DateTime.UtcNow.AddDays(7), manager.Id, TaskType.Simple, manager.Id);
+        var task = CreateTestTask("Test Task", "Description", TaskPriority.High, DateTime.UtcNow.AddDays(7), manager.Id,
+            TaskType.Simple, manager.Id);
         var nonExistentUserId = Guid.NewGuid();
-        
+
         var command = new AssignTaskCommand
         {
             TaskId = task.Id,
@@ -168,8 +167,9 @@ public class AssignTaskCommandHandlerTests : InMemoryDatabaseTestBase
     {
         // Arrange
         var manager = GetTestUserWithRole("john.doe@example.com", UserRole.Manager);
-        var task = CreateTestTask("Test Task", "Description", TaskPriority.High, DateTime.UtcNow.AddDays(7), manager.Id, TaskType.Simple, manager.Id);
-        
+        var task = CreateTestTask("Test Task", "Description", TaskPriority.High, DateTime.UtcNow.AddDays(7), manager.Id,
+            TaskType.Simple, manager.Id);
+
         var command = new AssignTaskCommand
         {
             TaskId = task.Id,
@@ -192,11 +192,12 @@ public class AssignTaskCommandHandlerTests : InMemoryDatabaseTestBase
         var manager = GetTestUserWithRole("john.doe@example.com", UserRole.Manager);
         var employee1 = GetTestUser("jane.smith@example.com");
         var employee2 = GetTestUser("bob.wilson@example.com");
-        var task = CreateTestTask("Test Task", "Description", TaskPriority.High, DateTime.UtcNow.AddDays(7), manager.Id, TaskType.Simple, manager.Id);
-        
+        var task = CreateTestTask("Test Task", "Description", TaskPriority.High, DateTime.UtcNow.AddDays(7), manager.Id,
+            TaskType.Simple, manager.Id);
+
         // Create initial assignment
         CreateTestAssignment(task.Id, employee1.Id, isPrimary: true);
-        
+
         var command = new AssignTaskCommand
         {
             TaskId = task.Id,
@@ -209,12 +210,12 @@ public class AssignTaskCommandHandlerTests : InMemoryDatabaseTestBase
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        
+
         // Verify old assignment removed
         var oldAssignment = await Context.Set<TaskAssignment>()
             .FirstOrDefaultAsync(ta => ta.TaskId == task.Id && ta.UserId == employee1.Id);
         oldAssignment.Should().BeNull();
-        
+
         // Verify new assignment created
         var newAssignment = await Context.Set<TaskAssignment>()
             .FirstOrDefaultAsync(ta => ta.TaskId == task.Id && ta.UserId == employee2.Id);
@@ -227,11 +228,12 @@ public class AssignTaskCommandHandlerTests : InMemoryDatabaseTestBase
         // Arrange
         var manager = GetTestUserWithRole("john.doe@example.com", UserRole.Manager);
         var employee1 = GetTestUser("jane.smith@example.com");
-        var task = CreateTestTask("Test Task", "Description", TaskPriority.High, DateTime.UtcNow.AddDays(7), manager.Id, TaskType.Simple, manager.Id);
-        
+        var task = CreateTestTask("Test Task", "Description", TaskPriority.High, DateTime.UtcNow.AddDays(7), manager.Id,
+            TaskType.Simple, manager.Id);
+
         // Verify initial status
         task.Status.Should().Be(TaskStatus.Created);
-        
+
         var command = new AssignTaskCommand
         {
             TaskId = task.Id,
@@ -244,7 +246,7 @@ public class AssignTaskCommandHandlerTests : InMemoryDatabaseTestBase
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        
+
         var updatedTask = await Context.Tasks.FindAsync(task.Id);
         updatedTask!.Status.Should().Be(TaskStatus.Assigned);
     }
@@ -255,8 +257,9 @@ public class AssignTaskCommandHandlerTests : InMemoryDatabaseTestBase
         // Arrange - Manager tries to assign to someone who is not their employee
         var manager = GetTestUserWithRole("john.doe@example.com", UserRole.Manager);
         var nonEmployee = GetTestUser("bob.wilson@example.com"); // Not in manager's team
-        var task = CreateTestTask("Test Task", "Description", TaskPriority.High, DateTime.UtcNow.AddDays(7), manager.Id, TaskType.Simple, manager.Id);
-        
+        var task = CreateTestTask("Test Task", "Description", TaskPriority.High, DateTime.UtcNow.AddDays(7), manager.Id,
+            TaskType.Simple, manager.Id);
+
         var command = new AssignTaskCommand
         {
             TaskId = task.Id,
@@ -278,8 +281,9 @@ public class AssignTaskCommandHandlerTests : InMemoryDatabaseTestBase
         // Arrange - Employee tries to assign task
         var employee = GetTestUser("jane.smith@example.com");
         var anotherEmployee = GetTestUser("bob.wilson@example.com");
-        var task = CreateTestTask("Test Task", "Description", TaskPriority.High, DateTime.UtcNow.AddDays(7), employee.Id, TaskType.Simple, employee.Id);
-        
+        var task = CreateTestTask("Test Task", "Description", TaskPriority.High, DateTime.UtcNow.AddDays(7),
+            employee.Id, TaskType.Simple, employee.Id);
+
         var command = new AssignTaskCommand
         {
             TaskId = task.Id,
@@ -301,8 +305,9 @@ public class AssignTaskCommandHandlerTests : InMemoryDatabaseTestBase
         // Arrange - Admin can assign to anyone
         var admin = GetTestUserWithRole("john.doe@example.com", UserRole.Admin);
         var employee = GetTestUser("jane.smith@example.com"); // No manager relationship needed
-        var task = CreateTestTask("Test Task", "Description", TaskPriority.High, DateTime.UtcNow.AddDays(7), admin.Id, TaskType.Simple, admin.Id);
-        
+        var task = CreateTestTask("Test Task", "Description", TaskPriority.High, DateTime.UtcNow.AddDays(7), admin.Id,
+            TaskType.Simple, admin.Id);
+
         var command = new AssignTaskCommand
         {
             TaskId = task.Id,
@@ -318,4 +323,3 @@ public class AssignTaskCommandHandlerTests : InMemoryDatabaseTestBase
         result.Value.Should().NotBeNull();
     }
 }
-

@@ -4,10 +4,7 @@ using TaskManagement.Application.Tasks.Queries.GetTasks;
 using TaskManagement.Domain.Common;
 using TaskManagement.Domain.DTOs;
 using TaskManagement.Domain.Errors.Tasks;
-using TaskManagement.Domain.Entities;
 using TaskManagement.Infrastructure.Data;
-using Task = TaskManagement.Domain.Entities.Task;
-using TaskStatus = TaskManagement.Domain.Entities.TaskStatus;
 
 namespace TaskManagement.Application.Tasks.Queries.GetAssignedTasks;
 
@@ -23,36 +20,25 @@ public class GetAssignedTasksQueryHandler : IRequestHandler<GetAssignedTasksQuer
         _context = context;
     }
 
-    public async Task<Result<GetTasksResponse>> Handle(GetAssignedTasksQuery request, CancellationToken cancellationToken)
+    public async Task<Result<GetTasksResponse>> Handle(GetAssignedTasksQuery request,
+        CancellationToken cancellationToken)
     {
         var errors = new List<Error>();
 
         // Validate pagination
-        if (request.Page < 1)
-        {
-            errors.Add(TaskErrors.InvalidPageNumber);
-        }
+        if (request.Page < 1) errors.Add(TaskErrors.InvalidPageNumber);
 
-        if (request.PageSize < 1 || request.PageSize > 100)
-        {
-            errors.Add(TaskErrors.InvalidPageSize);
-        }
+        if (request.PageSize < 1 || request.PageSize > 100) errors.Add(TaskErrors.InvalidPageSize);
 
-        if (errors.Any())
-        {
-            return Result<GetTasksResponse>.Failure(errors);
-        }
+        if (errors.Any()) return Result<GetTasksResponse>.Failure(errors);
 
         var query = _context.Tasks
             .Include(t => t.AssignedUser)
             .Include(t => t.Assignments)
             .Where(t => t.AssignedUserId == request.UserId ||
-                       t.Assignments.Any(a => a.UserId == request.UserId));
+                        t.Assignments.Any(a => a.UserId == request.UserId));
 
-        if (request.Status.HasValue)
-        {
-            query = query.Where(t => t.Status == request.Status.Value);
-        }
+        if (request.Status.HasValue) query = query.Where(t => t.Status == request.Status.Value);
 
         var totalCount = await query.CountAsync(cancellationToken);
 
@@ -91,4 +77,3 @@ public class GetAssignedTasksQueryHandler : IRequestHandler<GetAssignedTasksQuer
         };
     }
 }
-

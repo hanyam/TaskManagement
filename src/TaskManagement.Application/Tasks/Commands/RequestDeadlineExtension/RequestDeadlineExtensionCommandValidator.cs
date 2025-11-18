@@ -24,4 +24,3 @@ public class RequestDeadlineExtensionCommandValidator : AbstractValidator<Reques
             .NotEmpty().WithMessage("Requested by user ID is required");
     }
 }
-

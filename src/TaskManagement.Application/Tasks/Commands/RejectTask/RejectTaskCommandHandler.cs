@@ -46,9 +46,9 @@ public class RejectTaskCommandHandler : ICommandHandler<RejectTaskCommand, TaskD
         var assignments = await _context.Set<TaskAssignment>()
             .Where(ta => ta.TaskId == request.TaskId)
             .ToListAsync(cancellationToken);
-        
+
         var isAssigned = (task.AssignedUserId.HasValue && task.AssignedUserId.Value == request.RejectedById) ||
-                        assignments.Any(a => a.UserId == request.RejectedById);
+                         assignments.Any(a => a.UserId == request.RejectedById);
 
 
         // Check if already rejected
@@ -82,9 +82,7 @@ public class RejectTaskCommandHandler : ICommandHandler<RejectTaskCommand, TaskD
         // Get assigned user for DTO
         User? assignedUser = null;
         if (task.AssignedUserId.HasValue)
-        {
             assignedUser = await _userQueryRepository.GetByIdAsync(task.AssignedUserId.Value, cancellationToken);
-        }
 
         return new TaskDto
         {
@@ -107,4 +105,3 @@ public class RejectTaskCommandHandler : ICommandHandler<RejectTaskCommand, TaskD
         };
     }
 }
-

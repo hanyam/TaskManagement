@@ -20,25 +20,17 @@ public class GetExtensionRequestsQueryHandler : IRequestHandler<GetExtensionRequ
         _context = context;
     }
 
-    public async Task<Result<List<ExtensionRequestDto>>> Handle(GetExtensionRequestsQuery request, CancellationToken cancellationToken)
+    public async Task<Result<List<ExtensionRequestDto>>> Handle(GetExtensionRequestsQuery request,
+        CancellationToken cancellationToken)
     {
         var errors = new List<Error>();
 
         // Validate pagination
-        if (request.Page < 1)
-        {
-            errors.Add(TaskErrors.InvalidPageNumber);
-        }
+        if (request.Page < 1) errors.Add(TaskErrors.InvalidPageNumber);
 
-        if (request.PageSize < 1 || request.PageSize > 100)
-        {
-            errors.Add(TaskErrors.InvalidPageSize);
-        }
+        if (request.PageSize < 1 || request.PageSize > 100) errors.Add(TaskErrors.InvalidPageSize);
 
-        if (errors.Any())
-        {
-            return Result<List<ExtensionRequestDto>>.Failure(errors);
-        }
+        if (errors.Any()) return Result<List<ExtensionRequestDto>>.Failure(errors);
 
         var query = _context.Set<DeadlineExtensionRequest>()
             .Include(er => er.Task)
@@ -46,20 +38,11 @@ public class GetExtensionRequestsQueryHandler : IRequestHandler<GetExtensionRequ
             .Include(er => er.ReviewedBy)
             .AsQueryable();
 
-        if (request.TaskId.HasValue)
-        {
-            query = query.Where(er => er.TaskId == request.TaskId.Value);
-        }
+        if (request.TaskId.HasValue) query = query.Where(er => er.TaskId == request.TaskId.Value);
 
-        if (request.Status.HasValue)
-        {
-            query = query.Where(er => er.Status == request.Status.Value);
-        }
+        if (request.Status.HasValue) query = query.Where(er => er.Status == request.Status.Value);
 
-        if (request.UserId.HasValue)
-        {
-            query = query.Where(er => er.RequestedById == request.UserId.Value);
-        }
+        if (request.UserId.HasValue) query = query.Where(er => er.RequestedById == request.UserId.Value);
 
         var extensionRequests = await query
             .OrderByDescending(er => er.CreatedAt)
@@ -86,4 +69,3 @@ public class GetExtensionRequestsQueryHandler : IRequestHandler<GetExtensionRequ
         return extensionRequests;
     }
 }
-

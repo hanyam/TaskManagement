@@ -1,5 +1,5 @@
+using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Application.Common.Services;
@@ -26,19 +26,17 @@ using TaskManagement.Application.Users.Queries.SearchManagedUsers;
 using TaskManagement.Domain.DTOs;
 using TaskManagement.Domain.Options;
 using TaskManagement.Infrastructure.Data;
-using TaskManagement.Tests.Unit.TestHelpers;
-using FluentValidation;
 
 namespace TaskManagement.Tests.Unit.TestHelpers;
 
 /// <summary>
-/// Real service locator implementation for testing that provides actual services instead of mocks.
-/// Pipeline behaviors are now handled internally by PipelineMediator.
+///     Real service locator implementation for testing that provides actual services instead of mocks.
+///     Pipeline behaviors are now handled internally by PipelineMediator.
 /// </summary>
 public class TestServiceLocator : IServiceLocator
 {
-    private readonly IServiceProvider _serviceProvider;
     private readonly TaskManagementDbContext _context;
+    private readonly IServiceProvider _serviceProvider;
 
     public TestServiceLocator(IServiceProvider serviceProvider, TaskManagementDbContext context)
     {
@@ -48,7 +46,8 @@ public class TestServiceLocator : IServiceLocator
 
     public T GetService<T>() where T : notnull
     {
-        return _serviceProvider.GetService<T>() ?? throw new InvalidOperationException($"Service of type {typeof(T)} is not registered.");
+        return _serviceProvider.GetService<T>() ??
+               throw new InvalidOperationException($"Service of type {typeof(T)} is not registered.");
     }
 
     public T GetRequiredService<T>() where T : notnull
@@ -69,20 +68,20 @@ public class TestServiceLocator : IServiceLocator
         var userEfRepository = new UserEfQueryRepository(_context);
         var userQueryRepository = new UserDapperRepositoryWrapper(userEfRepository);
         var taskRepository = new TaskDapperRepositoryWrapper(taskEfRepository);
-        
+
         // Create ReminderCalculationService with default options
         var reminderOptions = Options.Create(new ReminderOptions());
         var reminderCalculationService = new ReminderCalculationService(reminderOptions);
 
         // Handle command handlers as both ICommandHandler and IRequestHandler (since PipelineMediator uses IRequestHandler)
-        if (serviceType == typeof(ICommandHandler<CreateTaskCommand, TaskDto>) || 
+        if (serviceType == typeof(ICommandHandler<CreateTaskCommand, TaskDto>) ||
             serviceType == typeof(IRequestHandler<CreateTaskCommand, TaskDto>))
         {
             return new CreateTaskCommandHandler(taskCommandRepository, userQueryRepository, _context);
         }
 
         // Handle command handlers as both ICommandHandler and IRequestHandler
-        if (serviceType == typeof(ICommandHandler<AssignTaskCommand, TaskDto>) || 
+        if (serviceType == typeof(ICommandHandler<AssignTaskCommand, TaskDto>) ||
             serviceType == typeof(IRequestHandler<AssignTaskCommand, TaskDto>))
         {
             return new AssignTaskCommandHandler(taskCommandRepository, userQueryRepository, _context);
@@ -198,14 +197,17 @@ public class TestServiceLocator : IServiceLocator
             {
                 return new CreateTaskCommandValidator();
             }
+
             if (requestType == typeof(AssignTaskCommand))
             {
                 return new AssignTaskCommandValidator();
             }
+
             if (requestType == typeof(UpdateTaskProgressCommand))
             {
                 return new UpdateTaskProgressCommandValidator();
             }
+
             if (requestType == typeof(RequestDeadlineExtensionCommand))
             {
                 return new RequestDeadlineExtensionCommandValidator();
@@ -227,14 +229,17 @@ public class TestServiceLocator : IServiceLocator
             {
                 return new List<object> { new CreateTaskCommandValidator() };
             }
+
             if (requestType == typeof(AssignTaskCommand))
             {
                 return new List<object> { new AssignTaskCommandValidator() };
             }
+
             if (requestType == typeof(UpdateTaskProgressCommand))
             {
                 return new List<object> { new UpdateTaskProgressCommandValidator() };
             }
+
             if (requestType == typeof(RequestDeadlineExtensionCommand))
             {
                 return new List<object> { new RequestDeadlineExtensionCommandValidator() };

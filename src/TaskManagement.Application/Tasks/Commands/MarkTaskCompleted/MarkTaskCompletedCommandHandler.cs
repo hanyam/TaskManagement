@@ -58,9 +58,7 @@ public class MarkTaskCompletedCommandHandler : ICommandHandler<MarkTaskCompleted
         // Get assigned user for DTO
         User? assignedUser = null;
         if (task.AssignedUserId.HasValue)
-        {
             assignedUser = await _userQueryRepository.GetByIdAsync(task.AssignedUserId.Value, cancellationToken);
-        }
 
         return new TaskDto
         {
@@ -85,4 +83,3 @@ public class MarkTaskCompletedCommandHandler : ICommandHandler<MarkTaskCompleted
         };
     }
 }
-

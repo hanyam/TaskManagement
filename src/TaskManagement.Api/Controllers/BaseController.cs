@@ -28,14 +28,8 @@ public abstract class BaseController(ICommandMediator commandMediator, IRequestM
 
         // Collect all errors (both single Error and Errors collection)
         var allErrors = new List<Error>();
-        if (result.Errors.Any())
-        {
-            allErrors.AddRange(result.Errors);
-        }
-        if (result.Error != null)
-        {
-            allErrors.Add(result.Error);
-        }
+        if (result.Errors.Any()) allErrors.AddRange(result.Errors);
+        if (result.Error != null) allErrors.Add(result.Error);
 
         return allErrors.Any()
             ? BadRequest(ApiResponse<T>.ErrorResponse(allErrors, HttpContext.TraceIdentifier))
@@ -54,14 +48,8 @@ public abstract class BaseController(ICommandMediator commandMediator, IRequestM
 
         // Collect all errors (both single Error and Errors collection)
         var allErrors = new List<Error>();
-        if (result.Errors.Any())
-        {
-            allErrors.AddRange(result.Errors);
-        }
-        if (result.Error != null)
-        {
-            allErrors.Add(result.Error);
-        }
+        if (result.Errors.Any()) allErrors.AddRange(result.Errors);
+        if (result.Error != null) allErrors.Add(result.Error);
 
         return allErrors.Any()
             ? BadRequest(ApiResponse.ErrorResponse(allErrors, HttpContext.TraceIdentifier))
@@ -76,7 +64,8 @@ public abstract class BaseController(ICommandMediator commandMediator, IRequestM
     /// <param name="links">HATEOAS links to include in the response.</param>
     /// <param name="successStatusCode">HTTP status code for successful operations.</param>
     /// <returns>HTTP response with standardized format including HATEOAS links.</returns>
-    protected IActionResult HandleResultWithLinks<T>(Result<T> result, List<ApiActionLink>? links, int successStatusCode = 200)
+    protected IActionResult HandleResultWithLinks<T>(Result<T> result, List<ApiActionLink>? links,
+        int successStatusCode = 200)
     {
         if (result.IsSuccess)
         {
@@ -87,14 +76,8 @@ public abstract class BaseController(ICommandMediator commandMediator, IRequestM
 
         // Collect all errors (both single Error and Errors collection)
         var allErrors = new List<Error>();
-        if (result.Errors.Any())
-        {
-            allErrors.AddRange(result.Errors);
-        }
-        if (result.Error != null)
-        {
-            allErrors.Add(result.Error);
-        }
+        if (result.Errors.Any()) allErrors.AddRange(result.Errors);
+        if (result.Error != null) allErrors.Add(result.Error);
 
         return allErrors.Any()
             ? BadRequest(ApiResponse<T>.ErrorResponse(allErrors, HttpContext.TraceIdentifier))

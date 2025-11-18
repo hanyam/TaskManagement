@@ -2,7 +2,6 @@ using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using TaskManagement.Application.Common;
-using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Application.Tasks.Queries.GetTasks;
 using TaskManagement.Domain.Entities;
 using TaskManagement.Domain.Errors.Tasks;
@@ -27,14 +26,14 @@ public class GetTasksQueryHandlerTests : InMemoryDatabaseTestBase
         var services = new ServiceCollection();
         services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
         var serviceProvider = services.BuildServiceProvider();
-        
+
         // Create real service locator that provides actual services
         _serviceLocator = new TestServiceLocator(serviceProvider, Context);
-        
+
         // Create real logger
         var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
         var logger = loggerFactory.CreateLogger<PipelineMediator>();
-        
+
         // Create real mediator with real services
         _mediator = new PipelineMediator(_serviceLocator, logger);
     }
@@ -147,7 +146,7 @@ public class GetTasksQueryHandlerTests : InMemoryDatabaseTestBase
         result.Should().NotBeNull();
         result.IsSuccess.Should().BeTrue();
         result.Value.Should().NotBeNull();
-        result.Value!.Tasks.Should().AllSatisfy(t => 
+        result.Value!.Tasks.Should().AllSatisfy(t =>
             t.DueDate.Should().BeOnOrAfter(fromDate).And.BeOnOrBefore(toDate));
     }
 

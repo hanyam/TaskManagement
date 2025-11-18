@@ -1,8 +1,7 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Graph;
-using Microsoft.Graph.Models;
-using System.Security.Claims;
 using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Application.Infrastructure.Data.Repositories;
 using TaskManagement.Application.Users.Queries.SearchManagedUsers;
@@ -24,7 +23,7 @@ public class UsersController : ControllerBase
     private readonly UserDapperRepository _userRepository;
 
     public UsersController(
-        GraphServiceClient? graphClient, 
+        GraphServiceClient? graphClient,
         ILogger<UsersController> logger,
         IRequestMediator requestMediator,
         UserDapperRepository userRepository)
@@ -45,15 +44,13 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> SearchUsers([FromQuery] string query)
     {
         if (string.IsNullOrWhiteSpace(query) || query.Length < 2)
-        {
             return Ok(ApiResponse<List<UserSearchResult>>.SuccessResponse(new List<UserSearchResult>()));
-        }
 
         try
         {
             // Get current user's email from JWT claims
-            var userEmail = User.FindFirst(ClaimTypes.Email)?.Value ?? 
-                           User.FindFirst("email")?.Value;
+            var userEmail = User.FindFirst(ClaimTypes.Email)?.Value ??
+                            User.FindFirst("email")?.Value;
 
             if (string.IsNullOrEmpty(userEmail))
             {
@@ -77,12 +74,12 @@ public class UsersController : ControllerBase
             };
 
             var result = await _requestMediator.Send(searchQuery);
-            
+
             if (result.IsFailure)
             {
                 _logger.LogError("Error searching managed users: {Error}", result.Error?.Message);
                 return StatusCode(500, ApiResponse<List<UserSearchResult>>.ErrorResponse(
-                    "An error occurred while searching users", 
+                    "An error occurred while searching users",
                     HttpContext.TraceIdentifier));
             }
 
@@ -102,7 +99,7 @@ public class UsersController : ControllerBase
         {
             _logger.LogError(ex, "Error searching users with query: {Query}", query);
             return StatusCode(500, ApiResponse<List<UserSearchResult>>.ErrorResponse(
-                "An error occurred while searching users", 
+                "An error occurred while searching users",
                 HttpContext.TraceIdentifier));
         }
     }
@@ -134,7 +131,7 @@ public class UsersController : ControllerBase
             var users = await _graphClient.Users
                 .GetAsync(requestConfiguration =>
                 {
-                    requestConfiguration.QueryParameters.Filter = 
+                    requestConfiguration.QueryParameters.Filter =
                         $"startswith(displayName,'{query}') or startswith(mail,'{query}') or startswith(userPrincipalName,'{query}')";
                     requestConfiguration.QueryParameters.Select = new[] { "id", "displayName", "mail", "userPrincipalName", "jobTitle" };
                     requestConfiguration.QueryParameters.Top = 10;
@@ -158,7 +155,7 @@ public class UsersController : ControllerBase
         {
             _logger.LogError(ex, "Error searching users with query: {Query}", query);
             return StatusCode(500, ApiResponse<List<UserSearchResult>>.ErrorResponse(
-                "An error occurred while searching users", 
+                "An error occurred while searching users",
                 HttpContext.TraceIdentifier));
         }
     }
@@ -177,19 +174,20 @@ public class UsersController : ControllerBase
             if (_graphClient == null)
             {
                 _logger.LogWarning("GraphServiceClient is not configured.");
-                return NotFound(ApiResponse<UserSearchResult>.ErrorResponse("User not found", HttpContext.TraceIdentifier));
+                return NotFound(
+                    ApiResponse<UserSearchResult>.ErrorResponse("User not found", HttpContext.TraceIdentifier));
             }
 
             var user = await _graphClient.Users[id]
                 .GetAsync(requestConfiguration =>
                 {
-                    requestConfiguration.QueryParameters.Select = new[] { "id", "displayName", "mail", "userPrincipalName", "jobTitle" };
+                    requestConfiguration.QueryParameters.Select = new[]
+                        { "id", "displayName", "mail", "userPrincipalName", "jobTitle" };
                 });
 
             if (user == null)
-            {
-                return NotFound(ApiResponse<UserSearchResult>.ErrorResponse("User not found", HttpContext.TraceIdentifier));
-            }
+                return NotFound(
+                    ApiResponse<UserSearchResult>.ErrorResponse("User not found", HttpContext.TraceIdentifier));
 
             var result = new UserSearchResult
             {
@@ -206,7 +204,7 @@ public class UsersController : ControllerBase
         {
             _logger.LogError(ex, "Error fetching user with ID: {UserId}", id);
             return StatusCode(500, ApiResponse<UserSearchResult>.ErrorResponse(
-                "An error occurred while fetching user", 
+                "An error occurred while fetching user",
                 HttpContext.TraceIdentifier));
         }
     }
@@ -223,4 +221,3 @@ public class UserSearchResult
     public string UserPrincipalName { get; set; } = string.Empty;
     public string? JobTitle { get; set; }
 }
-

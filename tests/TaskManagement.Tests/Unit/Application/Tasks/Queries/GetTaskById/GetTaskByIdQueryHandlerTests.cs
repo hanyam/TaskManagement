@@ -2,13 +2,12 @@ using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using TaskManagement.Application.Common;
-using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Application.Tasks.Queries.GetTaskById;
 using TaskManagement.Domain.Entities;
+using TaskManagement.Domain.Errors.Tasks;
 using TaskManagement.Tests.Unit.TestHelpers;
 using Xunit;
 using Task = System.Threading.Tasks.Task;
-using TaskManagement.Domain.Errors.Tasks;
 
 namespace TaskManagement.Tests.Unit.Application.Tasks.Queries.GetTaskById;
 
@@ -26,14 +25,14 @@ public class GetTaskByIdQueryHandlerTests : InMemoryDatabaseTestBase
         var services = new ServiceCollection();
         services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
         var serviceProvider = services.BuildServiceProvider();
-        
+
         // Create real service locator that provides actual services
         _serviceLocator = new TestServiceLocator(serviceProvider, Context);
-        
+
         // Create real logger
         var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
         var logger = loggerFactory.CreateLogger<PipelineMediator>();
-        
+
         // Create real mediator with real services
         _mediator = new PipelineMediator(_serviceLocator, logger);
     }
@@ -43,8 +42,8 @@ public class GetTaskByIdQueryHandlerTests : InMemoryDatabaseTestBase
     {
         // Arrange - Use a test task from the seeded data
         var testTask = GetAllTestTasks().First();
-        var query = new GetTaskByIdQuery 
-        { 
+        var query = new GetTaskByIdQuery
+        {
             Id = testTask.Id,
             UserId = testTask.CreatedById // User who created the task should have access
         };
@@ -70,8 +69,8 @@ public class GetTaskByIdQueryHandlerTests : InMemoryDatabaseTestBase
         // Arrange
         var nonExistentId = Guid.NewGuid();
         var userId = GetAllTestUsers().First().Id;
-        var query = new GetTaskByIdQuery 
-        { 
+        var query = new GetTaskByIdQuery
+        {
             Id = nonExistentId,
             UserId = userId
         };
@@ -90,8 +89,8 @@ public class GetTaskByIdQueryHandlerTests : InMemoryDatabaseTestBase
     {
         // Arrange
         var userId = GetAllTestUsers().First().Id;
-        var query = new GetTaskByIdQuery 
-        { 
+        var query = new GetTaskByIdQuery
+        {
             Id = Guid.Empty,
             UserId = userId
         };
@@ -110,8 +109,8 @@ public class GetTaskByIdQueryHandlerTests : InMemoryDatabaseTestBase
     {
         // Arrange - Use a test task from the seeded data
         var testTask = GetAllTestTasks().First();
-        var query = new GetTaskByIdQuery 
-        { 
+        var query = new GetTaskByIdQuery
+        {
             Id = testTask.Id,
             UserId = testTask.CreatedById // User who created the task should have access
         };
@@ -134,8 +133,8 @@ public class GetTaskByIdQueryHandlerTests : InMemoryDatabaseTestBase
         // Arrange - Get all test tasks and pick a specific one
         var allTasks = GetAllTestTasks().ToList();
         var targetTask = allTasks[1]; // Pick the second task
-        var query = new GetTaskByIdQuery 
-        { 
+        var query = new GetTaskByIdQuery
+        {
             Id = targetTask.Id,
             UserId = targetTask.CreatedById // User who created the task should have access
         };
@@ -157,8 +156,8 @@ public class GetTaskByIdQueryHandlerTests : InMemoryDatabaseTestBase
     {
         // Arrange - Use a test task and access it as the assigned user
         var testTask = GetAllTestTasks().First(t => t.AssignedUserId.HasValue);
-        var query = new GetTaskByIdQuery 
-        { 
+        var query = new GetTaskByIdQuery
+        {
             Id = testTask.Id,
             UserId = testTask.AssignedUserId!.Value // User assigned to the task should have access
         };
@@ -177,12 +176,13 @@ public class GetTaskByIdQueryHandlerTests : InMemoryDatabaseTestBase
     public async Task Handle_WhenUserIsInAssignmentChain_ShouldReturnTaskSuccessfully()
     {
         // Arrange - Create a task and assign it to a user via TaskAssignment
-        var testTask = CreateTestTask("Test Task", "Description", TaskPriority.High, DateTime.UtcNow.AddDays(7), GetAllTestUsers().First().Id);
+        var testTask = CreateTestTask("Test Task", "Description", TaskPriority.High, DateTime.UtcNow.AddDays(7),
+            GetAllTestUsers().First().Id);
         var assignedUser = GetAllTestUsers().Skip(1).First();
         CreateTestAssignment(testTask.Id, assignedUser.Id, isPrimary: true);
-        
-        var query = new GetTaskByIdQuery 
-        { 
+
+        var query = new GetTaskByIdQuery
+        {
             Id = testTask.Id,
             UserId = assignedUser.Id // User in assignment chain should have access
         };
@@ -201,11 +201,12 @@ public class GetTaskByIdQueryHandlerTests : InMemoryDatabaseTestBase
     public async Task Handle_WhenUserHasNoAccess_ShouldReturnAccessDeniedError()
     {
         // Arrange - Create a task and try to access it with an unrelated user
-        var testTask = CreateTestTask("Test Task", "Description", TaskPriority.High, DateTime.UtcNow.AddDays(7), GetAllTestUsers().First().Id);
+        var testTask = CreateTestTask("Test Task", "Description", TaskPriority.High, DateTime.UtcNow.AddDays(7),
+            GetAllTestUsers().First().Id);
         var unrelatedUser = GetAllTestUsers().Last();
-        
-        var query = new GetTaskByIdQuery 
-        { 
+
+        var query = new GetTaskByIdQuery
+        {
             Id = testTask.Id,
             UserId = unrelatedUser.Id // User with no relationship to task
         };
@@ -224,8 +225,8 @@ public class GetTaskByIdQueryHandlerTests : InMemoryDatabaseTestBase
     {
         // Arrange
         var testTask = GetAllTestTasks().First();
-        var query = new GetTaskByIdQuery 
-        { 
+        var query = new GetTaskByIdQuery
+        {
             Id = testTask.Id,
             UserId = Guid.Empty // Invalid user ID
         };

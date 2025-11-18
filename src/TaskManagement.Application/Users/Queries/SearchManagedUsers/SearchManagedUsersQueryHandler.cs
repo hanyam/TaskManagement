@@ -16,13 +16,12 @@ public class SearchManagedUsersQueryHandler : IRequestHandler<SearchManagedUsers
         _userRepository = userRepository;
     }
 
-    public async Task<Result<List<UserSearchResultDto>>> Handle(SearchManagedUsersQuery request, CancellationToken cancellationToken)
+    public async Task<Result<List<UserSearchResultDto>>> Handle(SearchManagedUsersQuery request,
+        CancellationToken cancellationToken)
     {
         // Validate search query
         if (string.IsNullOrWhiteSpace(request.SearchQuery) || request.SearchQuery.Length < 2)
-        {
             return Result<List<UserSearchResultDto>>.Success(new List<UserSearchResultDto>());
-        }
 
         // Search for users where:
         // 1. Current user is the manager (ManagerEmployee.ManagerId == request.ManagerId)
@@ -46,4 +45,3 @@ public class SearchManagedUsersQueryHandler : IRequestHandler<SearchManagedUsers
         return Result<List<UserSearchResultDto>>.Success(results);
     }
 }
-

@@ -12,4 +12,3 @@ public record ReassignTaskCommand : ICommand<TaskDto>
     public List<Guid> NewUserIds { get; init; } = new();
     public Guid ReassignedById { get; init; }
 }
-

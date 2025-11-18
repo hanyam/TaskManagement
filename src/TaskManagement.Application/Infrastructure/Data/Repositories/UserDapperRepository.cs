@@ -27,7 +27,8 @@ public class UserDapperRepository : DapperQueryRepository<User>
     /// <summary>
     ///     Checks if a manager-employee relationship exists.
     /// </summary>
-    public virtual async Task<bool> IsManagerOfEmployeeAsync(Guid managerId, Guid employeeId, CancellationToken cancellationToken = default)
+    public virtual async Task<bool> IsManagerOfEmployeeAsync(Guid managerId, Guid employeeId,
+        CancellationToken cancellationToken = default)
     {
         var sql = @"
             SELECT COUNT(1) 
@@ -59,7 +60,8 @@ public class UserDapperRepository : DapperQueryRepository<User>
     /// <summary>
     ///     Searches for users managed by a specific manager (manager-employee relationship).
     /// </summary>
-    public virtual async Task<IEnumerable<User>> SearchManagedUsersAsync(Guid managerId, string searchQuery, CancellationToken cancellationToken = default)
+    public virtual async Task<IEnumerable<User>> SearchManagedUsersAsync(Guid managerId, string searchQuery,
+        CancellationToken cancellationToken = default)
     {
         var sql = @"
             SELECT TOP 10

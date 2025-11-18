@@ -8,7 +8,7 @@ using TaskManagement.Tests.Integration.Auth;
 namespace TaskManagement.Tests.Integration;
 
 /// <summary>
-/// Custom WebApplicationFactory for integration tests that target the real SQL Server database.
+///     Custom WebApplicationFactory for integration tests that target the real SQL Server database.
 /// </summary>
 public class TestWebApplicationFactory : WebApplicationFactory<Program>
 {
@@ -17,19 +17,20 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         builder.ConfigureAppConfiguration((context, config) =>
         {
             var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
-                                   ?? "Server=localhost,1433;Database=TaskManagementIntegrationTests;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=true;MultipleActiveResultSets=true;";
+                                   ??
+                                   "Server=localhost,1433;Database=TaskManagementIntegrationTests;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=true;MultipleActiveResultSets=true;";
 
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
-                {"ConnectionStrings:DefaultConnection", connectionString},
-                {"Jwt:SecretKey", "supersecretkeythatisatleast32characterslong"},
-                {"Jwt:Issuer", "TestIssuer"},
-                {"Jwt:Audience", "TestAudience"},
-                {"Jwt:ExpiryInHours", "1"},
-                {"AzureAd:Issuer", "https://login.microsoftonline.com/test-tenant-id/v2.0"},
-                {"AzureAd:ClientId", "test-client-id"},
-                {"AzureAd:ClientSecret", "test-client-secret"},
-                {"AzureAd:TenantId", "test-tenant-id"}
+                { "ConnectionStrings:DefaultConnection", connectionString },
+                { "Jwt:SecretKey", "supersecretkeythatisatleast32characterslong" },
+                { "Jwt:Issuer", "TestIssuer" },
+                { "Jwt:Audience", "TestAudience" },
+                { "Jwt:ExpiryInHours", "1" },
+                { "AzureAd:Issuer", "https://login.microsoftonline.com/test-tenant-id/v2.0" },
+                { "AzureAd:ClientId", "test-client-id" },
+                { "AzureAd:ClientSecret", "test-client-secret" },
+                { "AzureAd:TenantId", "test-tenant-id" }
             });
         });
 

@@ -1,15 +1,11 @@
 using FluentAssertions;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using TaskManagement.Application.Common;
-using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Application.Tasks.Commands.CreateTask;
 using TaskManagement.Domain.Entities;
-using TaskManagement.Domain.Common;
 using TaskManagement.Domain.Errors.Tasks;
 using TaskManagement.Tests.Unit.TestHelpers;
-using static TaskManagement.Tests.Unit.TestHelpers.ErrorAssertionExtensions;
 using Xunit;
 using Task = System.Threading.Tasks.Task;
 using TaskStatus = TaskManagement.Domain.Entities.TaskStatus;
@@ -32,14 +28,14 @@ public class CreateTaskCommandHandlerTests : InMemoryDatabaseTestBase
         var services = new ServiceCollection();
         services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
         var serviceProvider = services.BuildServiceProvider();
-        
+
         // Create real service locator that provides actual services
         _serviceLocator = new TestServiceLocator(serviceProvider, Context);
-        
+
         // Create real logger
         var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
         var logger = loggerFactory.CreateLogger<PipelineMediator>();
-        
+
         // Create real mediator with real services
         _mediator = new PipelineMediator(_serviceLocator, logger);
     }
@@ -51,7 +47,7 @@ public class CreateTaskCommandHandlerTests : InMemoryDatabaseTestBase
         var manager = GetTestUserWithRole("john.doe@example.com", UserRole.Manager);
         var employee = GetTestUser("jane.smith@example.com");
         CreateManagerEmployeeRelationship(manager.Id, employee.Id);
-        
+
         var command = new CreateTaskCommand
         {
             Title = "Test Task",
@@ -189,7 +185,7 @@ public class CreateTaskCommandHandlerTests : InMemoryDatabaseTestBase
         var manager = GetTestUserWithRole("john.doe@example.com", UserRole.Manager);
         var employee = GetTestUser("jane.smith@example.com");
         CreateManagerEmployeeRelationship(manager.Id, employee.Id);
-        
+
         var command = new CreateTaskCommand
         {
             Title = "New Valid Task",
@@ -282,7 +278,7 @@ public class CreateTaskCommandHandlerTests : InMemoryDatabaseTestBase
         // Arrange - Manager tries to assign to someone who is not their employee
         var manager = GetTestUserWithRole("john.doe@example.com", UserRole.Manager);
         var nonEmployee = GetTestUser("bob.wilson@example.com"); // Not in manager's team
-        
+
         var command = new CreateTaskCommand
         {
             Title = "Test Task",
@@ -308,7 +304,7 @@ public class CreateTaskCommandHandlerTests : InMemoryDatabaseTestBase
         // Arrange - Employee tries to assign task
         var employee = GetTestUser("jane.smith@example.com");
         var anotherEmployee = GetTestUser("bob.wilson@example.com");
-        
+
         var command = new CreateTaskCommand
         {
             Title = "Test Task",
@@ -334,7 +330,7 @@ public class CreateTaskCommandHandlerTests : InMemoryDatabaseTestBase
         // Arrange - Admin can assign to anyone
         var admin = GetTestUserWithRole("john.doe@example.com", UserRole.Admin);
         var employee = GetTestUser("jane.smith@example.com"); // No manager relationship needed
-        
+
         var command = new CreateTaskCommand
         {
             Title = "Test Task",

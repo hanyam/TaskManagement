@@ -7,14 +7,14 @@ using Microsoft.Extensions.Options;
 namespace TaskManagement.Tests.Integration.Auth;
 
 /// <summary>
-/// Authentication handler used in integration tests to bypass JWT validation while providing consistent claims.
+///     Authentication handler used in integration tests to bypass JWT validation while providing consistent claims.
 /// </summary>
 public sealed class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>
 {
     public const string SchemeName = "Test";
-    public static readonly Guid TestUserId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
     public const string TestUserEmail = "integration.user@example.com";
     public const string TestUserName = "Integration Test User";
+    public static readonly Guid TestUserId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
 
     private static readonly string[] DefaultRoles = { "Manager" };
 
@@ -39,10 +39,7 @@ public sealed class TestAuthHandler : AuthenticationHandler<AuthenticationScheme
             new(ClaimTypes.Email, TestUserEmail)
         };
 
-        foreach (var role in DefaultRoles)
-        {
-            claims.Add(new Claim(ClaimTypes.Role, role));
-        }
+        foreach (var role in DefaultRoles) claims.Add(new Claim(ClaimTypes.Role, role));
 
         var identity = new ClaimsIdentity(claims, SchemeName);
         var principal = new ClaimsPrincipal(identity);
@@ -51,5 +48,3 @@ public sealed class TestAuthHandler : AuthenticationHandler<AuthenticationScheme
         return Task.FromResult(AuthenticateResult.Success(ticket));
     }
 }
-
-

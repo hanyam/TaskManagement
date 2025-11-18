@@ -11,4 +11,3 @@ public record AcceptTaskCommand : ICommand<TaskDto>
     public Guid TaskId { get; init; }
     public Guid AcceptedById { get; init; }
 }
-

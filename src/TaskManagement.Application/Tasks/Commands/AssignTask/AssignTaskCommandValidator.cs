@@ -16,10 +16,9 @@ public class AssignTaskCommandValidator : AbstractValidator<AssignTaskCommand>
             .NotNull().WithMessage("User IDs are required")
             .Must(userIds => userIds != null && userIds.Any()).WithMessage("At least one user must be assigned")
             .Must(userIds => userIds == null || userIds.All(id => id != Guid.Empty))
-                .WithMessage("User ID cannot be empty");
+            .WithMessage("User ID cannot be empty");
 
         RuleFor(x => x.AssignedById)
             .NotEmpty().WithMessage("Assigned by user ID is required");
     }
 }
-

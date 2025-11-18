@@ -1,8 +1,6 @@
 using FluentValidation;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using TaskManagement.Application.Common.Interfaces;
-using TaskManagement.Application.Common.Behaviors;
 using TaskManagement.Domain.Common;
 
 namespace TaskManagement.Application.Common;
@@ -50,7 +48,8 @@ public class PipelineMediator : IMediator
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error processing request of type {RequestType}", request.GetType().Name);
-            return Result<TResponse>.Failure(Error.Internal($"An error occurred while processing the request: {ex.Message}"));
+            return Result<TResponse>.Failure(
+                Error.Internal($"An error occurred while processing the request: {ex.Message}"));
         }
     }
 
@@ -86,7 +85,8 @@ public class PipelineMediator : IMediator
         }
     }
 
-    private Func<Task<Result<TResponse>>> BuildPipeline<TRequest, TResponse>(TRequest request, object handler, CancellationToken cancellationToken)
+    private Func<Task<Result<TResponse>>> BuildPipeline<TRequest, TResponse>(TRequest request, object handler,
+        CancellationToken cancellationToken)
         where TRequest : IRequest<TResponse>
     {
         // Get the handle method
@@ -97,7 +97,8 @@ public class PipelineMediator : IMediator
         // Create the base handler function
         Func<Task<Result<TResponse>>> handlerFunc = async () =>
         {
-            var task = (Task<Result<TResponse>>)handleMethod.Invoke(handler, new object[] { request, cancellationToken })!;
+            var task = (Task<Result<TResponse>>)handleMethod.Invoke(handler,
+                new object[] { request, cancellationToken })!;
             return await task;
         };
 
@@ -116,7 +117,8 @@ public class PipelineMediator : IMediator
         return pipeline;
     }
 
-    private Func<Task<Result>> BuildPipeline<TRequest>(TRequest request, object handler, CancellationToken cancellationToken)
+    private Func<Task<Result>> BuildPipeline<TRequest>(TRequest request, object handler,
+        CancellationToken cancellationToken)
         where TRequest : IRequest
     {
         // Get the handle method
@@ -146,31 +148,36 @@ public class PipelineMediator : IMediator
         return pipeline;
     }
 
-    private Func<Task<Result<TResponse>>> WrapWithLogging<TRequest, TResponse>(TRequest request, Func<Task<Result<TResponse>>> next, CancellationToken cancellationToken)
+    private Func<Task<Result<TResponse>>> WrapWithLogging<TRequest, TResponse>(TRequest request,
+        Func<Task<Result<TResponse>>> next, CancellationToken cancellationToken)
         where TRequest : IRequest<TResponse>
     {
         return async () =>
         {
             _logger.LogInformation("Executing {RequestType} with {Request}", typeof(TRequest).Name, request);
             var result = await next();
-            _logger.LogInformation("Executed {RequestType} with result: {IsSuccess}", typeof(TRequest).Name, result.IsSuccess);
+            _logger.LogInformation("Executed {RequestType} with result: {IsSuccess}", typeof(TRequest).Name,
+                result.IsSuccess);
             return result;
         };
     }
 
-    private Func<Task<Result>> WrapWithLogging<TRequest>(TRequest request, Func<Task<Result>> next, CancellationToken cancellationToken)
+    private Func<Task<Result>> WrapWithLogging<TRequest>(TRequest request, Func<Task<Result>> next,
+        CancellationToken cancellationToken)
         where TRequest : IRequest
     {
         return async () =>
         {
             _logger.LogInformation("Executing {RequestType} with {Request}", typeof(TRequest).Name, request);
             var result = await next();
-            _logger.LogInformation("Executed {RequestType} with result: {IsSuccess}", typeof(TRequest).Name, result.IsSuccess);
+            _logger.LogInformation("Executed {RequestType} with result: {IsSuccess}", typeof(TRequest).Name,
+                result.IsSuccess);
             return result;
         };
     }
 
-    private Func<Task<Result<TResponse>>> WrapWithValidation<TRequest, TResponse>(TRequest request, Func<Task<Result<TResponse>>> next, CancellationToken cancellationToken)
+    private Func<Task<Result<TResponse>>> WrapWithValidation<TRequest, TResponse>(TRequest request,
+        Func<Task<Result<TResponse>>> next, CancellationToken cancellationToken)
         where TRequest : IRequest<TResponse>
     {
         return async () =>
@@ -182,9 +189,10 @@ public class PipelineMediator : IMediator
             if (validators.Any())
             {
                 _logger.LogDebug("Validating request of type {RequestType}", typeof(TRequest).Name);
-                
+
                 var context = new ValidationContext<TRequest>(request);
-                var validationResults = await Task.WhenAll(validators.Select(v => v.ValidateAsync(context, cancellationToken)));
+                var validationResults =
+                    await Task.WhenAll(validators.Select(v => v.ValidateAsync(context, cancellationToken)));
                 var failures = validationResults.SelectMany(r => r.Errors).Where(f => f != null).ToList();
 
                 if (failures.Any())
@@ -204,7 +212,8 @@ public class PipelineMediator : IMediator
         };
     }
 
-    private Func<Task<Result>> WrapWithValidation<TRequest>(TRequest request, Func<Task<Result>> next, CancellationToken cancellationToken)
+    private Func<Task<Result>> WrapWithValidation<TRequest>(TRequest request, Func<Task<Result>> next,
+        CancellationToken cancellationToken)
         where TRequest : IRequest
     {
         return async () =>
@@ -216,9 +225,10 @@ public class PipelineMediator : IMediator
             if (validators.Any())
             {
                 _logger.LogDebug("Validating request of type {RequestType}", typeof(TRequest).Name);
-                
+
                 var context = new ValidationContext<TRequest>(request);
-                var validationResults = await Task.WhenAll(validators.Select(v => v.ValidateAsync(context, cancellationToken)));
+                var validationResults =
+                    await Task.WhenAll(validators.Select(v => v.ValidateAsync(context, cancellationToken)));
                 var failures = validationResults.SelectMany(r => r.Errors).Where(f => f != null).ToList();
 
                 if (failures.Any())
@@ -238,7 +248,8 @@ public class PipelineMediator : IMediator
         };
     }
 
-    private Func<Task<Result<TResponse>>> WrapWithExceptionHandling<TRequest, TResponse>(TRequest request, Func<Task<Result<TResponse>>> next, CancellationToken cancellationToken)
+    private Func<Task<Result<TResponse>>> WrapWithExceptionHandling<TRequest, TResponse>(TRequest request,
+        Func<Task<Result<TResponse>>> next, CancellationToken cancellationToken)
         where TRequest : IRequest<TResponse>
     {
         return async () =>
@@ -250,12 +261,14 @@ public class PipelineMediator : IMediator
             catch (Exception ex)
             {
                 _logger.LogError(ex, "An error occurred while processing {RequestType}", typeof(TRequest).Name);
-                return Result<TResponse>.Failure(Error.Internal($"An error occurred while processing the request: {ex.Message}"));
+                return Result<TResponse>.Failure(
+                    Error.Internal($"An error occurred while processing the request: {ex.Message}"));
             }
         };
     }
 
-    private Func<Task<Result>> WrapWithExceptionHandling<TRequest>(TRequest request, Func<Task<Result>> next, CancellationToken cancellationToken)
+    private Func<Task<Result>> WrapWithExceptionHandling<TRequest>(TRequest request, Func<Task<Result>> next,
+        CancellationToken cancellationToken)
         where TRequest : IRequest
     {
         return async () =>
@@ -271,5 +284,4 @@ public class PipelineMediator : IMediator
             }
         };
     }
-
 }

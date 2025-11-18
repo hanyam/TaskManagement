@@ -45,9 +45,9 @@ public class RequestMoreInfoCommandHandler : ICommandHandler<RequestMoreInfoComm
         var assignments = await _context.Set<TaskAssignment>()
             .Where(ta => ta.TaskId == request.TaskId)
             .ToListAsync(cancellationToken);
-        
+
         var isAssigned = (task.AssignedUserId.HasValue && task.AssignedUserId.Value == request.RequestedById) ||
-                        assignments.Any(a => a.UserId == request.RequestedById);
+                         assignments.Any(a => a.UserId == request.RequestedById);
 
         if (!isAssigned)
         {
@@ -73,9 +73,7 @@ public class RequestMoreInfoCommandHandler : ICommandHandler<RequestMoreInfoComm
         // Get assigned user for DTO
         User? assignedUser = null;
         if (task.AssignedUserId.HasValue)
-        {
             assignedUser = await _userQueryRepository.GetByIdAsync(task.AssignedUserId.Value, cancellationToken);
-        }
 
         return new TaskDto
         {
@@ -98,4 +96,3 @@ public class RequestMoreInfoCommandHandler : ICommandHandler<RequestMoreInfoComm
         };
     }
 }
-

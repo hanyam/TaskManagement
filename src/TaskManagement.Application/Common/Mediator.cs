@@ -1,4 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Domain.Common;
@@ -33,7 +32,8 @@ public class Mediator : IMediator
 
             // Use reflection to call the Handle method
             var handleMethod = handlerType.GetMethod("Handle");
-            var task = (Task<Result<TResponse>>)handleMethod!.Invoke(handler, new object[] { request, cancellationToken })!;
+            var task = (Task<Result<TResponse>>)handleMethod!.Invoke(handler,
+                new object[] { request, cancellationToken })!;
             var result = await task;
 
             if (result.IsSuccess)
@@ -47,7 +47,8 @@ public class Mediator : IMediator
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error processing request of type {RequestType}", request.GetType().Name);
-                return Result<TResponse>.Failure(Error.Internal($"An error occurred while processing the request: {ex.Message}"));
+            return Result<TResponse>.Failure(
+                Error.Internal($"An error occurred while processing the request: {ex.Message}"));
         }
     }
 
@@ -78,7 +79,7 @@ public class Mediator : IMediator
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error processing request of type {RequestType}", request.GetType().Name);
-                return Result.Failure(Error.Internal($"An error occurred while processing the request: {ex.Message}"));
+            return Result.Failure(Error.Internal($"An error occurred while processing the request: {ex.Message}"));
         }
     }
 }

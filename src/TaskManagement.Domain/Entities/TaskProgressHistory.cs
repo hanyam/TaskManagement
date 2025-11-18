@@ -59,4 +59,3 @@ public enum ProgressStatus
     Accepted = 1,
     Rejected = 2
 }
-

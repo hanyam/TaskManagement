@@ -13,4 +13,3 @@ public record RequestDeadlineExtensionCommand : ICommand<ExtensionRequestDto>
     public string Reason { get; init; } = string.Empty;
     public Guid RequestedById { get; init; }
 }
-

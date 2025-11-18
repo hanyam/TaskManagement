@@ -1,5 +1,4 @@
 using TaskManagement.Domain.Common;
-using TaskManagement.Domain.Entities;
 using DomainTask = TaskManagement.Domain.Entities.Task;
 
 namespace TaskManagement.Application.Tasks.Services;
@@ -18,4 +17,3 @@ public interface ITaskActionService
     /// <returns>List of available action links.</returns>
     List<ApiActionLink> GetAvailableActions(DomainTask task, Guid currentUserId, string currentUserRole);
 }
-

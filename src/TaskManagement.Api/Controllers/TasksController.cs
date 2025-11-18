@@ -1,12 +1,13 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
 using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Application.Tasks.Commands.AcceptTask;
 using TaskManagement.Application.Tasks.Commands.AcceptTaskProgress;
 using TaskManagement.Application.Tasks.Commands.ApproveExtensionRequest;
 using TaskManagement.Application.Tasks.Commands.AssignTask;
+using TaskManagement.Application.Tasks.Commands.CreateTask;
 using TaskManagement.Application.Tasks.Commands.MarkTaskCompleted;
 using TaskManagement.Application.Tasks.Commands.ReassignTask;
 using TaskManagement.Application.Tasks.Commands.RejectTask;
@@ -14,13 +15,14 @@ using TaskManagement.Application.Tasks.Commands.RequestDeadlineExtension;
 using TaskManagement.Application.Tasks.Commands.RequestMoreInfo;
 using TaskManagement.Application.Tasks.Commands.ReviewCompletedTask;
 using TaskManagement.Application.Tasks.Commands.UpdateTaskProgress;
-using TaskManagement.Application.Tasks.Commands.CreateTask;
 using TaskManagement.Application.Tasks.Queries.GetTaskById;
 using TaskManagement.Application.Tasks.Queries.GetTasks;
+using TaskManagement.Application.Tasks.Services;
 using TaskManagement.Domain.Common;
 using TaskManagement.Domain.DTOs;
 using TaskManagement.Domain.Entities;
 using TaskManagement.Infrastructure.Data;
+using Task = TaskManagement.Domain.Entities.Task;
 using TaskStatus = TaskManagement.Domain.Entities.TaskStatus;
 
 namespace TaskManagement.Api.Controllers;
@@ -32,14 +34,15 @@ namespace TaskManagement.Api.Controllers;
 [Route("tasks")]
 [Authorize]
 public class TasksController(
-    ICommandMediator commandMediator, 
+    ICommandMediator commandMediator,
     IRequestMediator requestMediator,
-    TaskManagement.Application.Tasks.Services.ITaskActionService taskActionService,
+    ITaskActionService taskActionService,
     TaskManagementDbContext context)
     : BaseController(commandMediator, requestMediator)
 {
-    private readonly TaskManagement.Application.Tasks.Services.ITaskActionService _taskActionService = taskActionService;
     private readonly TaskManagementDbContext _context = context;
+    private readonly ITaskActionService _taskActionService = taskActionService;
+
     /// <summary>
     ///     Gets a task by its ID.
     /// </summary>
@@ -51,25 +54,21 @@ public class TasksController(
         // Get user ID from claims (should be set during authentication)
         var userIdClaim = User.FindFirst("user_id")?.Value;
         if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-        {
-            return BadRequest(ApiResponse<object>.ErrorResponse("User ID not found in token", HttpContext.TraceIdentifier));
-        }
+            return BadRequest(
+                ApiResponse<object>.ErrorResponse("User ID not found in token", HttpContext.TraceIdentifier));
 
-        var query = new GetTaskByIdQuery 
-        { 
+        var query = new GetTaskByIdQuery
+        {
             Id = id,
             UserId = userId
         };
         var result = await _requestMediator.Send(query);
-        
-        if (!result.IsSuccess)
-        {
-            return HandleResult(result);
-        }
+
+        if (!result.IsSuccess) return HandleResult(result);
 
         // Generate HATEOAS links
         var links = await GenerateTaskLinks(id, userId);
-        
+
         return HandleResultWithLinks(result, links);
     }
 
@@ -120,9 +119,8 @@ public class TasksController(
         // Get user ID from claims (should be set during authentication)
         var userIdClaim = User.FindFirst("user_id")?.Value;
         if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-        {
-            return BadRequest(ApiResponse<object>.ErrorResponse("User ID not found in token", HttpContext.TraceIdentifier));
-        }
+            return BadRequest(
+                ApiResponse<object>.ErrorResponse("User ID not found in token", HttpContext.TraceIdentifier));
 
         var command = new CreateTaskCommand
         {
@@ -137,15 +135,12 @@ public class TasksController(
         };
 
         var result = await _commandMediator.Send(command);
-        
-        if (!result.IsSuccess)
-        {
-            return HandleResult(result, 201);
-        }
+
+        if (!result.IsSuccess) return HandleResult(result, 201);
 
         // Generate HATEOAS links for the newly created task
         var links = await GenerateTaskLinks(result.Value!.Id, userId);
-        
+
         return HandleResultWithLinks(result, links, 201);
     }
 
@@ -161,9 +156,8 @@ public class TasksController(
     {
         var userIdClaim = User.FindFirst("user_id")?.Value;
         if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-        {
-            return BadRequest(ApiResponse<object>.ErrorResponse("User ID not found in token", HttpContext.TraceIdentifier));
-        }
+            return BadRequest(
+                ApiResponse<object>.ErrorResponse("User ID not found in token", HttpContext.TraceIdentifier));
 
         var command = new AssignTaskCommand
         {
@@ -173,15 +167,12 @@ public class TasksController(
         };
 
         var result = await _commandMediator.Send(command);
-        
-        if (!result.IsSuccess)
-        {
-            return HandleResult(result);
-        }
+
+        if (!result.IsSuccess) return HandleResult(result);
 
         // Generate HATEOAS links
         var links = await GenerateTaskLinks(id, userId);
-        
+
         return HandleResultWithLinks(result, links);
     }
 
@@ -197,9 +188,8 @@ public class TasksController(
     {
         var userIdClaim = User.FindFirst("user_id")?.Value;
         if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-        {
-            return BadRequest(ApiResponse<object>.ErrorResponse("User ID not found in token", HttpContext.TraceIdentifier));
-        }
+            return BadRequest(
+                ApiResponse<object>.ErrorResponse("User ID not found in token", HttpContext.TraceIdentifier));
 
         var command = new UpdateTaskProgressCommand
         {
@@ -210,15 +200,12 @@ public class TasksController(
         };
 
         var result = await _commandMediator.Send(command);
-        
-        if (!result.IsSuccess)
-        {
-            return HandleResult(result);
-        }
+
+        if (!result.IsSuccess) return HandleResult(result);
 
         // Generate HATEOAS links
         var links = await GenerateTaskLinks(id, userId);
-        
+
         return HandleResultWithLinks(result, links);
     }
 
@@ -234,9 +221,8 @@ public class TasksController(
     {
         var userIdClaim = User.FindFirst("user_id")?.Value;
         if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-        {
-            return BadRequest(ApiResponse<object>.ErrorResponse("User ID not found in token", HttpContext.TraceIdentifier));
-        }
+            return BadRequest(
+                ApiResponse<object>.ErrorResponse("User ID not found in token", HttpContext.TraceIdentifier));
 
         var command = new AcceptTaskProgressCommand
         {
@@ -260,9 +246,8 @@ public class TasksController(
     {
         var userIdClaim = User.FindFirst("user_id")?.Value;
         if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-        {
-            return BadRequest(ApiResponse<object>.ErrorResponse("User ID not found in token", HttpContext.TraceIdentifier));
-        }
+            return BadRequest(
+                ApiResponse<object>.ErrorResponse("User ID not found in token", HttpContext.TraceIdentifier));
 
         var command = new AcceptTaskCommand
         {
@@ -271,15 +256,12 @@ public class TasksController(
         };
 
         var result = await _commandMediator.Send(command);
-        
-        if (!result.IsSuccess)
-        {
-            return HandleResult(result);
-        }
+
+        if (!result.IsSuccess) return HandleResult(result);
 
         // Generate HATEOAS links
         var links = await GenerateTaskLinks(id, userId);
-        
+
         return HandleResultWithLinks(result, links);
     }
 
@@ -295,9 +277,8 @@ public class TasksController(
     {
         var userIdClaim = User.FindFirst("user_id")?.Value;
         if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-        {
-            return BadRequest(ApiResponse<object>.ErrorResponse("User ID not found in token", HttpContext.TraceIdentifier));
-        }
+            return BadRequest(
+                ApiResponse<object>.ErrorResponse("User ID not found in token", HttpContext.TraceIdentifier));
 
         var command = new RejectTaskCommand
         {
@@ -307,15 +288,12 @@ public class TasksController(
         };
 
         var result = await _commandMediator.Send(command);
-        
-        if (!result.IsSuccess)
-        {
-            return HandleResult(result);
-        }
+
+        if (!result.IsSuccess) return HandleResult(result);
 
         // Generate HATEOAS links
         var links = await GenerateTaskLinks(id, userId);
-        
+
         return HandleResultWithLinks(result, links);
     }
 
@@ -331,9 +309,8 @@ public class TasksController(
     {
         var userIdClaim = User.FindFirst("user_id")?.Value;
         if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-        {
-            return BadRequest(ApiResponse<object>.ErrorResponse("User ID not found in token", HttpContext.TraceIdentifier));
-        }
+            return BadRequest(
+                ApiResponse<object>.ErrorResponse("User ID not found in token", HttpContext.TraceIdentifier));
 
         var command = new RequestMoreInfoCommand
         {
@@ -343,15 +320,12 @@ public class TasksController(
         };
 
         var result = await _commandMediator.Send(command);
-        
-        if (!result.IsSuccess)
-        {
-            return HandleResult(result);
-        }
+
+        if (!result.IsSuccess) return HandleResult(result);
 
         // Generate HATEOAS links
         var links = await GenerateTaskLinks(id, userId);
-        
+
         return HandleResultWithLinks(result, links);
     }
 
@@ -367,9 +341,8 @@ public class TasksController(
     {
         var userIdClaim = User.FindFirst("user_id")?.Value;
         if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-        {
-            return BadRequest(ApiResponse<object>.ErrorResponse("User ID not found in token", HttpContext.TraceIdentifier));
-        }
+            return BadRequest(
+                ApiResponse<object>.ErrorResponse("User ID not found in token", HttpContext.TraceIdentifier));
 
         var command = new ReassignTaskCommand
         {
@@ -379,15 +352,12 @@ public class TasksController(
         };
 
         var result = await _commandMediator.Send(command);
-        
-        if (!result.IsSuccess)
-        {
-            return HandleResult(result);
-        }
+
+        if (!result.IsSuccess) return HandleResult(result);
 
         // Generate HATEOAS links
         var links = await GenerateTaskLinks(id, userId);
-        
+
         return HandleResultWithLinks(result, links);
     }
 
@@ -399,13 +369,13 @@ public class TasksController(
     /// <returns>Extension request information.</returns>
     [HttpPost("{id}/extension-request")]
     [Authorize(Roles = "Employee,Manager")]
-    public async Task<IActionResult> RequestDeadlineExtension(Guid id, [FromBody] RequestDeadlineExtensionRequest request)
+    public async Task<IActionResult> RequestDeadlineExtension(Guid id,
+        [FromBody] RequestDeadlineExtensionRequest request)
     {
         var userIdClaim = User.FindFirst("user_id")?.Value;
         if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-        {
-            return BadRequest(ApiResponse<object>.ErrorResponse("User ID not found in token", HttpContext.TraceIdentifier));
-        }
+            return BadRequest(
+                ApiResponse<object>.ErrorResponse("User ID not found in token", HttpContext.TraceIdentifier));
 
         var command = new RequestDeadlineExtensionCommand
         {
@@ -416,15 +386,12 @@ public class TasksController(
         };
 
         var result = await _commandMediator.Send(command);
-        
-        if (!result.IsSuccess)
-        {
-            return HandleResult(result);
-        }
+
+        if (!result.IsSuccess) return HandleResult(result);
 
         // Generate HATEOAS links
         var links = await GenerateTaskLinks(id, userId);
-        
+
         return HandleResultWithLinks(result, links);
     }
 
@@ -437,13 +404,13 @@ public class TasksController(
     /// <returns>Success response.</returns>
     [HttpPost("{id}/extension-request/{requestId}/approve")]
     [Authorize(Roles = "Manager")]
-    public async Task<IActionResult> ApproveExtensionRequest(Guid id, Guid requestId, [FromBody] ApproveExtensionRequestRequest? request = null)
+    public async Task<IActionResult> ApproveExtensionRequest(Guid id, Guid requestId,
+        [FromBody] ApproveExtensionRequestRequest? request = null)
     {
         var userIdClaim = User.FindFirst("user_id")?.Value;
         if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-        {
-            return BadRequest(ApiResponse<object>.ErrorResponse("User ID not found in token", HttpContext.TraceIdentifier));
-        }
+            return BadRequest(
+                ApiResponse<object>.ErrorResponse("User ID not found in token", HttpContext.TraceIdentifier));
 
         var command = new ApproveExtensionRequestCommand
         {
@@ -468,9 +435,8 @@ public class TasksController(
     {
         var userIdClaim = User.FindFirst("user_id")?.Value;
         if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-        {
-            return BadRequest(ApiResponse<object>.ErrorResponse("User ID not found in token", HttpContext.TraceIdentifier));
-        }
+            return BadRequest(
+                ApiResponse<object>.ErrorResponse("User ID not found in token", HttpContext.TraceIdentifier));
 
         var command = new MarkTaskCompletedCommand
         {
@@ -479,15 +445,12 @@ public class TasksController(
         };
 
         var result = await _commandMediator.Send(command);
-        
-        if (!result.IsSuccess)
-        {
-            return HandleResult(result);
-        }
+
+        if (!result.IsSuccess) return HandleResult(result);
 
         // Generate HATEOAS links
         var links = await GenerateTaskLinks(id, userId);
-        
+
         return HandleResultWithLinks(result, links);
     }
 
@@ -511,11 +474,8 @@ public class TasksController(
         };
 
         var result = await _commandMediator.Send(command);
-        
-        if (!result.IsSuccess)
-        {
-            return HandleResult(result);
-        }
+
+        if (!result.IsSuccess) return HandleResult(result);
 
         // Get user ID from claims for HATEOAS generation
         var userIdClaim = User.FindFirst("user_id")?.Value;
@@ -525,7 +485,7 @@ public class TasksController(
             var links = await GenerateTaskLinks(id, userId);
             return HandleResultWithLinks(result, links);
         }
-        
+
         return HandleResult(result);
     }
 
@@ -538,14 +498,11 @@ public class TasksController(
     private async Task<List<ApiActionLink>?> GenerateTaskLinks(Guid taskId, Guid userId)
     {
         // Fetch the task entity from the database
-        var task = await _context.Set<TaskManagement.Domain.Entities.Task>()
+        var task = await _context.Set<Task>()
             .AsNoTracking()
             .FirstOrDefaultAsync(t => t.Id == taskId);
 
-        if (task == null)
-        {
-            return null;
-        }
+        if (task == null) return null;
 
         // Get user role from claims
         var userRole = User.FindFirst(ClaimTypes.Role)?.Value ?? "Employee";

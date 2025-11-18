@@ -43,5 +43,3 @@ public class TaskProgressHistoryConfiguration : IEntityTypeConfiguration<TaskPro
             .OnDelete(DeleteBehavior.Restrict);
     }
 }
-
-

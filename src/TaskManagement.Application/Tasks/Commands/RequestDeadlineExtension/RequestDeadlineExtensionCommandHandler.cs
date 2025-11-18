@@ -13,7 +13,8 @@ namespace TaskManagement.Application.Tasks.Commands.RequestDeadlineExtension;
 /// <summary>
 ///     Handler for requesting a deadline extension (employee).
 /// </summary>
-public class RequestDeadlineExtensionCommandHandler : ICommandHandler<RequestDeadlineExtensionCommand, ExtensionRequestDto>
+public class
+    RequestDeadlineExtensionCommandHandler : ICommandHandler<RequestDeadlineExtensionCommand, ExtensionRequestDto>
 {
     private readonly TaskManagementDbContext _context;
     private readonly TaskEfCommandRepository _taskCommandRepository;
@@ -29,7 +30,8 @@ public class RequestDeadlineExtensionCommandHandler : ICommandHandler<RequestDea
         _context = context;
     }
 
-    public async Task<Result<ExtensionRequestDto>> Handle(RequestDeadlineExtensionCommand request, CancellationToken cancellationToken)
+    public async Task<Result<ExtensionRequestDto>> Handle(RequestDeadlineExtensionCommand request,
+        CancellationToken cancellationToken)
     {
         var errors = new List<Error>();
 
@@ -45,9 +47,9 @@ public class RequestDeadlineExtensionCommandHandler : ICommandHandler<RequestDea
         var assignments = await _context.Set<TaskAssignment>()
             .Where(ta => ta.TaskId == request.TaskId)
             .ToListAsync(cancellationToken);
-        
+
         var isAssigned = (task.AssignedUserId.HasValue && task.AssignedUserId.Value == request.RequestedById) ||
-                        assignments.Any(a => a.UserId == request.RequestedById);
+                         assignments.Any(a => a.UserId == request.RequestedById);
 
         if (!isAssigned)
         {
@@ -97,4 +99,3 @@ public class RequestDeadlineExtensionCommandHandler : ICommandHandler<RequestDea
         };
     }
 }
-

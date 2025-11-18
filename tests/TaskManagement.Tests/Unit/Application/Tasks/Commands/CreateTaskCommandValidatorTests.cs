@@ -1,4 +1,3 @@
-using FluentAssertions;
 using FluentValidation.TestHelper;
 using TaskManagement.Application.Tasks.Commands.CreateTask;
 using TaskManagement.Domain.Entities;
@@ -7,7 +6,7 @@ using Xunit;
 namespace TaskManagement.Tests.Unit.Application.Tasks.Commands;
 
 /// <summary>
-/// Unit tests for the CreateTaskCommandValidator.
+///     Unit tests for the CreateTaskCommandValidator.
 /// </summary>
 public class CreateTaskCommandValidatorTests
 {

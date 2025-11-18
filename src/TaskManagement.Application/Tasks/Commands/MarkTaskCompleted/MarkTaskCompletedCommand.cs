@@ -11,4 +11,3 @@ public record MarkTaskCompletedCommand : ICommand<TaskDto>
     public Guid TaskId { get; init; }
     public Guid CompletedById { get; init; }
 }
-

@@ -2,9 +2,7 @@ using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using TaskManagement.Application.Common;
-using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Application.Users.Queries.SearchManagedUsers;
-using TaskManagement.Domain.Entities;
 using TaskManagement.Tests.Unit.TestHelpers;
 using Xunit;
 using Task = System.Threading.Tasks.Task;
@@ -25,14 +23,14 @@ public class SearchManagedUsersQueryHandlerTests : InMemoryDatabaseTestBase
         var services = new ServiceCollection();
         services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
         var serviceProvider = services.BuildServiceProvider();
-        
+
         // Create real service locator that provides actual services
         _serviceLocator = new TestServiceLocator(serviceProvider, Context);
-        
+
         // Create real logger
         var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
         var logger = loggerFactory.CreateLogger<PipelineMediator>();
-        
+
         // Create real mediator with real services
         _mediator = new PipelineMediator(_serviceLocator, logger);
     }
@@ -197,4 +195,3 @@ public class SearchManagedUsersQueryHandlerTests : InMemoryDatabaseTestBase
         result.Value[2].DisplayName.Should().Be("Zebra User");
     }
 }
-

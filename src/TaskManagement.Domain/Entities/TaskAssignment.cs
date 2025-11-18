@@ -21,6 +21,7 @@ public class TaskAssignment : BaseEntity
 
     public Guid TaskId { get; private set; }
     public Guid UserId { get; private set; }
+
     public bool IsPrimary { get; private set; }
     // AssignedAt is now represented by CreatedAt from BaseEntity
 
@@ -33,4 +34,3 @@ public class TaskAssignment : BaseEntity
         IsPrimary = isPrimary;
     }
 }
-

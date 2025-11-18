@@ -2,10 +2,8 @@ using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using TaskManagement.Application.Common;
-using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Application.Tasks.Commands.CreateTask;
 using TaskManagement.Domain.Entities;
-using TaskManagement.Domain.DTOs;
 using TaskManagement.Tests.Unit.TestHelpers;
 using Xunit;
 using Task = System.Threading.Tasks.Task;
@@ -13,13 +11,13 @@ using Task = System.Threading.Tasks.Task;
 namespace TaskManagement.Tests.Unit.Application.Common;
 
 /// <summary>
-/// Tests for CommandMediator to verify command handling with pipeline behaviors.
+///     Tests for CommandMediator to verify command handling with pipeline behaviors.
 /// </summary>
 public class CommandMediatorTests : InMemoryDatabaseTestBase
 {
     private readonly CommandMediator _commandMediator;
-    private readonly TestServiceLocator _serviceLocator;
     private readonly ILogger<CommandMediator> _logger;
+    private readonly TestServiceLocator _serviceLocator;
 
     public CommandMediatorTests()
     {
@@ -27,14 +25,14 @@ public class CommandMediatorTests : InMemoryDatabaseTestBase
         var services = new ServiceCollection();
         services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
         var serviceProvider = services.BuildServiceProvider();
-        
+
         // Create real service locator that provides actual services
         _serviceLocator = new TestServiceLocator(serviceProvider, Context);
-        
+
         // Create real logger
         var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
         _logger = loggerFactory.CreateLogger<CommandMediator>();
-        
+
         // Create real command mediator with real services
         _commandMediator = new CommandMediator(_serviceLocator, _logger);
     }
@@ -87,7 +85,7 @@ public class CommandMediatorTests : InMemoryDatabaseTestBase
         result.IsSuccess.Should().BeFalse();
         result.Errors.Should().NotBeEmpty();
         result.Errors.Should().HaveCount(2); // Expecting 2 validation errors (Title and DueDate)
-        
+
         // Verify specific validation errors
         result.Errors.Should().Contain(e => e.Code == "VALIDATION_ERROR" && e.Field == "Title");
         result.Errors.Should().Contain(e => e.Code == "VALIDATION_ERROR" && e.Field == "DueDate");

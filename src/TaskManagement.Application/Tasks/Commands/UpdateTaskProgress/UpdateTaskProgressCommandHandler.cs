@@ -28,7 +28,8 @@ public class UpdateTaskProgressCommandHandler : ICommandHandler<UpdateTaskProgre
         _context = context;
     }
 
-    public async Task<Result<TaskProgressDto>> Handle(UpdateTaskProgressCommand request, CancellationToken cancellationToken)
+    public async Task<Result<TaskProgressDto>> Handle(UpdateTaskProgressCommand request,
+        CancellationToken cancellationToken)
     {
         var errors = new List<Error>();
 
@@ -98,4 +99,3 @@ public class UpdateTaskProgressCommandHandler : ICommandHandler<UpdateTaskProgre
         };
     }
 }
-

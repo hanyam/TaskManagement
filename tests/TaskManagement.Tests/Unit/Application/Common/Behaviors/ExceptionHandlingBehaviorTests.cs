@@ -9,12 +9,12 @@ using Xunit;
 namespace TaskManagement.Tests.Unit.Application.Common.Behaviors;
 
 /// <summary>
-/// Unit tests for the ExceptionHandlingBehavior class.
+///     Unit tests for the ExceptionHandlingBehavior class.
 /// </summary>
 public class ExceptionHandlingBehaviorTests
 {
-    private readonly Mock<ILogger<ExceptionHandlingBehavior<TestRequest, string>>> _mockLogger;
     private readonly ExceptionHandlingBehavior<TestRequest, string> _behavior;
+    private readonly Mock<ILogger<ExceptionHandlingBehavior<TestRequest, string>>> _mockLogger;
 
     public ExceptionHandlingBehaviorTests()
     {
@@ -130,7 +130,8 @@ public class ExceptionHandlingBehaviorTests
         var aggregateException = new AggregateException("Aggregate exception", innerException1, innerException2);
 
         // Act
-        var result = await _behavior.Handle(request, () => Task.FromException<Result<string>>(aggregateException), CancellationToken.None);
+        var result = await _behavior.Handle(request, () => Task.FromException<Result<string>>(aggregateException),
+            CancellationToken.None);
 
         // Assert
         result.IsSuccess.Should().BeFalse();
@@ -142,12 +143,12 @@ public class ExceptionHandlingBehaviorTests
 }
 
 /// <summary>
-/// Unit tests for the ExceptionHandlingBehavior class with void requests.
+///     Unit tests for the ExceptionHandlingBehavior class with void requests.
 /// </summary>
 public class ExceptionHandlingBehaviorVoidTests
 {
-    private readonly Mock<ILogger<ExceptionHandlingBehavior<TestVoidRequest>>> _mockLogger;
     private readonly ExceptionHandlingBehavior<TestVoidRequest> _behavior;
+    private readonly Mock<ILogger<ExceptionHandlingBehavior<TestVoidRequest>>> _mockLogger;
 
     public ExceptionHandlingBehaviorVoidTests()
     {

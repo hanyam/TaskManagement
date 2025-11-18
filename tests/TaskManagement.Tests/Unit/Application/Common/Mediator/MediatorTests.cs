@@ -1,8 +1,6 @@
 using FluentAssertions;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
-using TaskManagement.Application.Common;
 using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Domain.Common;
 using Xunit;
@@ -10,13 +8,13 @@ using Xunit;
 namespace TaskManagement.Tests.Unit.Application.Common.Mediator;
 
 /// <summary>
-/// Unit tests for the Mediator class.
+///     Unit tests for the Mediator class.
 /// </summary>
 public class MediatorTests
 {
-    private readonly Mock<IServiceLocator> _mockServiceLocator;
-    private readonly Mock<ILogger<TaskManagement.Application.Common.Mediator>> _mockLogger;
     private readonly TaskManagement.Application.Common.Mediator _mediator;
+    private readonly Mock<ILogger<TaskManagement.Application.Common.Mediator>> _mockLogger;
+    private readonly Mock<IServiceLocator> _mockServiceLocator;
 
     public MediatorTests()
     {

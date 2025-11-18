@@ -1,8 +1,6 @@
 using System.Text;
 using Azure.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Graph;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -45,7 +43,8 @@ public static class DependencyInjection
                     ValidateIssuerSigningKey = true,
                     ValidIssuer = jwtOptions?.Issuer,
                     ValidAudience = jwtOptions?.Audience,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions?.SecretKey ?? string.Empty))
+                    IssuerSigningKey =
+                        new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions?.SecretKey ?? string.Empty))
                 };
             });
 
@@ -65,7 +64,8 @@ public static class DependencyInjection
             // Add JWT authentication to Swagger
             c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
             {
-                Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+                Description =
+                    "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
                 Name = "Authorization",
                 In = ParameterLocation.Header,
                 Type = SecuritySchemeType.ApiKey,
@@ -102,18 +102,18 @@ public static class DependencyInjection
 
         // Configure Microsoft Graph API client (optional - only if Azure AD is configured)
         var azureAdOptions = configuration.GetSection(AzureAdOptions.SectionName).Get<AzureAdOptions>();
-        if (azureAdOptions != null && 
-            !string.IsNullOrEmpty(azureAdOptions.TenantId) && 
-            !string.IsNullOrEmpty(azureAdOptions.ClientId) && 
+        if (azureAdOptions != null &&
+            !string.IsNullOrEmpty(azureAdOptions.TenantId) &&
+            !string.IsNullOrEmpty(azureAdOptions.ClientId) &&
             !string.IsNullOrEmpty(azureAdOptions.ClientSecret) &&
             azureAdOptions.TenantId != "FAKE-DATA")
         {
             var scopes = new[] { "https://graph.microsoft.com/.default" };
             var clientSecretCredential = new ClientSecretCredential(
-                azureAdOptions.TenantId, 
-                azureAdOptions.ClientId, 
+                azureAdOptions.TenantId,
+                azureAdOptions.ClientId,
                 azureAdOptions.ClientSecret);
-            
+
             var graphClient = new GraphServiceClient(clientSecretCredential, scopes);
             services.AddSingleton(graphClient);
         }
@@ -121,5 +121,3 @@ public static class DependencyInjection
         return services;
     }
 }
-
-

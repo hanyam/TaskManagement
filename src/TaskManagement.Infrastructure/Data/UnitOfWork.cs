@@ -9,10 +9,8 @@ namespace TaskManagement.Infrastructure.Data;
 /// <summary>
 ///     Unit of Work implementation using Entity Framework.
 ///     Provides explicit transaction management for complex operations.
-///     
 ///     Note: The DbContext is managed by the DI container (scoped lifetime) and will be disposed automatically.
 ///     This UnitOfWork should NOT dispose the DbContext - it only manages transactions.
-///     
 ///     Usage Guidelines:
 ///     - For simple operations: Use DbContext directly with SaveChangesAsync() (implicit transaction)
 ///     - For complex operations: Use UnitOfWork with explicit transaction control (BeginTransaction/Commit/Rollback)
@@ -54,9 +52,8 @@ public class UnitOfWork : IUnitOfWork
     public async System.Threading.Tasks.Task BeginTransactionAsync(CancellationToken cancellationToken = default)
     {
         if (_transaction != null)
-        {
-            throw new InvalidOperationException("A transaction is already in progress. Commit or rollback the current transaction before starting a new one.");
-        }
+            throw new InvalidOperationException(
+                "A transaction is already in progress. Commit or rollback the current transaction before starting a new one.");
 
         _transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
     }
@@ -67,9 +64,7 @@ public class UnitOfWork : IUnitOfWork
     public async System.Threading.Tasks.Task CommitTransactionAsync(CancellationToken cancellationToken = default)
     {
         if (_transaction == null)
-        {
             throw new InvalidOperationException("No transaction in progress. Call BeginTransactionAsync first.");
-        }
 
         try
         {
@@ -87,10 +82,8 @@ public class UnitOfWork : IUnitOfWork
     /// </summary>
     public async System.Threading.Tasks.Task RollbackTransactionAsync(CancellationToken cancellationToken = default)
     {
-        if (_transaction == null)
-        {
-            return; // No transaction to rollback - this is safe to call if no transaction was started
-        }
+        if (_transaction ==
+            null) return; // No transaction to rollback - this is safe to call if no transaction was started
 
         try
         {

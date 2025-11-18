@@ -12,7 +12,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
     public void Configure(EntityTypeBuilder<User> builder)
     {
         builder.HasKey(e => e.Id);
-        
+
         builder.Property(e => e.Email)
             .IsRequired()
             .HasMaxLength(256);
@@ -51,5 +51,3 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .HasFilter("[AzureAdObjectId] IS NOT NULL");
     }
 }
-
-

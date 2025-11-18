@@ -33,4 +33,3 @@ public class ExtensionPolicyOptions
     /// </summary>
     public bool AutoApproveIfConditionsMet { get; set; } = false;
 }
-

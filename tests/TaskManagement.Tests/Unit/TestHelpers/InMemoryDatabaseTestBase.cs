@@ -1,21 +1,21 @@
 using Microsoft.EntityFrameworkCore;
-using TaskManagement.Infrastructure.Data;
 using TaskManagement.Domain.Entities;
+using TaskManagement.Infrastructure.Data;
 using TaskAssignment = TaskManagement.Domain.Entities.TaskAssignment;
 using TaskProgressHistory = TaskManagement.Domain.Entities.TaskProgressHistory;
 using DeadlineExtensionRequest = TaskManagement.Domain.Entities.DeadlineExtensionRequest;
 using ManagerEmployee = TaskManagement.Domain.Entities.ManagerEmployee;
+using Task = TaskManagement.Domain.Entities.Task;
 
 namespace TaskManagement.Tests.Unit.TestHelpers;
 
 /// <summary>
-/// Base class for unit tests that use in-memory database with real test data.
+///     Base class for unit tests that use in-memory database with real test data.
 /// </summary>
 public abstract class InMemoryDatabaseTestBase : IDisposable
 {
-    protected TaskManagementDbContext Context { get; }
-    protected readonly List<Guid> TestUserIds = new();
     protected readonly List<Guid> TestTaskIds = new();
+    protected readonly List<Guid> TestUserIds = new();
 
     protected InMemoryDatabaseTestBase()
     {
@@ -24,10 +24,12 @@ public abstract class InMemoryDatabaseTestBase : IDisposable
             .Options;
 
         Context = new TaskManagementDbContext(options);
-        
+
         // Seed test data
         SeedTestData();
     }
+
+    protected TaskManagementDbContext Context { get; }
 
     private void SeedTestData()
     {
@@ -48,7 +50,7 @@ public abstract class InMemoryDatabaseTestBase : IDisposable
             new Guid("22222222-2222-2222-2222-222222222222"), // jane.smith@example.com
             new Guid("33333333-3333-3333-3333-333333333333"), // bob.wilson@example.com
             new Guid("44444444-4444-4444-4444-444444444444"), // alice.brown@example.com
-            new Guid("55555555-5555-5555-5555-555555555555")  // charlie.davis@example.com
+            new Guid("55555555-5555-5555-5555-555555555555") // charlie.davis@example.com
         };
 
         for (int i = 0; i < testUsers.Length; i++)
@@ -64,7 +66,7 @@ public abstract class InMemoryDatabaseTestBase : IDisposable
         // Create some test tasks
         var testTasks = new[]
         {
-            new TaskManagement.Domain.Entities.Task(
+            new Task(
                 "Complete project documentation",
                 "Write comprehensive documentation for the new API endpoints",
                 TaskPriority.High,
@@ -73,7 +75,7 @@ public abstract class InMemoryDatabaseTestBase : IDisposable
                 TaskType.WithProgress,
                 userIds[0] // Created by John Doe
             ),
-            new TaskManagement.Domain.Entities.Task(
+            new Task(
                 "Review code changes",
                 "Review the latest pull requests and provide feedback",
                 TaskPriority.Medium,
@@ -82,7 +84,7 @@ public abstract class InMemoryDatabaseTestBase : IDisposable
                 TaskType.Simple,
                 userIds[0] // Created by John Doe
             ),
-            new TaskManagement.Domain.Entities.Task(
+            new Task(
                 "Update dependencies",
                 "Update all project dependencies to latest versions",
                 TaskPriority.Low,
@@ -103,7 +105,7 @@ public abstract class InMemoryDatabaseTestBase : IDisposable
 
         for (int i = 0; i < testTasks.Length; i++)
         {
-            typeof(TaskManagement.Domain.Entities.Task).BaseType!.GetProperty("Id")!.SetValue(testTasks[i], taskIds[i]);
+            typeof(Task).BaseType!.GetProperty("Id")!.SetValue(testTasks[i], taskIds[i]);
             TestTaskIds.Add(taskIds[i]);
         }
 
@@ -115,7 +117,7 @@ public abstract class InMemoryDatabaseTestBase : IDisposable
     }
 
     /// <summary>
-    /// Gets a test user by email.
+    ///     Gets a test user by email.
     /// </summary>
     protected User GetTestUser(string email)
     {
@@ -123,7 +125,7 @@ public abstract class InMemoryDatabaseTestBase : IDisposable
     }
 
     /// <summary>
-    /// Gets a test user by ID.
+    ///     Gets a test user by ID.
     /// </summary>
     protected User GetTestUser(Guid id)
     {
@@ -131,7 +133,7 @@ public abstract class InMemoryDatabaseTestBase : IDisposable
     }
 
     /// <summary>
-    /// Gets all test users.
+    ///     Gets all test users.
     /// </summary>
     protected List<User> GetAllTestUsers()
     {
@@ -139,23 +141,23 @@ public abstract class InMemoryDatabaseTestBase : IDisposable
     }
 
     /// <summary>
-    /// Gets a test task by ID.
+    ///     Gets a test task by ID.
     /// </summary>
-    protected TaskManagement.Domain.Entities.Task GetTestTask(Guid id)
+    protected Task GetTestTask(Guid id)
     {
         return Context.Tasks.First(t => t.Id == id);
     }
 
     /// <summary>
-    /// Gets all test tasks.
+    ///     Gets all test tasks.
     /// </summary>
-    protected List<TaskManagement.Domain.Entities.Task> GetAllTestTasks()
+    protected List<Task> GetAllTestTasks()
     {
         return Context.Tasks.ToList();
     }
 
     /// <summary>
-    /// Creates a new user for testing.
+    ///     Creates a new user for testing.
     /// </summary>
     protected User CreateTestUser(string email, string firstName, string lastName, string? azureAdObjectId = null)
     {
@@ -168,19 +170,19 @@ public abstract class InMemoryDatabaseTestBase : IDisposable
     }
 
     /// <summary>
-    /// Creates a new task for testing.
+    ///     Creates a new task for testing.
     /// </summary>
-    protected TaskManagement.Domain.Entities.Task CreateTestTask(
-        string title, 
-        string? description, 
-        TaskPriority priority, 
-        DateTime? dueDate, 
+    protected Task CreateTestTask(
+        string title,
+        string? description,
+        TaskPriority priority,
+        DateTime? dueDate,
         Guid? assignedUserId, // Now nullable to support draft tasks
         TaskType type = TaskType.Simple,
         Guid? createdById = null)
     {
         var creatorId = createdById ?? assignedUserId ?? Guid.NewGuid(); // Use a new GUID if both are null
-        var task = new TaskManagement.Domain.Entities.Task(title, description, priority, dueDate, assignedUserId, type, creatorId);
+        var task = new Task(title, description, priority, dueDate, assignedUserId, type, creatorId);
         task.SetCreatedBy("test@example.com");
         Context.Tasks.Add(task);
         Context.SaveChanges();
@@ -189,7 +191,7 @@ public abstract class InMemoryDatabaseTestBase : IDisposable
     }
 
     /// <summary>
-    /// Creates a task assignment for testing.
+    ///     Creates a task assignment for testing.
     /// </summary>
     protected TaskAssignment CreateTestAssignment(Guid taskId, Guid userId, bool isPrimary = false)
     {
@@ -201,9 +203,10 @@ public abstract class InMemoryDatabaseTestBase : IDisposable
     }
 
     /// <summary>
-    /// Creates task progress history entry for testing.
+    ///     Creates task progress history entry for testing.
     /// </summary>
-    protected TaskProgressHistory CreateTestProgressHistory(Guid taskId, Guid updatedById, int progressPercentage, string? notes = null)
+    protected TaskProgressHistory CreateTestProgressHistory(Guid taskId, Guid updatedById, int progressPercentage,
+        string? notes = null)
     {
         var progressHistory = new TaskProgressHistory(taskId, updatedById, progressPercentage, notes);
         progressHistory.SetCreatedBy("test@example.com");
@@ -213,9 +216,10 @@ public abstract class InMemoryDatabaseTestBase : IDisposable
     }
 
     /// <summary>
-    /// Creates a deadline extension request for testing.
+    ///     Creates a deadline extension request for testing.
     /// </summary>
-    protected DeadlineExtensionRequest CreateTestExtensionRequest(Guid taskId, Guid requestedById, DateTime requestedDueDate, string reason)
+    protected DeadlineExtensionRequest CreateTestExtensionRequest(Guid taskId, Guid requestedById,
+        DateTime requestedDueDate, string reason)
     {
         var extensionRequest = new DeadlineExtensionRequest(taskId, requestedById, requestedDueDate, reason);
         extensionRequest.SetCreatedBy("test@example.com");
@@ -225,7 +229,7 @@ public abstract class InMemoryDatabaseTestBase : IDisposable
     }
 
     /// <summary>
-    /// Sets the role of a test user.
+    ///     Sets the role of a test user.
     /// </summary>
     protected void SetUserRole(Guid userId, UserRole role)
     {
@@ -235,7 +239,7 @@ public abstract class InMemoryDatabaseTestBase : IDisposable
     }
 
     /// <summary>
-    /// Gets a test user and sets their role.
+    ///     Gets a test user and sets their role.
     /// </summary>
     protected User GetTestUserWithRole(string email, UserRole role)
     {
@@ -246,7 +250,7 @@ public abstract class InMemoryDatabaseTestBase : IDisposable
     }
 
     /// <summary>
-    /// Creates a manager-employee relationship for testing.
+    ///     Creates a manager-employee relationship for testing.
     /// </summary>
     protected ManagerEmployee CreateManagerEmployeeRelationship(Guid managerId, Guid employeeId)
     {

@@ -12,4 +12,3 @@ public record RequestMoreInfoCommand : ICommand<TaskDto>
     public string RequestMessage { get; init; } = string.Empty;
     public Guid RequestedById { get; init; }
 }
-

@@ -47,5 +47,3 @@ public class DeadlineExtensionRequestConfiguration : IEntityTypeConfiguration<De
             .OnDelete(DeleteBehavior.Restrict);
     }
 }
-
-

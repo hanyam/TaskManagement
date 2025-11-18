@@ -2,9 +2,9 @@ using Microsoft.EntityFrameworkCore;
 using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Domain.Common;
 using TaskManagement.Domain.DTOs;
-using TaskManagement.Domain.Entities;
 using TaskManagement.Domain.Errors.Tasks;
 using TaskManagement.Infrastructure.Data;
+using Task = TaskManagement.Domain.Entities.Task;
 using TaskStatus = TaskManagement.Domain.Entities.TaskStatus;
 
 namespace TaskManagement.Application.Tasks.Commands.ReviewCompletedTask;
@@ -26,7 +26,7 @@ public class ReviewCompletedTaskCommandHandler : ICommandHandler<ReviewCompleted
         var errors = new List<Error>();
 
         // Find the task
-        var task = await _context.Set<Domain.Entities.Task>()
+        var task = await _context.Set<Task>()
             .Include(t => t.AssignedUser)
             .Include(t => t.CreatedByUser)
             .FirstOrDefaultAsync(t => t.Id == request.TaskId, cancellationToken);
@@ -90,4 +90,3 @@ public class ReviewCompletedTaskCommandHandler : ICommandHandler<ReviewCompleted
         return Result<TaskDto>.Success(taskDto);
     }
 }
-

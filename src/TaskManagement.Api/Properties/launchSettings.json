@@ -1,25 +1,25 @@
 {
-  "profiles": {
-    "TaskManagement.Api": {
-      "commandName": "Project",
-      "launchBrowser": false,
-      "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
-      },
-      "applicationUrl": "http://localhost:5000"
-    },
-    "Container (Dockerfile)": {
-      "commandName": "Docker",
-      "launchBrowser": false,
-      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}",
-      "environmentVariables": {
-        //"ASPNETCORE_HTTPS_PORTS": "5001"//,
-        "ASPNETCORE_HTTP_PORTS": "5000"
-      },
-      "publishAllPorts": false,
-      //"useSSL": true,
-      "httpPort": 5000 //,
-      //"sslPort": 5001
+    "profiles": {
+        "TaskManagement.Api": {
+            "commandName": "Project",
+            "launchBrowser": false,
+            "environmentVariables": {
+                "ASPNETCORE_ENVIRONMENT": "Development"
+            },
+            "applicationUrl": "http://localhost:5000"
+        },
+        "Container (Dockerfile)": {
+            "commandName": "Docker",
+            "launchBrowser": false,
+            "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}",
+            "environmentVariables": {
+                //"ASPNETCORE_HTTPS_PORTS": "5001"//,
+                "ASPNETCORE_HTTP_PORTS": "5000"
+            },
+            "publishAllPorts": false,
+            //"useSSL": true,
+            "httpPort": 5000 //,
+            //"sslPort": 5001
+        }
     }
-  }
 }

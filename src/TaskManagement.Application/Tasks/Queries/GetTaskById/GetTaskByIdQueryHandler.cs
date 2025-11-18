@@ -3,9 +3,9 @@ using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Application.Infrastructure.Data.Repositories;
 using TaskManagement.Domain.Common;
 using TaskManagement.Domain.DTOs;
+using TaskManagement.Domain.Entities;
 using TaskManagement.Domain.Errors.Tasks;
 using TaskManagement.Infrastructure.Data;
-using Task = TaskManagement.Domain.Entities.Task;
 
 namespace TaskManagement.Application.Tasks.Queries.GetTaskById;
 
@@ -15,8 +15,8 @@ namespace TaskManagement.Application.Tasks.Queries.GetTaskById;
 /// </summary>
 public class GetTaskByIdQueryHandler : IRequestHandler<GetTaskByIdQuery, TaskDto>
 {
-    private readonly TaskDapperRepository _taskRepository;
     private readonly TaskManagementDbContext _context;
+    private readonly TaskDapperRepository _taskRepository;
 
     public GetTaskByIdQueryHandler(TaskDapperRepository taskRepository, TaskManagementDbContext context)
     {
@@ -29,21 +29,12 @@ public class GetTaskByIdQueryHandler : IRequestHandler<GetTaskByIdQuery, TaskDto
         var errors = new List<Error>();
 
         // Validate input
-        if (request.Id == Guid.Empty)
-        {
-            errors.Add(TaskErrors.InvalidTaskId);
-        }
+        if (request.Id == Guid.Empty) errors.Add(TaskErrors.InvalidTaskId);
 
-        if (request.UserId == Guid.Empty)
-        {
-            errors.Add(TaskErrors.InvalidUserId);
-        }
+        if (request.UserId == Guid.Empty) errors.Add(TaskErrors.InvalidUserId);
 
         // If there are any validation errors, return them all
-        if (errors.Any())
-        {
-            return Result<TaskDto>.Failure(errors);
-        }
+        if (errors.Any()) return Result<TaskDto>.Failure(errors);
 
         // Get task using Dapper (optimized query)
         var taskDto = await _taskRepository.GetTaskWithUserAsync(request.Id, cancellationToken);
@@ -76,22 +67,17 @@ public class GetTaskByIdQueryHandler : IRequestHandler<GetTaskByIdQuery, TaskDto
     ///     2. User is assigned to the task
     ///     3. User is in the assignment chain
     /// </summary>
-    private async Task<bool> HasUserAccessToTask(Guid taskId, Guid userId, TaskDto taskDto, CancellationToken cancellationToken)
+    private async Task<bool> HasUserAccessToTask(Guid taskId, Guid userId, TaskDto taskDto,
+        CancellationToken cancellationToken)
     {
         // Check if user created the task
-        if (taskDto.CreatedById == userId)
-        {
-            return true;
-        }
+        if (taskDto.CreatedById == userId) return true;
 
         // Check if user is assigned to the task
-        if (taskDto.AssignedUserId.HasValue && taskDto.AssignedUserId.Value == userId)
-        {
-            return true;
-        }
+        if (taskDto.AssignedUserId.HasValue && taskDto.AssignedUserId.Value == userId) return true;
 
         // Check if user is in the assignment chain (TaskAssignments)
-        var isInAssignmentChain = await _context.Set<TaskManagement.Domain.Entities.TaskAssignment>()
+        var isInAssignmentChain = await _context.Set<TaskAssignment>()
             .AnyAsync(ta => ta.TaskId == taskId && ta.UserId == userId, cancellationToken);
 
         return isInAssignmentChain;

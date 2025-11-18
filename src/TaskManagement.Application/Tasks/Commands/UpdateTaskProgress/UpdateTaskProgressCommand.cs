@@ -13,4 +13,3 @@ public record UpdateTaskProgressCommand : ICommand<TaskProgressDto>
     public string? Notes { get; init; }
     public Guid UpdatedById { get; init; }
 }
-

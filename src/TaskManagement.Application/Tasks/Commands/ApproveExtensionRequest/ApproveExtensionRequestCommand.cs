@@ -12,4 +12,3 @@ public record ApproveExtensionRequestCommand : ICommand
     public Guid ApprovedById { get; init; }
     public string? ReviewNotes { get; init; }
 }
-

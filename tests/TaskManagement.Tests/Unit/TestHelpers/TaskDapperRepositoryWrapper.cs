@@ -1,25 +1,21 @@
-
 using Microsoft.Extensions.Configuration;
 using TaskManagement.Application.Infrastructure.Data.Repositories;
 using TaskManagement.Domain.DTOs;
 using TaskManagement.Domain.Entities;
-using TaskManagement.Infrastructure.Data;
-using DomainTask = TaskManagement.Domain.Entities.Task;
 using DomainTaskStatus = TaskManagement.Domain.Entities.TaskStatus;
-using System.Linq;
 
 namespace TaskManagement.Tests.Unit.TestHelpers;
 
 /// <summary>
-/// Wrapper that implements the same interface as TaskDapperRepository but uses EF Core internally.
-/// This allows the original query handlers to work with EF Core in tests.
+///     Wrapper that implements the same interface as TaskDapperRepository but uses EF Core internally.
+///     This allows the original query handlers to work with EF Core in tests.
 /// </summary>
 public class TaskDapperRepositoryWrapper : TaskDapperRepository
 {
     private readonly TaskEfQueryRepository _efRepository;
 
     public TaskDapperRepositoryWrapper(TaskEfQueryRepository efRepository)
-        : base(new Microsoft.Extensions.Configuration.ConfigurationBuilder()
+        : base(new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["ConnectionStrings:DefaultConnection"] = "Server=localhost;Database=TestDb;Trusted_Connection=true;"
@@ -68,7 +64,7 @@ public class TaskDapperRepositoryWrapper : TaskDapperRepository
         // For testing purposes, we'll implement a simple version
         // In a real scenario, you'd need to implement the full filtering logic
         var allTasks = await _efRepository.GetAllAsync(cancellationToken);
-        
+
         // Convert to DTOs
         var taskDtos = allTasks.Select(t => new TaskDto
         {
@@ -89,37 +85,33 @@ public class TaskDapperRepositoryWrapper : TaskDapperRepository
             ReminderLevel = t.ReminderLevel,
             ProgressPercentage = t.ProgressPercentage
         });
-        
+
         // Apply filters
         var filteredTasks = taskDtos.AsQueryable();
-        
+
         if (status.HasValue)
             filteredTasks = filteredTasks.Where(t => t.Status == status.Value);
-        
+
         if (priority.HasValue)
             filteredTasks = filteredTasks.Where(t => t.Priority == priority.Value);
-        
+
         if (assignedUserId.HasValue)
-        {
             filteredTasks = filteredTasks.Where(t => t.AssignedUserId == assignedUserId.Value);
-        }
         else
-        {
             filteredTasks = filteredTasks.Where(t => t.AssignedUserId == null);
-        }
-        
+
         if (dueDateFrom.HasValue)
             filteredTasks = filteredTasks.Where(t => t.DueDate >= dueDateFrom.Value);
-        
+
         if (dueDateTo.HasValue)
             filteredTasks = filteredTasks.Where(t => t.DueDate <= dueDateTo.Value);
-        
+
         var totalCount = filteredTasks.Count();
         var pagedTasks = filteredTasks
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToList();
-        
+
         return (pagedTasks, totalCount);
     }
 }

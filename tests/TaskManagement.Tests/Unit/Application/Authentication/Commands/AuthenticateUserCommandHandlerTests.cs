@@ -1,48 +1,45 @@
+using System.Security.Claims;
 using FluentAssertions;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Moq;
-using System.Security.Claims;
-using TaskManagement.Application.Infrastructure.Data.Repositories;
 using TaskManagement.Application.Authentication.Commands.AuthenticateUser;
+using TaskManagement.Application.Infrastructure.Data.Repositories;
 using TaskManagement.Domain.Common;
-using TaskManagement.Domain.DTOs;
 using TaskManagement.Domain.Entities;
 using TaskManagement.Domain.Errors.Authentication;
 using TaskManagement.Domain.Interfaces;
 using TaskManagement.Infrastructure.Data;
 using TaskManagement.Tests.TestHelpers;
 using Xunit;
-using DomainTask = TaskManagement.Domain.Entities.Task;
 using SystemTask = System.Threading.Tasks.Task;
 
 namespace TaskManagement.Tests.Unit.Application.Authentication.Commands;
 
 /// <summary>
-/// Unit tests for the AuthenticateUserCommandHandler.
+///     Unit tests for the AuthenticateUserCommandHandler.
 /// </summary>
 public class AuthenticateUserCommandHandlerTests
 {
-    private readonly Mock<IAuthenticationService> _mockAuthenticationService;
-    private readonly Mock<UserDapperRepository> _mockUserQueryRepository;
-    private readonly Mock<UserEfCommandRepository> _mockUserCommandRepository;
-    private readonly Mock<TaskManagementDbContext> _mockContext;
     private readonly AuthenticateUserCommandHandler _handler;
+    private readonly Mock<IAuthenticationService> _mockAuthenticationService;
+    private readonly Mock<TaskManagementDbContext> _mockContext;
+    private readonly Mock<UserEfCommandRepository> _mockUserCommandRepository;
+    private readonly Mock<UserDapperRepository> _mockUserQueryRepository;
 
     public AuthenticateUserCommandHandlerTests()
     {
         _mockAuthenticationService = new Mock<IAuthenticationService>();
-        
+
         // Create in-memory configuration that returns a connection string
         var inMemorySettings = new Dictionary<string, string?>
         {
-            {"ConnectionStrings:DefaultConnection", "Data Source=:memory:"}
+            { "ConnectionStrings:DefaultConnection", "Data Source=:memory:" }
         };
-        
+
         IConfiguration configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(inMemorySettings)
             .Build();
-        
+
         _mockUserQueryRepository = new Mock<UserDapperRepository>(configuration);
         _mockContext = DbContextTestHelper.CreateMockDbContext();
         _mockUserCommandRepository = new Mock<UserEfCommandRepository>(_mockContext.Object);
@@ -74,7 +71,8 @@ public class AuthenticateUserCommandHandlerTests
 
         var jwtToken = "generated-jwt-token";
 
-        _mockAuthenticationService.Setup(s => s.ValidateAzureAdTokenAsync(command.AzureAdToken, It.IsAny<CancellationToken>()))
+        _mockAuthenticationService
+            .Setup(s => s.ValidateAzureAdTokenAsync(command.AzureAdToken, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<ClaimsPrincipal>.Success(claimsPrincipal));
 
         _mockUserQueryRepository.Setup(r => r.GetByEmailAsync("test@example.com", It.IsAny<CancellationToken>()))
@@ -84,12 +82,13 @@ public class AuthenticateUserCommandHandlerTests
             .ReturnsAsync(false);
 
         _mockUserCommandRepository.Setup(r => r.UpdateAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()))
-            .Returns(System.Threading.Tasks.Task.CompletedTask);
+            .Returns(SystemTask.CompletedTask);
 
         _mockContext.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
-        _mockAuthenticationService.Setup(s => s.GenerateJwtTokenAsync("test@example.com", It.IsAny<Dictionary<string, string>>(), It.IsAny<CancellationToken>()))
+        _mockAuthenticationService.Setup(s => s.GenerateJwtTokenAsync("test@example.com",
+                It.IsAny<Dictionary<string, string>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<string>.Success(jwtToken));
 
         // Act
@@ -125,7 +124,8 @@ public class AuthenticateUserCommandHandlerTests
 
         var jwtToken = "generated-jwt-token";
 
-        _mockAuthenticationService.Setup(s => s.ValidateAzureAdTokenAsync(command.AzureAdToken, It.IsAny<CancellationToken>()))
+        _mockAuthenticationService
+            .Setup(s => s.ValidateAzureAdTokenAsync(command.AzureAdToken, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<ClaimsPrincipal>.Success(claimsPrincipal));
 
         _mockUserQueryRepository.Setup(r => r.GetByEmailAsync("newuser@example.com", It.IsAny<CancellationToken>()))
@@ -140,7 +140,8 @@ public class AuthenticateUserCommandHandlerTests
         _mockContext.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
-        _mockAuthenticationService.Setup(s => s.GenerateJwtTokenAsync("newuser@example.com", It.IsAny<Dictionary<string, string>>(), It.IsAny<CancellationToken>()))
+        _mockAuthenticationService.Setup(s => s.GenerateJwtTokenAsync("newuser@example.com",
+                It.IsAny<Dictionary<string, string>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<string>.Success(jwtToken));
 
         // Act
@@ -168,7 +169,8 @@ public class AuthenticateUserCommandHandlerTests
             AzureAdToken = "invalid-token"
         };
 
-        _mockAuthenticationService.Setup(s => s.ValidateAzureAdTokenAsync(command.AzureAdToken, It.IsAny<CancellationToken>()))
+        _mockAuthenticationService
+            .Setup(s => s.ValidateAzureAdTokenAsync(command.AzureAdToken, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<ClaimsPrincipal>.Failure(AuthenticationErrors.InvalidAzureAdToken));
 
         // Act
@@ -199,7 +201,8 @@ public class AuthenticateUserCommandHandlerTests
             // Missing email claim
         }));
 
-        _mockAuthenticationService.Setup(s => s.ValidateAzureAdTokenAsync(command.AzureAdToken, It.IsAny<CancellationToken>()))
+        _mockAuthenticationService
+            .Setup(s => s.ValidateAzureAdTokenAsync(command.AzureAdToken, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<ClaimsPrincipal>.Success(claimsPrincipal));
 
         // Act
@@ -232,7 +235,8 @@ public class AuthenticateUserCommandHandlerTests
 
         var existingUser = new User("test@example.com", "John", "Doe", "test-object-id");
 
-        _mockAuthenticationService.Setup(s => s.ValidateAzureAdTokenAsync(command.AzureAdToken, It.IsAny<CancellationToken>()))
+        _mockAuthenticationService
+            .Setup(s => s.ValidateAzureAdTokenAsync(command.AzureAdToken, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<ClaimsPrincipal>.Success(claimsPrincipal));
 
         _mockUserQueryRepository.Setup(r => r.GetByEmailAsync("test@example.com", It.IsAny<CancellationToken>()))
@@ -242,12 +246,13 @@ public class AuthenticateUserCommandHandlerTests
             .ReturnsAsync(false);
 
         _mockUserCommandRepository.Setup(r => r.UpdateAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()))
-            .Returns(System.Threading.Tasks.Task.CompletedTask);
+            .Returns(SystemTask.CompletedTask);
 
         _mockContext.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
-        _mockAuthenticationService.Setup(s => s.GenerateJwtTokenAsync("test@example.com", It.IsAny<Dictionary<string, string>>(), It.IsAny<CancellationToken>()))
+        _mockAuthenticationService.Setup(s => s.GenerateJwtTokenAsync("test@example.com",
+                It.IsAny<Dictionary<string, string>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<string>.Failure(AuthenticationErrors.JwtTokenGenerationFailed));
 
         // Act
@@ -282,7 +287,8 @@ public class AuthenticateUserCommandHandlerTests
 
         var jwtToken = "generated-jwt-token";
 
-        _mockAuthenticationService.Setup(s => s.ValidateAzureAdTokenAsync(command.AzureAdToken, It.IsAny<CancellationToken>()))
+        _mockAuthenticationService
+            .Setup(s => s.ValidateAzureAdTokenAsync(command.AzureAdToken, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<ClaimsPrincipal>.Success(claimsPrincipal));
 
         _mockUserQueryRepository.Setup(r => r.GetByEmailAsync("test@example.com", It.IsAny<CancellationToken>()))
@@ -292,12 +298,13 @@ public class AuthenticateUserCommandHandlerTests
             .ReturnsAsync(false);
 
         _mockUserCommandRepository.Setup(r => r.UpdateAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()))
-            .Returns(System.Threading.Tasks.Task.CompletedTask);
+            .Returns(SystemTask.CompletedTask);
 
         _mockContext.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
-        _mockAuthenticationService.Setup(s => s.GenerateJwtTokenAsync("test@example.com", It.IsAny<Dictionary<string, string>>(), It.IsAny<CancellationToken>()))
+        _mockAuthenticationService.Setup(s => s.GenerateJwtTokenAsync("test@example.com",
+                It.IsAny<Dictionary<string, string>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<string>.Success(jwtToken));
 
         // Act
@@ -306,7 +313,7 @@ public class AuthenticateUserCommandHandlerTests
         // Assert
         _mockAuthenticationService.Verify(s => s.GenerateJwtTokenAsync(
             "test@example.com",
-            It.Is<Dictionary<string, string>>(claims => 
+            It.Is<Dictionary<string, string>>(claims =>
                 claims.ContainsKey("user_id") &&
                 claims.ContainsKey("display_name") &&
                 claims.ContainsKey("first_name") &&
@@ -335,7 +342,8 @@ public class AuthenticateUserCommandHandlerTests
 
         var jwtToken = "generated-jwt-token";
 
-        _mockAuthenticationService.Setup(s => s.ValidateAzureAdTokenAsync(command.AzureAdToken, It.IsAny<CancellationToken>()))
+        _mockAuthenticationService
+            .Setup(s => s.ValidateAzureAdTokenAsync(command.AzureAdToken, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<ClaimsPrincipal>.Success(claimsPrincipal));
 
         _mockUserQueryRepository.Setup(r => r.GetByEmailAsync("test@example.com", It.IsAny<CancellationToken>()))
@@ -345,19 +353,21 @@ public class AuthenticateUserCommandHandlerTests
             .ReturnsAsync(false);
 
         _mockUserCommandRepository.Setup(r => r.UpdateAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()))
-            .Returns(System.Threading.Tasks.Task.CompletedTask);
+            .Returns(SystemTask.CompletedTask);
 
         _mockContext.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
-        _mockAuthenticationService.Setup(s => s.GenerateJwtTokenAsync("test@example.com", It.IsAny<Dictionary<string, string>>(), It.IsAny<CancellationToken>()))
+        _mockAuthenticationService.Setup(s => s.GenerateJwtTokenAsync("test@example.com",
+                It.IsAny<Dictionary<string, string>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<string>.Success(jwtToken));
 
         // Act
         await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        _mockUserCommandRepository.Verify(r => r.UpdateAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()), Times.Once);
+        _mockUserCommandRepository.Verify(r => r.UpdateAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()),
+            Times.Once);
         _mockContext.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -381,7 +391,8 @@ public class AuthenticateUserCommandHandlerTests
         var jwtToken = "generated-jwt-token";
         User? createdUser = null;
 
-        _mockAuthenticationService.Setup(s => s.ValidateAzureAdTokenAsync(command.AzureAdToken, It.IsAny<CancellationToken>()))
+        _mockAuthenticationService
+            .Setup(s => s.ValidateAzureAdTokenAsync(command.AzureAdToken, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<ClaimsPrincipal>.Success(claimsPrincipal));
 
         _mockUserQueryRepository.Setup(r => r.GetByEmailAsync("manager@example.com", It.IsAny<CancellationToken>()))
@@ -395,12 +406,13 @@ public class AuthenticateUserCommandHandlerTests
             .ReturnsAsync(true);
 
         _mockUserCommandRepository.Setup(r => r.UpdateAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()))
-            .Returns(System.Threading.Tasks.Task.CompletedTask);
+            .Returns(SystemTask.CompletedTask);
 
         _mockContext.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
-        _mockAuthenticationService.Setup(s => s.GenerateJwtTokenAsync("manager@example.com", It.IsAny<Dictionary<string, string>>(), It.IsAny<CancellationToken>()))
+        _mockAuthenticationService.Setup(s => s.GenerateJwtTokenAsync("manager@example.com",
+                It.IsAny<Dictionary<string, string>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<string>.Success(jwtToken));
 
         // Act
@@ -411,8 +423,11 @@ public class AuthenticateUserCommandHandlerTests
         createdUser.Should().NotBeNull();
         createdUser!.Role.Should().Be(UserRole.Manager);
         _mockUserCommandRepository.Verify(r => r.AddAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()), Times.Once);
-        _mockUserCommandRepository.Verify(r => r.UpdateAsync(It.Is<User>(u => u.Role == UserRole.Manager), It.IsAny<CancellationToken>()), Times.Once);
-        _mockContext.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Exactly(2)); // Once for Add, once for Update
+        _mockUserCommandRepository.Verify(
+            r => r.UpdateAsync(It.Is<User>(u => u.Role == UserRole.Manager), It.IsAny<CancellationToken>()),
+            Times.Once);
+        _mockContext.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()),
+            Times.Exactly(2)); // Once for Add, once for Update
     }
 
     [Fact]
@@ -437,7 +452,8 @@ public class AuthenticateUserCommandHandlerTests
 
         var jwtToken = "generated-jwt-token";
 
-        _mockAuthenticationService.Setup(s => s.ValidateAzureAdTokenAsync(command.AzureAdToken, It.IsAny<CancellationToken>()))
+        _mockAuthenticationService
+            .Setup(s => s.ValidateAzureAdTokenAsync(command.AzureAdToken, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<ClaimsPrincipal>.Success(claimsPrincipal));
 
         _mockUserQueryRepository.Setup(r => r.GetByEmailAsync("manager@example.com", It.IsAny<CancellationToken>()))
@@ -447,12 +463,13 @@ public class AuthenticateUserCommandHandlerTests
             .ReturnsAsync(true);
 
         _mockUserCommandRepository.Setup(r => r.UpdateAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()))
-            .Returns(System.Threading.Tasks.Task.CompletedTask);
+            .Returns(SystemTask.CompletedTask);
 
         _mockContext.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
-        _mockAuthenticationService.Setup(s => s.GenerateJwtTokenAsync("manager@example.com", It.IsAny<Dictionary<string, string>>(), It.IsAny<CancellationToken>()))
+        _mockAuthenticationService.Setup(s => s.GenerateJwtTokenAsync("manager@example.com",
+                It.IsAny<Dictionary<string, string>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<string>.Success(jwtToken));
 
         // Act
@@ -461,7 +478,9 @@ public class AuthenticateUserCommandHandlerTests
         // Assert
         result.IsSuccess.Should().BeTrue();
         existingUser.Role.Should().Be(UserRole.Manager);
-        _mockUserCommandRepository.Verify(r => r.UpdateAsync(It.Is<User>(u => u.Role == UserRole.Manager), It.IsAny<CancellationToken>()), Times.Once);
+        _mockUserCommandRepository.Verify(
+            r => r.UpdateAsync(It.Is<User>(u => u.Role == UserRole.Manager), It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]
@@ -486,7 +505,8 @@ public class AuthenticateUserCommandHandlerTests
 
         var jwtToken = "generated-jwt-token";
 
-        _mockAuthenticationService.Setup(s => s.ValidateAzureAdTokenAsync(command.AzureAdToken, It.IsAny<CancellationToken>()))
+        _mockAuthenticationService
+            .Setup(s => s.ValidateAzureAdTokenAsync(command.AzureAdToken, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<ClaimsPrincipal>.Success(claimsPrincipal));
 
         _mockUserQueryRepository.Setup(r => r.GetByEmailAsync("exmanager@example.com", It.IsAny<CancellationToken>()))
@@ -496,12 +516,13 @@ public class AuthenticateUserCommandHandlerTests
             .ReturnsAsync(false); // User is no longer a manager
 
         _mockUserCommandRepository.Setup(r => r.UpdateAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()))
-            .Returns(System.Threading.Tasks.Task.CompletedTask);
+            .Returns(SystemTask.CompletedTask);
 
         _mockContext.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
-        _mockAuthenticationService.Setup(s => s.GenerateJwtTokenAsync("exmanager@example.com", It.IsAny<Dictionary<string, string>>(), It.IsAny<CancellationToken>()))
+        _mockAuthenticationService.Setup(s => s.GenerateJwtTokenAsync("exmanager@example.com",
+                It.IsAny<Dictionary<string, string>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<string>.Success(jwtToken));
 
         // Act
@@ -510,7 +531,9 @@ public class AuthenticateUserCommandHandlerTests
         // Assert
         result.IsSuccess.Should().BeTrue();
         existingUser.Role.Should().Be(UserRole.Employee);
-        _mockUserCommandRepository.Verify(r => r.UpdateAsync(It.Is<User>(u => u.Role == UserRole.Employee), It.IsAny<CancellationToken>()), Times.Once);
+        _mockUserCommandRepository.Verify(
+            r => r.UpdateAsync(It.Is<User>(u => u.Role == UserRole.Employee), It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]
@@ -535,7 +558,8 @@ public class AuthenticateUserCommandHandlerTests
 
         var jwtToken = "generated-jwt-token";
 
-        _mockAuthenticationService.Setup(s => s.ValidateAzureAdTokenAsync(command.AzureAdToken, It.IsAny<CancellationToken>()))
+        _mockAuthenticationService
+            .Setup(s => s.ValidateAzureAdTokenAsync(command.AzureAdToken, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<ClaimsPrincipal>.Success(claimsPrincipal));
 
         _mockUserQueryRepository.Setup(r => r.GetByEmailAsync("admin@example.com", It.IsAny<CancellationToken>()))
@@ -545,12 +569,13 @@ public class AuthenticateUserCommandHandlerTests
             .ReturnsAsync(false); // Admin is not a manager
 
         _mockUserCommandRepository.Setup(r => r.UpdateAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()))
-            .Returns(System.Threading.Tasks.Task.CompletedTask);
+            .Returns(SystemTask.CompletedTask);
 
         _mockContext.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
-        _mockAuthenticationService.Setup(s => s.GenerateJwtTokenAsync("admin@example.com", It.IsAny<Dictionary<string, string>>(), It.IsAny<CancellationToken>()))
+        _mockAuthenticationService.Setup(s => s.GenerateJwtTokenAsync("admin@example.com",
+                It.IsAny<Dictionary<string, string>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<string>.Success(jwtToken));
 
         // Act
@@ -559,6 +584,7 @@ public class AuthenticateUserCommandHandlerTests
         // Assert
         result.IsSuccess.Should().BeTrue();
         existingUser.Role.Should().Be(UserRole.Admin); // Admin role should remain unchanged
-        _mockUserCommandRepository.Verify(r => r.UpdateAsync(It.Is<User>(u => u.Role == UserRole.Admin), It.IsAny<CancellationToken>()), Times.Once);
+        _mockUserCommandRepository.Verify(
+            r => r.UpdateAsync(It.Is<User>(u => u.Role == UserRole.Admin), It.IsAny<CancellationToken>()), Times.Once);
     }
 }

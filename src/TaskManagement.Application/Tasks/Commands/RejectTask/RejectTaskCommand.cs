@@ -12,4 +12,3 @@ public record RejectTaskCommand : ICommand<TaskDto>
     public string? Reason { get; init; }
     public Guid RejectedById { get; init; }
 }
-

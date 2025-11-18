@@ -42,4 +42,3 @@ public class ManagerEmployeeConfiguration : IEntityTypeConfiguration<ManagerEmpl
             "[ManagerId] != [EmployeeId]"));
     }
 }
-

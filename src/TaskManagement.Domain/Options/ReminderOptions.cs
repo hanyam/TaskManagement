@@ -14,9 +14,9 @@ public class ReminderOptions
     public Dictionary<string, double> Thresholds { get; set; } = new()
     {
         { "Critical", 0.90 }, // 90% of time passed
-        { "High", 0.75 },     // 75% of time passed
-        { "Medium", 0.50 },   // 50% of time passed
-        { "Low", 0.25 }       // 25% of time passed
+        { "High", 0.75 }, // 75% of time passed
+        { "Medium", 0.50 }, // 50% of time passed
+        { "Low", 0.25 } // 25% of time passed
     };
 
     /// <summary>
@@ -25,10 +25,10 @@ public class ReminderOptions
     /// </summary>
     public Dictionary<string, int> DayThresholds { get; set; } = new()
     {
-        { "Critical", 1 },   // 1 day before due date
-        { "High", 3 },       // 3 days before due date
-        { "Medium", 7 },     // 7 days before due date
-        { "Low", 14 }        // 14 days before due date
+        { "Critical", 1 }, // 1 day before due date
+        { "High", 3 }, // 3 days before due date
+        { "Medium", 7 }, // 7 days before due date
+        { "Low", 14 } // 14 days before due date
     };
 
     /// <summary>
@@ -36,4 +36,3 @@ public class ReminderOptions
     /// </summary>
     public bool UseDayThresholds { get; set; } = false;
 }
-

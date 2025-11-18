@@ -5,7 +5,7 @@ using Xunit;
 namespace TaskManagement.Tests.Unit.Domain.Errors;
 
 /// <summary>
-/// Unit tests for TaskErrors centralized error management.
+///     Unit tests for TaskErrors centralized error management.
 /// </summary>
 public class TaskErrorsTests
 {

@@ -3,7 +3,7 @@ using TaskManagement.Domain.Common;
 namespace TaskManagement.Domain.Errors.Authentication;
 
 /// <summary>
-/// Centralized error definitions for Authentication-related operations.
+///     Centralized error definitions for Authentication-related operations.
 /// </summary>
 public static class AuthenticationErrors
 {
@@ -22,7 +22,9 @@ public static class AuthenticationErrors
     public static Error JwtTokenInvalidFormat => Error.Validation("Invalid JWT token format", "Authorization");
 
     // Claims errors
-    public static Error EmailClaimMissing => Error.Validation("Email claim not found in Azure AD token", "AzureAdToken");
+    public static Error EmailClaimMissing =>
+        Error.Validation("Email claim not found in Azure AD token", "AzureAdToken");
+
     public static Error InvalidEmailClaim => Error.Validation("Invalid email claim in token", "Email");
     public static Error MissingRequiredClaims => Error.Validation("Required claims are missing from token", "Claims");
 

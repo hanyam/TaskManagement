@@ -36,5 +36,3 @@ public class TaskAssignmentConfiguration : IEntityTypeConfiguration<TaskAssignme
             .IsUnique();
     }
 }
-
-

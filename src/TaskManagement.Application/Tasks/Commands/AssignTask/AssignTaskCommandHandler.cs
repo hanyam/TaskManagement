@@ -100,7 +100,7 @@ public class AssignTaskCommandHandler : ICommandHandler<AssignTaskCommand, TaskD
         var existingAssignments = await _context.Set<TaskAssignment>()
             .Where(ta => ta.TaskId == request.TaskId)
             .ToListAsync(cancellationToken);
-        
+
         foreach (var assignment in existingAssignments)
         {
             _context.Set<TaskAssignment>().Remove(assignment);
@@ -160,4 +160,3 @@ public class AssignTaskCommandHandler : ICommandHandler<AssignTaskCommand, TaskD
         };
     }
 }
-

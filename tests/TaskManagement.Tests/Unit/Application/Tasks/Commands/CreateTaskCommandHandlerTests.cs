@@ -1,12 +1,8 @@
 using FluentAssertions;
-using System.Collections.Generic;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Moq;
 using TaskManagement.Application.Infrastructure.Data.Repositories;
 using TaskManagement.Application.Tasks.Commands.CreateTask;
-using TaskManagement.Domain.Common;
-using TaskManagement.Domain.DTOs;
 using TaskManagement.Domain.Entities;
 using TaskManagement.Domain.Errors.Tasks;
 using TaskManagement.Infrastructure.Data;
@@ -19,14 +15,14 @@ using SystemTask = System.Threading.Tasks.Task;
 namespace TaskManagement.Tests.Unit.Application.Tasks.Commands;
 
 /// <summary>
-/// Unit tests for the CreateTaskCommandHandler.
+///     Unit tests for the CreateTaskCommandHandler.
 /// </summary>
 public class CreateTaskCommandHandlerTests
 {
+    private readonly CreateTaskCommandHandler _handler;
+    private readonly Mock<TaskManagementDbContext> _mockContext;
     private readonly Mock<TaskEfCommandRepository> _mockTaskCommandRepository;
     private readonly Mock<UserDapperRepository> _mockUserQueryRepository;
-    private readonly Mock<TaskManagementDbContext> _mockContext;
-    private readonly CreateTaskCommandHandler _handler;
 
     public CreateTaskCommandHandlerTests()
     {
@@ -39,7 +35,8 @@ public class CreateTaskCommandHandlerTests
             })
             .Build();
         _mockUserQueryRepository = new Mock<UserDapperRepository>(configuration);
-        _handler = new CreateTaskCommandHandler(_mockTaskCommandRepository.Object, _mockUserQueryRepository.Object, _mockContext.Object);
+        _handler = new CreateTaskCommandHandler(_mockTaskCommandRepository.Object, _mockUserQueryRepository.Object,
+            _mockContext.Object);
     }
 
     [Fact]
@@ -59,7 +56,8 @@ public class CreateTaskCommandHandlerTests
 
         var assignedUser = new User("assigned@example.com", "John", "Doe", "test-object-id");
 
-        _mockUserQueryRepository.Setup(r => r.GetByIdAsync(command.AssignedUserId!.Value, It.IsAny<CancellationToken>()))
+        _mockUserQueryRepository
+            .Setup(r => r.GetByIdAsync(command.AssignedUserId!.Value, It.IsAny<CancellationToken>()))
             .ReturnsAsync((User?)assignedUser);
 
         _mockTaskCommandRepository.Setup(r => r.AddAsync(It.IsAny<DomainTask>(), It.IsAny<CancellationToken>()))
@@ -98,7 +96,8 @@ public class CreateTaskCommandHandlerTests
             CreatedBy = "test@example.com"
         };
 
-        _mockUserQueryRepository.Setup(r => r.GetByIdAsync(command.AssignedUserId!.Value, It.IsAny<CancellationToken>()))
+        _mockUserQueryRepository
+            .Setup(r => r.GetByIdAsync(command.AssignedUserId!.Value, It.IsAny<CancellationToken>()))
             .ReturnsAsync((User?)null);
 
         // Act
@@ -128,7 +127,8 @@ public class CreateTaskCommandHandlerTests
 
         var assignedUser = new User("assigned@example.com", "John", "Doe", "test-object-id");
 
-        _mockUserQueryRepository.Setup(r => r.GetByIdAsync(command.AssignedUserId!.Value, It.IsAny<CancellationToken>()))
+        _mockUserQueryRepository
+            .Setup(r => r.GetByIdAsync(command.AssignedUserId!.Value, It.IsAny<CancellationToken>()))
             .ReturnsAsync((User?)assignedUser);
 
         // Act
@@ -158,7 +158,8 @@ public class CreateTaskCommandHandlerTests
 
         var assignedUser = new User("assigned@example.com", "John", "Doe", "test-object-id");
 
-        _mockUserQueryRepository.Setup(r => r.GetByIdAsync(command.AssignedUserId!.Value, It.IsAny<CancellationToken>()))
+        _mockUserQueryRepository
+            .Setup(r => r.GetByIdAsync(command.AssignedUserId!.Value, It.IsAny<CancellationToken>()))
             .ReturnsAsync((User?)assignedUser);
 
         // Act
@@ -188,7 +189,8 @@ public class CreateTaskCommandHandlerTests
 
         var assignedUser = new User("assigned@example.com", "John", "Doe", "test-object-id");
 
-        _mockUserQueryRepository.Setup(r => r.GetByIdAsync(command.AssignedUserId!.Value, It.IsAny<CancellationToken>()))
+        _mockUserQueryRepository
+            .Setup(r => r.GetByIdAsync(command.AssignedUserId!.Value, It.IsAny<CancellationToken>()))
             .ReturnsAsync((User?)assignedUser);
 
         // Act
@@ -219,7 +221,8 @@ public class CreateTaskCommandHandlerTests
 
         var assignedUser = new User("assigned@example.com", "John", "Doe", "test-object-id");
 
-        _mockUserQueryRepository.Setup(r => r.GetByIdAsync(command.AssignedUserId!.Value, It.IsAny<CancellationToken>()))
+        _mockUserQueryRepository
+            .Setup(r => r.GetByIdAsync(command.AssignedUserId!.Value, It.IsAny<CancellationToken>()))
             .ReturnsAsync((User?)assignedUser);
 
         _mockTaskCommandRepository.Setup(r => r.AddAsync(It.IsAny<DomainTask>(), It.IsAny<CancellationToken>()))
@@ -232,8 +235,10 @@ public class CreateTaskCommandHandlerTests
         await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        _mockUserQueryRepository.Verify(r => r.GetByIdAsync(command.AssignedUserId!.Value, It.IsAny<CancellationToken>()), Times.Once);
-        _mockTaskCommandRepository.Verify(r => r.AddAsync(It.IsAny<DomainTask>(), It.IsAny<CancellationToken>()), Times.Once);
+        _mockUserQueryRepository.Verify(
+            r => r.GetByIdAsync(command.AssignedUserId!.Value, It.IsAny<CancellationToken>()), Times.Once);
+        _mockTaskCommandRepository.Verify(r => r.AddAsync(It.IsAny<DomainTask>(), It.IsAny<CancellationToken>()),
+            Times.Once);
         _mockContext.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -254,7 +259,8 @@ public class CreateTaskCommandHandlerTests
 
         var assignedUser = new User("assigned@example.com", "John", "Doe", "test-object-id");
 
-        _mockUserQueryRepository.Setup(r => r.GetByIdAsync(command.AssignedUserId!.Value, It.IsAny<CancellationToken>()))
+        _mockUserQueryRepository
+            .Setup(r => r.GetByIdAsync(command.AssignedUserId!.Value, It.IsAny<CancellationToken>()))
             .ReturnsAsync((User?)assignedUser);
 
         _mockTaskCommandRepository.Setup(r => r.AddAsync(It.IsAny<DomainTask>(), It.IsAny<CancellationToken>()))
@@ -268,7 +274,7 @@ public class CreateTaskCommandHandlerTests
 
         // Assert
         _mockTaskCommandRepository.Verify(r => r.AddAsync(
-            It.Is<DomainTask>(t => t.CreatedBy == command.CreatedBy), 
+            It.Is<DomainTask>(t => t.CreatedBy == command.CreatedBy),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 }

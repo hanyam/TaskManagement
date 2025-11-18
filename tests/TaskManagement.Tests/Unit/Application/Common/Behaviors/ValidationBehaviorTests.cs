@@ -11,13 +11,13 @@ using Xunit;
 namespace TaskManagement.Tests.Unit.Application.Common.Behaviors;
 
 /// <summary>
-/// Unit tests for the ValidationBehavior class.
+///     Unit tests for the ValidationBehavior class.
 /// </summary>
 public class ValidationBehaviorTests
 {
+    private readonly ValidationBehavior<ValidationTestRequest, string> _behavior;
     private readonly Mock<ILogger<ValidationBehavior<ValidationTestRequest, string>>> _mockLogger;
     private readonly List<IValidator<ValidationTestRequest>> _validators;
-    private readonly ValidationBehavior<ValidationTestRequest, string> _behavior;
 
     public ValidationBehaviorTests()
     {
@@ -52,7 +52,8 @@ public class ValidationBehaviorTests
         // Arrange
         var request = new ValidationTestRequest { TestProperty = "Valid" };
         var mockValidator = new Mock<IValidator<ValidationTestRequest>>();
-        mockValidator.Setup(v => v.ValidateAsync(It.IsAny<ValidationContext<ValidationTestRequest>>(), It.IsAny<CancellationToken>()))
+        mockValidator.Setup(v =>
+                v.ValidateAsync(It.IsAny<ValidationContext<ValidationTestRequest>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ValidationResult());
 
         _validators.Add(mockValidator.Object);
@@ -81,7 +82,8 @@ public class ValidationBehaviorTests
         var validationResult = new ValidationResult();
         validationResult.Errors.Add(new ValidationFailure("TestProperty", "Test property is invalid"));
 
-        mockValidator.Setup(v => v.ValidateAsync(It.IsAny<ValidationContext<ValidationTestRequest>>(), It.IsAny<CancellationToken>()))
+        mockValidator.Setup(v =>
+                v.ValidateAsync(It.IsAny<ValidationContext<ValidationTestRequest>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(validationResult);
 
         _validators.Add(mockValidator.Object);
@@ -109,17 +111,19 @@ public class ValidationBehaviorTests
     {
         // Arrange
         var request = new ValidationTestRequest { TestProperty = "Invalid" };
-        
+
         var mockValidator1 = new Mock<IValidator<ValidationTestRequest>>();
         var validationResult1 = new ValidationResult();
         validationResult1.Errors.Add(new ValidationFailure("TestProperty", "First error"));
-        mockValidator1.Setup(v => v.ValidateAsync(It.IsAny<ValidationContext<ValidationTestRequest>>(), It.IsAny<CancellationToken>()))
+        mockValidator1.Setup(v =>
+                v.ValidateAsync(It.IsAny<ValidationContext<ValidationTestRequest>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(validationResult1);
 
         var mockValidator2 = new Mock<IValidator<ValidationTestRequest>>();
         var validationResult2 = new ValidationResult();
         validationResult2.Errors.Add(new ValidationFailure("TestProperty", "Second error"));
-        mockValidator2.Setup(v => v.ValidateAsync(It.IsAny<ValidationContext<ValidationTestRequest>>(), It.IsAny<CancellationToken>()))
+        mockValidator2.Setup(v =>
+                v.ValidateAsync(It.IsAny<ValidationContext<ValidationTestRequest>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(validationResult2);
 
         _validators.Add(mockValidator1.Object);
@@ -150,7 +154,8 @@ public class ValidationBehaviorTests
         var request = new ValidationTestRequest { TestProperty = "Test" };
 
         // Act
-        await _behavior.Handle(request, () => Task.FromResult(Result<string>.Success("Success")), CancellationToken.None);
+        await _behavior.Handle(request, () => Task.FromResult(Result<string>.Success("Success")),
+            CancellationToken.None);
 
         // Assert
         _mockLogger.Verify(
@@ -169,13 +174,15 @@ public class ValidationBehaviorTests
         // Arrange
         var request = new ValidationTestRequest { TestProperty = "Valid" };
         var mockValidator = new Mock<IValidator<ValidationTestRequest>>();
-        mockValidator.Setup(v => v.ValidateAsync(It.IsAny<ValidationContext<ValidationTestRequest>>(), It.IsAny<CancellationToken>()))
+        mockValidator.Setup(v =>
+                v.ValidateAsync(It.IsAny<ValidationContext<ValidationTestRequest>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ValidationResult());
 
         _validators.Add(mockValidator.Object);
 
         // Act
-        await _behavior.Handle(request, () => Task.FromResult(Result<string>.Success("Success")), CancellationToken.None);
+        await _behavior.Handle(request, () => Task.FromResult(Result<string>.Success("Success")),
+            CancellationToken.None);
 
         // Assert
         _mockLogger.Verify(
@@ -206,13 +213,15 @@ public class ValidationBehaviorTests
         var validationResult = new ValidationResult();
         validationResult.Errors.Add(new ValidationFailure("TestProperty", "Test property is invalid"));
 
-        mockValidator.Setup(v => v.ValidateAsync(It.IsAny<ValidationContext<ValidationTestRequest>>(), It.IsAny<CancellationToken>()))
+        mockValidator.Setup(v =>
+                v.ValidateAsync(It.IsAny<ValidationContext<ValidationTestRequest>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(validationResult);
 
         _validators.Add(mockValidator.Object);
 
         // Act
-        await _behavior.Handle(request, () => Task.FromResult(Result<string>.Success("Success")), CancellationToken.None);
+        await _behavior.Handle(request, () => Task.FromResult(Result<string>.Success("Success")),
+            CancellationToken.None);
 
         // Assert
         _mockLogger.Verify(

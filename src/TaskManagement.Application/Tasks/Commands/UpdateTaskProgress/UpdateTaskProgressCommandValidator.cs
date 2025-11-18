@@ -19,4 +19,3 @@ public class UpdateTaskProgressCommandValidator : AbstractValidator<UpdateTaskPr
             .NotEmpty().WithMessage("Updated by user ID is required");
     }
 }
-

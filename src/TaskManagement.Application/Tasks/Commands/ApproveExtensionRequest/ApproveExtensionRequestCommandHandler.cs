@@ -1,10 +1,10 @@
+using Microsoft.EntityFrameworkCore;
 using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Application.Infrastructure.Data.Repositories;
 using TaskManagement.Domain.Common;
 using TaskManagement.Domain.Entities;
 using TaskManagement.Domain.Errors.Tasks;
 using TaskManagement.Infrastructure.Data;
-using Microsoft.EntityFrameworkCore;
 using Task = TaskManagement.Domain.Entities.Task;
 
 namespace TaskManagement.Application.Tasks.Commands.ApproveExtensionRequest;
@@ -39,7 +39,8 @@ public class ApproveExtensionRequestCommandHandler : ICommandHandler<ApproveExte
 
         // Get extension request
         var extensionRequest = await _context.Set<DeadlineExtensionRequest>()
-            .FirstOrDefaultAsync(er => er.Id == request.ExtensionRequestId && er.TaskId == request.TaskId, cancellationToken);
+            .FirstOrDefaultAsync(er => er.Id == request.ExtensionRequestId && er.TaskId == request.TaskId,
+                cancellationToken);
 
         if (extensionRequest == null)
         {
@@ -76,4 +77,3 @@ public class ApproveExtensionRequestCommandHandler : ICommandHandler<ApproveExte
         return Result.Success();
     }
 }
-

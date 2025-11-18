@@ -27,4 +27,3 @@ public class ReviewCompletedTaskCommandValidator : AbstractValidator<ReviewCompl
             .WithMessage("Cannot accept and send back for rework at the same time");
     }
 }
-

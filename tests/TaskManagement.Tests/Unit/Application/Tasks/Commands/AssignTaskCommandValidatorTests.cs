@@ -1,4 +1,3 @@
-using FluentAssertions;
 using FluentValidation.TestHelper;
 using TaskManagement.Application.Tasks.Commands.AssignTask;
 using Xunit;
@@ -6,7 +5,7 @@ using Xunit;
 namespace TaskManagement.Tests.Unit.Application.Tasks.Commands;
 
 /// <summary>
-/// Unit tests for the AssignTaskCommandValidator.
+///     Unit tests for the AssignTaskCommandValidator.
 /// </summary>
 public class AssignTaskCommandValidatorTests
 {
@@ -150,4 +149,3 @@ public class AssignTaskCommandValidatorTests
         result.ShouldHaveValidationErrorFor(x => x.AssignedById);
     }
 }
-

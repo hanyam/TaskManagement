@@ -14,4 +14,3 @@ public class ReviewCompletedTaskCommand : ICommand<TaskDto>
     public string? Feedback { get; set; }
     public bool SendBackForRework { get; set; }
 }
-

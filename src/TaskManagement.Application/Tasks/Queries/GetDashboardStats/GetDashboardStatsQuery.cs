@@ -10,4 +10,3 @@ public record GetDashboardStatsQuery : IQuery<DashboardStatsDto>
 {
     public Guid UserId { get; init; }
 }
-

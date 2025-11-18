@@ -6,7 +6,7 @@ using Xunit;
 namespace TaskManagement.Tests.Unit.Domain.Options;
 
 /// <summary>
-/// Unit tests for AzureAdOptions configuration.
+///     Unit tests for AzureAdOptions configuration.
 /// </summary>
 public class AzureAdOptionsTests
 {

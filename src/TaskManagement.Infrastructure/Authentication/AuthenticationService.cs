@@ -18,11 +18,11 @@ namespace TaskManagement.Infrastructure.Authentication;
 /// </summary>
 public class AuthenticationService : IAuthenticationService
 {
-    private readonly JwtOptions _jwtOptions;
     private readonly AzureAdOptions _azureAdOptions;
+    private readonly ConfigurationManager<OpenIdConnectConfiguration> _configurationManager;
+    private readonly JwtOptions _jwtOptions;
     private readonly ILogger<AuthenticationService> _logger;
     private readonly JwtSecurityTokenHandler _tokenHandler;
-    private readonly ConfigurationManager<OpenIdConnectConfiguration> _configurationManager;
 
     public AuthenticationService(
         IOptions<JwtOptions> jwtOptions,
@@ -42,7 +42,8 @@ public class AuthenticationService : IAuthenticationService
         }
         else
         {
-            var metadataAddress = $"https://login.microsoftonline.com/{_azureAdOptions.TenantId}/v2.0/.well-known/openid-configuration";
+            var metadataAddress =
+                $"https://login.microsoftonline.com/{_azureAdOptions.TenantId}/v2.0/.well-known/openid-configuration";
             _configurationManager = new ConfigurationManager<OpenIdConnectConfiguration>(
                 metadataAddress,
                 new OpenIdConnectConfigurationRetriever(),
@@ -66,12 +67,9 @@ public class AuthenticationService : IAuthenticationService
 
             // Build list of valid audiences - Azure AD tokens can have different audiences
             var validAudiences = new List<string>();
-            
+
             // Add API Client ID
-            if (!string.IsNullOrEmpty(_azureAdOptions.ClientId))
-            {
-                validAudiences.Add(_azureAdOptions.ClientId);
-            }
+            if (!string.IsNullOrEmpty(_azureAdOptions.ClientId)) validAudiences.Add(_azureAdOptions.ClientId);
 
             // Add API Application ID URI (for access tokens with API scope)
             // Format: api://[API-Client-ID] or api://[API-Client-ID]/.default
@@ -86,14 +84,12 @@ public class AuthenticationService : IAuthenticationService
             // For now, we'll decode the token first to check its audience (without validation)
             var jsonToken = _tokenHandler.ReadJwtToken(token);
             var tokenAudience = jsonToken.Audiences.FirstOrDefault();
-            
+
             // If token audience doesn't match API audiences, add it (for ID tokens)
-            if (!string.IsNullOrEmpty(tokenAudience) && 
+            if (!string.IsNullOrEmpty(tokenAudience) &&
                 !validAudiences.Contains(tokenAudience) &&
                 Guid.TryParse(tokenAudience, out _)) // Only add if it's a GUID (Client ID format)
-            {
                 validAudiences.Add(tokenAudience);
-            }
 
             var tokenValidationParameters = new TokenValidationParameters
             {
