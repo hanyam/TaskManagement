@@ -7,14 +7,9 @@ namespace TaskManagement.Application.Users.Queries.SearchManagedUsers;
 /// <summary>
 ///     Handler for searching users managed by the current user using Dapper for optimized querying.
 /// </summary>
-public class SearchManagedUsersQueryHandler : IRequestHandler<SearchManagedUsersQuery, List<UserSearchResultDto>>
+public class SearchManagedUsersQueryHandler(UserDapperRepository userRepository) : IRequestHandler<SearchManagedUsersQuery, List<UserSearchResultDto>>
 {
-    private readonly UserDapperRepository _userRepository;
-
-    public SearchManagedUsersQueryHandler(UserDapperRepository userRepository)
-    {
-        _userRepository = userRepository;
-    }
+    private readonly UserDapperRepository _userRepository = userRepository;
 
     public async Task<Result<List<UserSearchResultDto>>> Handle(SearchManagedUsersQuery request,
         CancellationToken cancellationToken)

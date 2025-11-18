@@ -13,16 +13,10 @@ namespace TaskManagement.Application.Tasks.Queries.GetTaskById;
 ///     Handler for getting a task by its ID using Dapper for optimized querying.
 ///     Includes authorization check to ensure user has access to the task.
 /// </summary>
-public class GetTaskByIdQueryHandler : IRequestHandler<GetTaskByIdQuery, TaskDto>
+public class GetTaskByIdQueryHandler(TaskDapperRepository taskRepository, TaskManagementDbContext context) : IRequestHandler<GetTaskByIdQuery, TaskDto>
 {
-    private readonly TaskManagementDbContext _context;
-    private readonly TaskDapperRepository _taskRepository;
-
-    public GetTaskByIdQueryHandler(TaskDapperRepository taskRepository, TaskManagementDbContext context)
-    {
-        _taskRepository = taskRepository;
-        _context = context;
-    }
+    private readonly TaskManagementDbContext _context = context;
+    private readonly TaskDapperRepository _taskRepository = taskRepository;
 
     public async Task<Result<TaskDto>> Handle(GetTaskByIdQuery request, CancellationToken cancellationToken)
     {

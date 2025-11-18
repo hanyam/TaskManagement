@@ -13,21 +13,14 @@ namespace TaskManagement.Application.Tasks.Commands.AssignTask;
 /// <summary>
 ///     Handler for assigning a task to one or multiple users (manager only).
 /// </summary>
-public class AssignTaskCommandHandler : ICommandHandler<AssignTaskCommand, TaskDto>
+public class AssignTaskCommandHandler(
+    TaskEfCommandRepository taskCommandRepository,
+    UserDapperRepository userQueryRepository,
+    TaskManagementDbContext context) : ICommandHandler<AssignTaskCommand, TaskDto>
 {
-    private readonly TaskManagementDbContext _context;
-    private readonly TaskEfCommandRepository _taskCommandRepository;
-    private readonly UserDapperRepository _userQueryRepository;
-
-    public AssignTaskCommandHandler(
-        TaskEfCommandRepository taskCommandRepository,
-        UserDapperRepository userQueryRepository,
-        TaskManagementDbContext context)
-    {
-        _taskCommandRepository = taskCommandRepository;
-        _userQueryRepository = userQueryRepository;
-        _context = context;
-    }
+    private readonly TaskManagementDbContext _context = context;
+    private readonly TaskEfCommandRepository _taskCommandRepository = taskCommandRepository;
+    private readonly UserDapperRepository _userQueryRepository = userQueryRepository;
 
     public async Task<Result<TaskDto>> Handle(AssignTaskCommand request, CancellationToken cancellationToken)
     {

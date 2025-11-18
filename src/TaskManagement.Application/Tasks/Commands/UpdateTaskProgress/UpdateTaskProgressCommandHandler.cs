@@ -12,21 +12,14 @@ namespace TaskManagement.Application.Tasks.Commands.UpdateTaskProgress;
 /// <summary>
 ///     Handler for updating task progress (employee).
 /// </summary>
-public class UpdateTaskProgressCommandHandler : ICommandHandler<UpdateTaskProgressCommand, TaskProgressDto>
+public class UpdateTaskProgressCommandHandler(
+    TaskEfCommandRepository taskCommandRepository,
+    UserDapperRepository userQueryRepository,
+    TaskManagementDbContext context) : ICommandHandler<UpdateTaskProgressCommand, TaskProgressDto>
 {
-    private readonly TaskManagementDbContext _context;
-    private readonly TaskEfCommandRepository _taskCommandRepository;
-    private readonly UserDapperRepository _userQueryRepository;
-
-    public UpdateTaskProgressCommandHandler(
-        TaskEfCommandRepository taskCommandRepository,
-        UserDapperRepository userQueryRepository,
-        TaskManagementDbContext context)
-    {
-        _taskCommandRepository = taskCommandRepository;
-        _userQueryRepository = userQueryRepository;
-        _context = context;
-    }
+    private readonly TaskManagementDbContext _context = context;
+    private readonly TaskEfCommandRepository _taskCommandRepository = taskCommandRepository;
+    private readonly UserDapperRepository _userQueryRepository = userQueryRepository;
 
     public async Task<Result<TaskProgressDto>> Handle(UpdateTaskProgressCommand request,
         CancellationToken cancellationToken)

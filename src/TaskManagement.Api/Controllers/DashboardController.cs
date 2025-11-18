@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using TaskManagement.Api.Attributes;
 using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Application.Tasks.Queries.GetDashboardStats;
 using TaskManagement.Domain.Common;
@@ -20,13 +21,11 @@ public class DashboardController(ICommandMediator commandMediator, IRequestMedia
     /// </summary>
     /// <returns>Dashboard statistics.</returns>
     [HttpGet("stats")]
+    [EnsureUserId]
     public async Task<IActionResult> GetDashboardStats()
     {
-        // Get user ID from claims
-        var userIdClaim = User.FindFirst("user_id")?.Value;
-        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-            return BadRequest(
-                ApiResponse<object>.ErrorResponse("User ID not found in token", HttpContext.TraceIdentifier));
+        // Get user ID (guaranteed to exist by EnsureUserIdAttribute)
+        var userId = GetRequiredUserId();
 
         var query = new GetDashboardStatsQuery { UserId = userId };
         var result = await _requestMediator.Send(query);

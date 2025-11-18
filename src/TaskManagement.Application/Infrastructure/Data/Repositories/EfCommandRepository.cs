@@ -8,16 +8,10 @@ namespace TaskManagement.Application.Infrastructure.Data.Repositories;
 ///     Generic Entity Framework Core-based command repository implementation.
 /// </summary>
 /// <typeparam name="T">The type of entity for command operations.</typeparam>
-public class EfCommandRepository<T> : ICommandRepository<T> where T : BaseEntity
+public class EfCommandRepository<T>(TaskManagementDbContext context) : ICommandRepository<T> where T : BaseEntity
 {
-    protected readonly TaskManagementDbContext _context;
-    protected readonly DbSet<T> _dbSet;
-
-    public EfCommandRepository(TaskManagementDbContext context)
-    {
-        _context = context;
-        _dbSet = context.Set<T>();
-    }
+    protected readonly TaskManagementDbContext _context = context;
+    protected readonly DbSet<T> _dbSet = context.Set<T>();
 
     public virtual async Task<T> AddAsync(T entity, CancellationToken cancellationToken = default)
     {

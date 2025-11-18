@@ -10,14 +10,9 @@ namespace TaskManagement.Application.Tasks.Queries.GetDashboardStats;
 /// <summary>
 ///     Handler for getting dashboard statistics.
 /// </summary>
-public class GetDashboardStatsQueryHandler : IRequestHandler<GetDashboardStatsQuery, DashboardStatsDto>
+public class GetDashboardStatsQueryHandler(TaskManagementDbContext context) : IRequestHandler<GetDashboardStatsQuery, DashboardStatsDto>
 {
-    private readonly TaskManagementDbContext _context;
-
-    public GetDashboardStatsQueryHandler(TaskManagementDbContext context)
-    {
-        _context = context;
-    }
+    private readonly TaskManagementDbContext _context = context;
 
     public async Task<Result<DashboardStatsDto>> Handle(GetDashboardStatsQuery request,
         CancellationToken cancellationToken)

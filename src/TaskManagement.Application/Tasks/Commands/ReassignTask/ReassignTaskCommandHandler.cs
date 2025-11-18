@@ -13,21 +13,14 @@ namespace TaskManagement.Application.Tasks.Commands.ReassignTask;
 /// <summary>
 ///     Handler for reassigning a task to different user(s) (manager).
 /// </summary>
-public class ReassignTaskCommandHandler : ICommandHandler<ReassignTaskCommand, TaskDto>
+public class ReassignTaskCommandHandler(
+    TaskEfCommandRepository taskCommandRepository,
+    UserDapperRepository userQueryRepository,
+    TaskManagementDbContext context) : ICommandHandler<ReassignTaskCommand, TaskDto>
 {
-    private readonly TaskManagementDbContext _context;
-    private readonly TaskEfCommandRepository _taskCommandRepository;
-    private readonly UserDapperRepository _userQueryRepository;
-
-    public ReassignTaskCommandHandler(
-        TaskEfCommandRepository taskCommandRepository,
-        UserDapperRepository userQueryRepository,
-        TaskManagementDbContext context)
-    {
-        _taskCommandRepository = taskCommandRepository;
-        _userQueryRepository = userQueryRepository;
-        _context = context;
-    }
+    private readonly TaskManagementDbContext _context = context;
+    private readonly TaskEfCommandRepository _taskCommandRepository = taskCommandRepository;
+    private readonly UserDapperRepository _userQueryRepository = userQueryRepository;
 
     public async Task<Result<TaskDto>> Handle(ReassignTaskCommand request, CancellationToken cancellationToken)
     {

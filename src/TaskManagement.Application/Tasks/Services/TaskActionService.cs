@@ -1,7 +1,9 @@
 using TaskManagement.Domain.Common;
+using TaskManagement.Domain.Constants;
 using DomainTask = TaskManagement.Domain.Entities.Task;
 using TaskStatus = TaskManagement.Domain.Entities.TaskStatus;
 using TaskType = TaskManagement.Domain.Entities.TaskType;
+using static TaskManagement.Domain.Constants.RoleNames;
 
 namespace TaskManagement.Application.Tasks.Services;
 
@@ -13,7 +15,7 @@ public class TaskActionService : ITaskActionService
     public List<ApiActionLink> GetAvailableActions(DomainTask task, Guid currentUserId, string currentUserRole)
     {
         var links = new List<ApiActionLink>();
-        var isManager = currentUserRole == "Manager" || currentUserRole == "Admin";
+        var isManager = currentUserRole == Manager || currentUserRole == Admin;
         var isAssignedUser = task.AssignedUserId.HasValue && task.AssignedUserId.Value == currentUserId;
         var isCreator = task.CreatedById == currentUserId;
 

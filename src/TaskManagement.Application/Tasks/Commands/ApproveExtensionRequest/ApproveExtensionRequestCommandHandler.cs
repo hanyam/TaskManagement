@@ -12,18 +12,12 @@ namespace TaskManagement.Application.Tasks.Commands.ApproveExtensionRequest;
 /// <summary>
 ///     Handler for approving a deadline extension request (manager).
 /// </summary>
-public class ApproveExtensionRequestCommandHandler : ICommandHandler<ApproveExtensionRequestCommand>
+public class ApproveExtensionRequestCommandHandler(
+    TaskEfCommandRepository taskCommandRepository,
+    TaskManagementDbContext context) : ICommandHandler<ApproveExtensionRequestCommand>
 {
-    private readonly TaskManagementDbContext _context;
-    private readonly TaskEfCommandRepository _taskCommandRepository;
-
-    public ApproveExtensionRequestCommandHandler(
-        TaskEfCommandRepository taskCommandRepository,
-        TaskManagementDbContext context)
-    {
-        _taskCommandRepository = taskCommandRepository;
-        _context = context;
-    }
+    private readonly TaskManagementDbContext _context = context;
+    private readonly TaskEfCommandRepository _taskCommandRepository = taskCommandRepository;
 
     public async Task<Result> Handle(ApproveExtensionRequestCommand request, CancellationToken cancellationToken)
     {

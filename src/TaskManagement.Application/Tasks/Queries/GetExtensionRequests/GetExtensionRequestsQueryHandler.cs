@@ -11,14 +11,9 @@ namespace TaskManagement.Application.Tasks.Queries.GetExtensionRequests;
 /// <summary>
 ///     Handler for getting extension requests.
 /// </summary>
-public class GetExtensionRequestsQueryHandler : IRequestHandler<GetExtensionRequestsQuery, List<ExtensionRequestDto>>
+public class GetExtensionRequestsQueryHandler(TaskManagementDbContext context) : IRequestHandler<GetExtensionRequestsQuery, List<ExtensionRequestDto>>
 {
-    private readonly TaskManagementDbContext _context;
-
-    public GetExtensionRequestsQueryHandler(TaskManagementDbContext context)
-    {
-        _context = context;
-    }
+    private readonly TaskManagementDbContext _context = context;
 
     public async Task<Result<List<ExtensionRequestDto>>> Handle(GetExtensionRequestsQuery request,
         CancellationToken cancellationToken)

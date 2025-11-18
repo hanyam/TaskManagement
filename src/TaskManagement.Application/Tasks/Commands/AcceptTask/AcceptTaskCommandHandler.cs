@@ -13,21 +13,14 @@ namespace TaskManagement.Application.Tasks.Commands.AcceptTask;
 /// <summary>
 ///     Handler for accepting an assigned task (employee).
 /// </summary>
-public class AcceptTaskCommandHandler : ICommandHandler<AcceptTaskCommand, TaskDto>
+public class AcceptTaskCommandHandler(
+    TaskEfCommandRepository taskCommandRepository,
+    UserDapperRepository userQueryRepository,
+    TaskManagementDbContext context) : ICommandHandler<AcceptTaskCommand, TaskDto>
 {
-    private readonly TaskManagementDbContext _context;
-    private readonly TaskEfCommandRepository _taskCommandRepository;
-    private readonly UserDapperRepository _userQueryRepository;
-
-    public AcceptTaskCommandHandler(
-        TaskEfCommandRepository taskCommandRepository,
-        UserDapperRepository userQueryRepository,
-        TaskManagementDbContext context)
-    {
-        _taskCommandRepository = taskCommandRepository;
-        _userQueryRepository = userQueryRepository;
-        _context = context;
-    }
+    private readonly TaskManagementDbContext _context = context;
+    private readonly TaskEfCommandRepository _taskCommandRepository = taskCommandRepository;
+    private readonly UserDapperRepository _userQueryRepository = userQueryRepository;
 
     public async Task<Result<TaskDto>> Handle(AcceptTaskCommand request, CancellationToken cancellationToken)
     {

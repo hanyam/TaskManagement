@@ -12,14 +12,9 @@ namespace TaskManagement.Application.Tasks.Commands.ReviewCompletedTask;
 /// <summary>
 ///     Handler for reviewing a completed task by a manager.
 /// </summary>
-public class ReviewCompletedTaskCommandHandler : ICommandHandler<ReviewCompletedTaskCommand, TaskDto>
+public class ReviewCompletedTaskCommandHandler(TaskManagementDbContext context) : ICommandHandler<ReviewCompletedTaskCommand, TaskDto>
 {
-    private readonly TaskManagementDbContext _context;
-
-    public ReviewCompletedTaskCommandHandler(TaskManagementDbContext context)
-    {
-        _context = context;
-    }
+    private readonly TaskManagementDbContext _context = context;
 
     public async Task<Result<TaskDto>> Handle(ReviewCompletedTaskCommand request, CancellationToken cancellationToken)
     {

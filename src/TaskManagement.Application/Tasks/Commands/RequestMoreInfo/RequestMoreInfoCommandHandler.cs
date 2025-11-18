@@ -13,21 +13,14 @@ namespace TaskManagement.Application.Tasks.Commands.RequestMoreInfo;
 /// <summary>
 ///     Handler for requesting more information on a task (employee).
 /// </summary>
-public class RequestMoreInfoCommandHandler : ICommandHandler<RequestMoreInfoCommand, TaskDto>
+public class RequestMoreInfoCommandHandler(
+    TaskEfCommandRepository taskCommandRepository,
+    UserDapperRepository userQueryRepository,
+    TaskManagementDbContext context) : ICommandHandler<RequestMoreInfoCommand, TaskDto>
 {
-    private readonly TaskManagementDbContext _context;
-    private readonly TaskEfCommandRepository _taskCommandRepository;
-    private readonly UserDapperRepository _userQueryRepository;
-
-    public RequestMoreInfoCommandHandler(
-        TaskEfCommandRepository taskCommandRepository,
-        UserDapperRepository userQueryRepository,
-        TaskManagementDbContext context)
-    {
-        _taskCommandRepository = taskCommandRepository;
-        _userQueryRepository = userQueryRepository;
-        _context = context;
-    }
+    private readonly TaskManagementDbContext _context = context;
+    private readonly TaskEfCommandRepository _taskCommandRepository = taskCommandRepository;
+    private readonly UserDapperRepository _userQueryRepository = userQueryRepository;
 
     public async Task<Result<TaskDto>> Handle(RequestMoreInfoCommand request, CancellationToken cancellationToken)
     {

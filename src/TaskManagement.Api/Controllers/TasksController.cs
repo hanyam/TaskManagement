@@ -2,7 +2,10 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using TaskManagement.Api.Attributes;
 using TaskManagement.Application.Common.Interfaces;
+using TaskManagement.Domain.Constants;
+using static TaskManagement.Domain.Constants.RoleNames;
 using TaskManagement.Application.Tasks.Commands.AcceptTask;
 using TaskManagement.Application.Tasks.Commands.AcceptTaskProgress;
 using TaskManagement.Application.Tasks.Commands.ApproveExtensionRequest;
@@ -49,13 +52,11 @@ public class TasksController(
     /// <param name="id">The task ID.</param>
     /// <returns>Task information.</returns>
     [HttpGet("{id}")]
+    [EnsureUserId]
     public async Task<IActionResult> GetTaskById(Guid id)
     {
-        // Get user ID from claims (should be set during authentication)
-        var userIdClaim = User.FindFirst("user_id")?.Value;
-        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-            return BadRequest(
-                ApiResponse<object>.ErrorResponse("User ID not found in token", HttpContext.TraceIdentifier));
+        // Get user ID (guaranteed to exist by EnsureUserIdAttribute)
+        var userId = GetRequiredUserId();
 
         var query = new GetTaskByIdQuery
         {
@@ -114,13 +115,12 @@ public class TasksController(
     /// <param name="request">The task creation request.</param>
     /// <returns>Created task information.</returns>
     [HttpPost]
+    [EnsureUserId]
     public async Task<IActionResult> CreateTask([FromBody] CreateTaskRequest request)
     {
-        // Get user ID from claims (should be set during authentication)
-        var userIdClaim = User.FindFirst("user_id")?.Value;
-        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-            return BadRequest(
-                ApiResponse<object>.ErrorResponse("User ID not found in token", HttpContext.TraceIdentifier));
+        // Get user ID (guaranteed to exist by EnsureUserIdAttribute)
+        var userId = GetRequiredUserId();
+        var userEmail = GetCurrentUserEmail() ?? "system";
 
         var command = new CreateTaskCommand
         {
@@ -131,7 +131,7 @@ public class TasksController(
             AssignedUserId = request.AssignedUserId,
             Type = request.Type,
             CreatedById = userId,
-            CreatedBy = User.Identity?.Name ?? "system"
+            CreatedBy = userEmail
         };
 
         var result = await _commandMediator.Send(command);
@@ -151,13 +151,11 @@ public class TasksController(
     /// <param name="request">The assignment request.</param>
     /// <returns>Updated task information.</returns>
     [HttpPost("{id}/assign")]
-    [Authorize(Roles = "Manager")]
+    [Authorize(Roles = Manager)]
+    [EnsureUserId]
     public async Task<IActionResult> AssignTask(Guid id, [FromBody] AssignTaskRequest request)
     {
-        var userIdClaim = User.FindFirst("user_id")?.Value;
-        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-            return BadRequest(
-                ApiResponse<object>.ErrorResponse("User ID not found in token", HttpContext.TraceIdentifier));
+        var userId = GetRequiredUserId();
 
         var command = new AssignTaskCommand
         {
@@ -183,13 +181,11 @@ public class TasksController(
     /// <param name="request">The progress update request.</param>
     /// <returns>Progress update information.</returns>
     [HttpPost("{id}/progress")]
-    [Authorize(Roles = "Employee,Manager")]
+    [Authorize(Roles = EmployeeOrManager)]
+    [EnsureUserId]
     public async Task<IActionResult> UpdateTaskProgress(Guid id, [FromBody] UpdateTaskProgressRequest request)
     {
-        var userIdClaim = User.FindFirst("user_id")?.Value;
-        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-            return BadRequest(
-                ApiResponse<object>.ErrorResponse("User ID not found in token", HttpContext.TraceIdentifier));
+        var userId = GetRequiredUserId();
 
         var command = new UpdateTaskProgressCommand
         {
@@ -216,13 +212,11 @@ public class TasksController(
     /// <param name="request">The progress acceptance request.</param>
     /// <returns>Success response.</returns>
     [HttpPost("{id}/progress/accept")]
-    [Authorize(Roles = "Manager")]
+    [Authorize(Roles = Manager)]
+    [EnsureUserId]
     public async Task<IActionResult> AcceptTaskProgress(Guid id, [FromBody] AcceptTaskProgressRequest request)
     {
-        var userIdClaim = User.FindFirst("user_id")?.Value;
-        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-            return BadRequest(
-                ApiResponse<object>.ErrorResponse("User ID not found in token", HttpContext.TraceIdentifier));
+        var userId = GetRequiredUserId();
 
         var command = new AcceptTaskProgressCommand
         {
@@ -241,13 +235,11 @@ public class TasksController(
     /// <param name="id">The task ID.</param>
     /// <returns>Updated task information.</returns>
     [HttpPost("{id}/accept")]
-    [Authorize(Roles = "Employee,Manager")]
+    [Authorize(Roles = EmployeeOrManager)]
+    [EnsureUserId]
     public async Task<IActionResult> AcceptTask(Guid id)
     {
-        var userIdClaim = User.FindFirst("user_id")?.Value;
-        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-            return BadRequest(
-                ApiResponse<object>.ErrorResponse("User ID not found in token", HttpContext.TraceIdentifier));
+        var userId = GetRequiredUserId();
 
         var command = new AcceptTaskCommand
         {
@@ -272,13 +264,11 @@ public class TasksController(
     /// <param name="request">The rejection request.</param>
     /// <returns>Updated task information.</returns>
     [HttpPost("{id}/reject")]
-    [Authorize(Roles = "Employee,Manager")]
+    [Authorize(Roles = EmployeeOrManager)]
+    [EnsureUserId]
     public async Task<IActionResult> RejectTask(Guid id, [FromBody] RejectTaskRequest? request = null)
     {
-        var userIdClaim = User.FindFirst("user_id")?.Value;
-        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-            return BadRequest(
-                ApiResponse<object>.ErrorResponse("User ID not found in token", HttpContext.TraceIdentifier));
+        var userId = GetRequiredUserId();
 
         var command = new RejectTaskCommand
         {
@@ -304,13 +294,11 @@ public class TasksController(
     /// <param name="request">The information request.</param>
     /// <returns>Updated task information.</returns>
     [HttpPost("{id}/request-info")]
-    [Authorize(Roles = "Employee,Manager")]
+    [Authorize(Roles = EmployeeOrManager)]
+    [EnsureUserId]
     public async Task<IActionResult> RequestMoreInfo(Guid id, [FromBody] RequestMoreInfoRequest request)
     {
-        var userIdClaim = User.FindFirst("user_id")?.Value;
-        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-            return BadRequest(
-                ApiResponse<object>.ErrorResponse("User ID not found in token", HttpContext.TraceIdentifier));
+        var userId = GetRequiredUserId();
 
         var command = new RequestMoreInfoCommand
         {
@@ -336,13 +324,11 @@ public class TasksController(
     /// <param name="request">The reassignment request.</param>
     /// <returns>Updated task information.</returns>
     [HttpPut("{id}/reassign")]
-    [Authorize(Roles = "Manager")]
+    [Authorize(Roles = Manager)]
+    [EnsureUserId]
     public async Task<IActionResult> ReassignTask(Guid id, [FromBody] ReassignTaskRequest request)
     {
-        var userIdClaim = User.FindFirst("user_id")?.Value;
-        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-            return BadRequest(
-                ApiResponse<object>.ErrorResponse("User ID not found in token", HttpContext.TraceIdentifier));
+        var userId = GetRequiredUserId();
 
         var command = new ReassignTaskCommand
         {
@@ -368,14 +354,12 @@ public class TasksController(
     /// <param name="request">The extension request.</param>
     /// <returns>Extension request information.</returns>
     [HttpPost("{id}/extension-request")]
-    [Authorize(Roles = "Employee,Manager")]
+    [Authorize(Roles = EmployeeOrManager)]
+    [EnsureUserId]
     public async Task<IActionResult> RequestDeadlineExtension(Guid id,
         [FromBody] RequestDeadlineExtensionRequest request)
     {
-        var userIdClaim = User.FindFirst("user_id")?.Value;
-        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-            return BadRequest(
-                ApiResponse<object>.ErrorResponse("User ID not found in token", HttpContext.TraceIdentifier));
+        var userId = GetRequiredUserId();
 
         var command = new RequestDeadlineExtensionCommand
         {
@@ -403,14 +387,12 @@ public class TasksController(
     /// <param name="request">The approval request.</param>
     /// <returns>Success response.</returns>
     [HttpPost("{id}/extension-request/{requestId}/approve")]
-    [Authorize(Roles = "Manager")]
+    [Authorize(Roles = Manager)]
+    [EnsureUserId]
     public async Task<IActionResult> ApproveExtensionRequest(Guid id, Guid requestId,
         [FromBody] ApproveExtensionRequestRequest? request = null)
     {
-        var userIdClaim = User.FindFirst("user_id")?.Value;
-        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-            return BadRequest(
-                ApiResponse<object>.ErrorResponse("User ID not found in token", HttpContext.TraceIdentifier));
+        var userId = GetRequiredUserId();
 
         var command = new ApproveExtensionRequestCommand
         {
@@ -430,13 +412,11 @@ public class TasksController(
     /// <param name="id">The task ID.</param>
     /// <returns>Updated task information.</returns>
     [HttpPost("{id}/complete")]
-    [Authorize(Roles = "Manager")]
+    [Authorize(Roles = Manager)]
+    [EnsureUserId]
     public async Task<IActionResult> MarkTaskCompleted(Guid id)
     {
-        var userIdClaim = User.FindFirst("user_id")?.Value;
-        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-            return BadRequest(
-                ApiResponse<object>.ErrorResponse("User ID not found in token", HttpContext.TraceIdentifier));
+        var userId = GetRequiredUserId();
 
         var command = new MarkTaskCompletedCommand
         {
@@ -461,7 +441,8 @@ public class TasksController(
     /// <param name="request">The review request.</param>
     /// <returns>Updated task information.</returns>
     [HttpPost("{id}/review-completed")]
-    [Authorize(Roles = "Manager,Admin")]
+    [Authorize(Roles = ManagerOrAdmin)]
+    [EnsureUserId]
     public async Task<IActionResult> ReviewCompletedTask(Guid id, [FromBody] ReviewCompletedTaskRequest request)
     {
         var command = new ReviewCompletedTaskCommand
@@ -477,16 +458,12 @@ public class TasksController(
 
         if (!result.IsSuccess) return HandleResult(result);
 
-        // Get user ID from claims for HATEOAS generation
-        var userIdClaim = User.FindFirst("user_id")?.Value;
-        if (!string.IsNullOrEmpty(userIdClaim) && Guid.TryParse(userIdClaim, out var userId))
-        {
-            // Generate HATEOAS links
-            var links = await GenerateTaskLinks(id, userId);
-            return HandleResultWithLinks(result, links);
-        }
+        // Get user ID (guaranteed to exist by EnsureUserIdAttribute)
+        var userId = GetRequiredUserId();
 
-        return HandleResult(result);
+        // Generate HATEOAS links
+        var links = await GenerateTaskLinks(id, userId);
+        return HandleResultWithLinks(result, links);
     }
 
     /// <summary>
@@ -504,8 +481,16 @@ public class TasksController(
 
         if (task == null) return null;
 
-        // Get user role from claims
-        var userRole = User.FindFirst(ClaimTypes.Role)?.Value ?? "Employee";
+        // Get user role from ICurrentUserService (supports override) or fallback to claims
+        string userRole = Default;
+        if (_currentUserService != null)
+        {
+            userRole = _currentUserService.GetClaimValue(ClaimTypes.Role) ?? Default;
+        }
+        else
+        {
+            userRole = User.FindFirst(ClaimTypes.Role)?.Value ?? Default;
+        }
 
         // Generate HATEOAS links using the service
         var links = _taskActionService.GetAvailableActions(task, userId, userRole);

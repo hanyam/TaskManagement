@@ -13,22 +13,14 @@ namespace TaskManagement.Application.Tasks.Commands.RequestDeadlineExtension;
 /// <summary>
 ///     Handler for requesting a deadline extension (employee).
 /// </summary>
-public class
-    RequestDeadlineExtensionCommandHandler : ICommandHandler<RequestDeadlineExtensionCommand, ExtensionRequestDto>
+public class RequestDeadlineExtensionCommandHandler(
+    TaskEfCommandRepository taskCommandRepository,
+    UserDapperRepository userQueryRepository,
+    TaskManagementDbContext context) : ICommandHandler<RequestDeadlineExtensionCommand, ExtensionRequestDto>
 {
-    private readonly TaskManagementDbContext _context;
-    private readonly TaskEfCommandRepository _taskCommandRepository;
-    private readonly UserDapperRepository _userQueryRepository;
-
-    public RequestDeadlineExtensionCommandHandler(
-        TaskEfCommandRepository taskCommandRepository,
-        UserDapperRepository userQueryRepository,
-        TaskManagementDbContext context)
-    {
-        _taskCommandRepository = taskCommandRepository;
-        _userQueryRepository = userQueryRepository;
-        _context = context;
-    }
+    private readonly TaskManagementDbContext _context = context;
+    private readonly TaskEfCommandRepository _taskCommandRepository = taskCommandRepository;
+    private readonly UserDapperRepository _userQueryRepository = userQueryRepository;
 
     public async Task<Result<ExtensionRequestDto>> Handle(RequestDeadlineExtensionCommand request,
         CancellationToken cancellationToken)

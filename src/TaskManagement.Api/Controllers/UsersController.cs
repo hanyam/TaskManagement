@@ -6,6 +6,8 @@ using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Application.Infrastructure.Data.Repositories;
 using TaskManagement.Application.Users.Queries.SearchManagedUsers;
 using TaskManagement.Domain.Common;
+using TaskManagement.Domain.Constants;
+using static TaskManagement.Domain.Constants.CustomClaimTypes;
 
 namespace TaskManagement.Api.Controllers;
 
@@ -15,24 +17,16 @@ namespace TaskManagement.Api.Controllers;
 [ApiController]
 [Route("users")]
 [Authorize]
-public class UsersController : ControllerBase
+public class UsersController(
+    GraphServiceClient? graphClient,
+    ILogger<UsersController> logger,
+    IRequestMediator requestMediator,
+    UserDapperRepository userRepository) : ControllerBase
 {
-    private readonly GraphServiceClient? _graphClient;
-    private readonly ILogger<UsersController> _logger;
-    private readonly IRequestMediator _requestMediator;
-    private readonly UserDapperRepository _userRepository;
-
-    public UsersController(
-        GraphServiceClient? graphClient,
-        ILogger<UsersController> logger,
-        IRequestMediator requestMediator,
-        UserDapperRepository userRepository)
-    {
-        _graphClient = graphClient;
-        _logger = logger;
-        _requestMediator = requestMediator;
-        _userRepository = userRepository;
-    }
+    private readonly GraphServiceClient? _graphClient = graphClient;
+    private readonly ILogger<UsersController> _logger = logger;
+    private readonly IRequestMediator _requestMediator = requestMediator;
+    private readonly UserDapperRepository _userRepository = userRepository;
 
     /// <summary>
     ///     Searches for users managed by the current user (manager-employee relationship).
@@ -50,7 +44,7 @@ public class UsersController : ControllerBase
         {
             // Get current user's email from JWT claims
             var userEmail = User.FindFirst(ClaimTypes.Email)?.Value ??
-                            User.FindFirst("email")?.Value;
+                            User.FindFirst(Email)?.Value;
 
             if (string.IsNullOrEmpty(userEmail))
             {

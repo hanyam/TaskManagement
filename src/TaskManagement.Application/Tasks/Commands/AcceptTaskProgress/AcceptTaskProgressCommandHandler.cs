@@ -12,18 +12,12 @@ namespace TaskManagement.Application.Tasks.Commands.AcceptTaskProgress;
 /// <summary>
 ///     Handler for accepting a task progress update (manager).
 /// </summary>
-public class AcceptTaskProgressCommandHandler : ICommandHandler<AcceptTaskProgressCommand>
+public class AcceptTaskProgressCommandHandler(
+    TaskEfCommandRepository taskCommandRepository,
+    TaskManagementDbContext context) : ICommandHandler<AcceptTaskProgressCommand>
 {
-    private readonly TaskManagementDbContext _context;
-    private readonly TaskEfCommandRepository _taskCommandRepository;
-
-    public AcceptTaskProgressCommandHandler(
-        TaskEfCommandRepository taskCommandRepository,
-        TaskManagementDbContext context)
-    {
-        _taskCommandRepository = taskCommandRepository;
-        _context = context;
-    }
+    private readonly TaskManagementDbContext _context = context;
+    private readonly TaskEfCommandRepository _taskCommandRepository = taskCommandRepository;
 
     public async Task<Result> Handle(AcceptTaskProgressCommand request, CancellationToken cancellationToken)
     {

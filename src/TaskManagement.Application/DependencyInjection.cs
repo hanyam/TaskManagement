@@ -66,6 +66,12 @@ public static class DependencyInjection
         services.AddScoped<ITaskActionService,
             TaskActionService>();
 
+        // Register current user and date services (with override support for testing)
+        services.AddHttpContextAccessor(); // Required for CurrentUserService
+        services.AddMemoryCache(); // Required for override mechanism
+        services.AddScoped<ICurrentUserService, CurrentUserService>();
+        services.AddScoped<ICurrentDateService, CurrentDateService>();
+
         return services;
     }
 

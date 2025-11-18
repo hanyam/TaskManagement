@@ -13,18 +13,12 @@ namespace TaskManagement.Application.Tasks.Queries.GetTasksByReminderLevel;
 /// <summary>
 ///     Handler for getting tasks filtered by reminder level.
 /// </summary>
-public class GetTasksByReminderLevelQueryHandler : IRequestHandler<GetTasksByReminderLevelQuery, GetTasksResponse>
+public class GetTasksByReminderLevelQueryHandler(
+    TaskManagementDbContext context,
+    IReminderCalculationService reminderCalculationService) : IRequestHandler<GetTasksByReminderLevelQuery, GetTasksResponse>
 {
-    private readonly TaskManagementDbContext _context;
-    private readonly IReminderCalculationService _reminderCalculationService;
-
-    public GetTasksByReminderLevelQueryHandler(
-        TaskManagementDbContext context,
-        IReminderCalculationService reminderCalculationService)
-    {
-        _context = context;
-        _reminderCalculationService = reminderCalculationService;
-    }
+    private readonly TaskManagementDbContext _context = context;
+    private readonly IReminderCalculationService _reminderCalculationService = reminderCalculationService;
 
     public async Task<Result<GetTasksResponse>> Handle(GetTasksByReminderLevelQuery request,
         CancellationToken cancellationToken)

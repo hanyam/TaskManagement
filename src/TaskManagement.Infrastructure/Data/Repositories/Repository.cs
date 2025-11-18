@@ -9,16 +9,10 @@ namespace TaskManagement.Infrastructure.Data.Repositories;
 ///     Generic repository implementation using Entity Framework.
 /// </summary>
 /// <typeparam name="T">The entity type.</typeparam>
-public class Repository<T> : IRepository<T> where T : BaseEntity
+public class Repository<T>(TaskManagementDbContext context) : IRepository<T> where T : BaseEntity
 {
-    protected readonly TaskManagementDbContext _context;
-    protected readonly DbSet<T> _dbSet;
-
-    public Repository(TaskManagementDbContext context)
-    {
-        _context = context;
-        _dbSet = context.Set<T>();
-    }
+    protected readonly TaskManagementDbContext _context = context;
+    protected readonly DbSet<T> _dbSet = context.Set<T>();
 
     public virtual async Task<T?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {

@@ -15,17 +15,12 @@ namespace TaskManagement.Infrastructure.Data;
 ///     - For simple operations: Use DbContext directly with SaveChangesAsync() (implicit transaction)
 ///     - For complex operations: Use UnitOfWork with explicit transaction control (BeginTransaction/Commit/Rollback)
 /// </summary>
-public class UnitOfWork : IUnitOfWork
+public class UnitOfWork(TaskManagementDbContext context) : IUnitOfWork
 {
-    private readonly TaskManagementDbContext _context;
+    private readonly TaskManagementDbContext _context = context;
     private IRepository<Task>? _tasks;
     private IDbContextTransaction? _transaction;
     private IRepository<User>? _users;
-
-    public UnitOfWork(TaskManagementDbContext context)
-    {
-        _context = context;
-    }
 
     /// <summary>
     ///     Gets the Users repository.

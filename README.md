@@ -487,6 +487,9 @@ Comprehensive documentation is available in the `docs/` directory:
 - **[API Reference](docs/API_REFERENCE.md)** - Complete API endpoint documentation
 - **[Features Documentation](docs/FEATURES.md)** - Detailed feature descriptions
 - **[Developer Guide](docs/DEVELOPER_GUIDE.md)** - Guide for extending the system
+- **[Database Seeding Guide](docs/DATABASE_SEEDING.md)** - SQL script seeding and data initialization 🆕
+- **[Testing Overrides Guide](docs/TESTING_OVERRIDES.md)** - Current user and date/time override for QA/testing 🆕
+- **[EnsureUserIdAttribute Guide](docs/ENSURE_USER_ID_ATTRIBUTE.md)** - Custom authorization attribute for user ID validation 🆕
 - **[HATEOAS Implementation](docs/HATEOAS.md)** - HATEOAS pattern and dynamic UI 🆕
 - **[Task State Machine](docs/STATE_MACHINE.md)** - Task lifecycle and state transitions 🆕
 - **[Implementation Status](docs/IMPLEMENTATION_STATUS.md)** - Feature completion tracking 🆕

@@ -11,14 +11,9 @@ namespace TaskManagement.Application.Tasks.Queries.GetAssignedTasks;
 /// <summary>
 ///     Handler for getting tasks assigned to a user.
 /// </summary>
-public class GetAssignedTasksQueryHandler : IRequestHandler<GetAssignedTasksQuery, GetTasksResponse>
+public class GetAssignedTasksQueryHandler(TaskManagementDbContext context) : IRequestHandler<GetAssignedTasksQuery, GetTasksResponse>
 {
-    private readonly TaskManagementDbContext _context;
-
-    public GetAssignedTasksQueryHandler(TaskManagementDbContext context)
-    {
-        _context = context;
-    }
+    private readonly TaskManagementDbContext _context = context;
 
     public async Task<Result<GetTasksResponse>> Handle(GetAssignedTasksQuery request,
         CancellationToken cancellationToken)

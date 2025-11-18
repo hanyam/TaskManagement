@@ -2,35 +2,30 @@ using System.Security.Claims;
 using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Application.Infrastructure.Data.Repositories;
 using TaskManagement.Domain.Common;
+using TaskManagement.Domain.Constants;
 using TaskManagement.Domain.DTOs;
 using TaskManagement.Domain.Entities;
 using TaskManagement.Domain.Errors.Authentication;
 using TaskManagement.Domain.Interfaces;
 using TaskManagement.Infrastructure.Data;
+using static TaskManagement.Domain.Constants.CustomClaimTypes;
+using static TaskManagement.Domain.Constants.AzureAdClaimTypes;
 
 namespace TaskManagement.Application.Authentication.Commands.AuthenticateUser;
 
 /// <summary>
 ///     Handler for authenticating a user with Azure AD token using EF Core for commands and Dapper for queries.
 /// </summary>
-public class AuthenticateUserCommandHandler : ICommandHandler<AuthenticateUserCommand, AuthenticationResponse>
+public class AuthenticateUserCommandHandler(
+    IAuthenticationService authenticationService,
+    UserDapperRepository userQueryRepository,
+    UserEfCommandRepository userCommandRepository,
+    TaskManagementDbContext context) : ICommandHandler<AuthenticateUserCommand, AuthenticationResponse>
 {
-    private readonly IAuthenticationService _authenticationService;
-    private readonly TaskManagementDbContext _context;
-    private readonly UserEfCommandRepository _userCommandRepository;
-    private readonly UserDapperRepository _userQueryRepository;
-
-    public AuthenticateUserCommandHandler(
-        IAuthenticationService authenticationService,
-        UserDapperRepository userQueryRepository,
-        UserEfCommandRepository userCommandRepository,
-        TaskManagementDbContext context)
-    {
-        _authenticationService = authenticationService;
-        _userQueryRepository = userQueryRepository;
-        _userCommandRepository = userCommandRepository;
-        _context = context;
-    }
+    private readonly IAuthenticationService _authenticationService = authenticationService;
+    private readonly TaskManagementDbContext _context = context;
+    private readonly UserEfCommandRepository _userCommandRepository = userCommandRepository;
+    private readonly UserDapperRepository _userQueryRepository = userQueryRepository;
 
     public async Task<Result<AuthenticationResponse>> Handle(AuthenticateUserCommand request,
         CancellationToken cancellationToken)
@@ -47,7 +42,7 @@ public class AuthenticateUserCommandHandler : ICommandHandler<AuthenticateUserCo
 
         var claimsPrincipal = validationResult.Value!;
         var email = claimsPrincipal.FindFirst(ClaimTypes.Email)?.Value ??
-                    claimsPrincipal.FindFirst("email")?.Value;
+                    claimsPrincipal.FindFirst(Email)?.Value;
 
         if (string.IsNullOrEmpty(email))
         {
@@ -62,10 +57,10 @@ public class AuthenticateUserCommandHandler : ICommandHandler<AuthenticateUserCo
         {
             // Create new user from Azure AD claims using EF Core (for change tracking)
             var firstName = claimsPrincipal.FindFirst(ClaimTypes.GivenName)?.Value ??
-                            claimsPrincipal.FindFirst("given_name")?.Value ?? string.Empty;
+                            claimsPrincipal.FindFirst(GivenName)?.Value ?? string.Empty;
             var lastName = claimsPrincipal.FindFirst(ClaimTypes.Surname)?.Value ??
-                           claimsPrincipal.FindFirst("family_name")?.Value ?? string.Empty;
-            var objectId = claimsPrincipal.FindFirst("oid")?.Value ??
+                           claimsPrincipal.FindFirst(FamilyName)?.Value ?? string.Empty;
+            var objectId = claimsPrincipal.FindFirst(ObjectId)?.Value ??
                            claimsPrincipal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             user = new User(email!, firstName, lastName, objectId);
@@ -105,11 +100,11 @@ public class AuthenticateUserCommandHandler : ICommandHandler<AuthenticateUserCo
         // Generate JWT token with custom claims
         var additionalClaims = new Dictionary<string, string>
         {
-            { "user_id", user.Id.ToString() },
+            { UserId, user.Id.ToString() },
             { "display_name", user.DisplayName },
             { "first_name", user.FirstName },
             { "last_name", user.LastName },
-            { "role", user.Role.ToString() }
+            { Role, user.Role.ToString() }
         };
 
         var jwtResult = await _authenticationService.GenerateJwtTokenAsync(email!, additionalClaims, cancellationToken);

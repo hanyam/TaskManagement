@@ -6,9 +6,6 @@ namespace TaskManagement.Application.Infrastructure.Data.Repositories;
 /// <summary>
 ///     Specialized EF Core command repository for Task entities.
 /// </summary>
-public class TaskEfCommandRepository : EfCommandRepository<DomainTask>, ITaskEfCommandRepository
+public class TaskEfCommandRepository(TaskManagementDbContext context) : EfCommandRepository<DomainTask>(context), ITaskEfCommandRepository
 {
-    public TaskEfCommandRepository(TaskManagementDbContext context) : base(context)
-    {
-    }
 }

@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
 using TaskManagement.Domain.Common;
+using TaskManagement.Domain.Constants;
 using TaskManagement.Domain.Errors.Authentication;
 using TaskManagement.Domain.Interfaces;
 using TaskManagement.Domain.Options;
@@ -16,39 +17,34 @@ namespace TaskManagement.Infrastructure.Authentication;
 /// <summary>
 ///     Implementation of authentication service for Azure AD and JWT token handling.
 /// </summary>
-public class AuthenticationService : IAuthenticationService
+public class AuthenticationService(
+    IOptions<JwtOptions> jwtOptions,
+    IOptions<AzureAdOptions> azureAdOptions,
+    ILogger<AuthenticationService> logger) : IAuthenticationService
 {
-    private readonly AzureAdOptions _azureAdOptions;
-    private readonly ConfigurationManager<OpenIdConnectConfiguration> _configurationManager;
-    private readonly JwtOptions _jwtOptions;
-    private readonly ILogger<AuthenticationService> _logger;
-    private readonly JwtSecurityTokenHandler _tokenHandler;
+    private readonly AzureAdOptions _azureAdOptions = azureAdOptions.Value;
+    private readonly ConfigurationManager<OpenIdConnectConfiguration> _configurationManager = InitializeConfigurationManager(azureAdOptions.Value, logger);
+    private readonly JwtOptions _jwtOptions = jwtOptions.Value;
+    private readonly ILogger<AuthenticationService> _logger = logger;
+    private readonly JwtSecurityTokenHandler _tokenHandler = new();
 
-    public AuthenticationService(
-        IOptions<JwtOptions> jwtOptions,
-        IOptions<AzureAdOptions> azureAdOptions,
+    private static ConfigurationManager<OpenIdConnectConfiguration> InitializeConfigurationManager(
+        AzureAdOptions azureAdOptions,
         ILogger<AuthenticationService> logger)
     {
-        _jwtOptions = jwtOptions.Value;
-        _azureAdOptions = azureAdOptions.Value;
-        _logger = logger;
-        _tokenHandler = new JwtSecurityTokenHandler();
-
         // Initialize OpenID Connect configuration manager for Azure AD metadata
-        if (string.IsNullOrWhiteSpace(_azureAdOptions.TenantId))
+        if (string.IsNullOrWhiteSpace(azureAdOptions.TenantId))
         {
-            _logger.LogWarning("Azure AD TenantId is not configured. Token validation may fail.");
-            _configurationManager = null!;
+            logger.LogWarning("Azure AD TenantId is not configured. Token validation may fail.");
+            return null!;
         }
-        else
-        {
-            var metadataAddress =
-                $"https://login.microsoftonline.com/{_azureAdOptions.TenantId}/v2.0/.well-known/openid-configuration";
-            _configurationManager = new ConfigurationManager<OpenIdConnectConfiguration>(
-                metadataAddress,
-                new OpenIdConnectConfigurationRetriever(),
-                new HttpDocumentRetriever { RequireHttps = true });
-        }
+
+        var metadataAddress =
+            $"https://login.microsoftonline.com/{azureAdOptions.TenantId}/v2.0/.well-known/openid-configuration";
+        return new ConfigurationManager<OpenIdConnectConfiguration>(
+            metadataAddress,
+            new OpenIdConnectConfigurationRetriever(),
+            new HttpDocumentRetriever { RequireHttps = true });
     }
 
     public async Task<Result<ClaimsPrincipal>> ValidateAzureAdTokenAsync(string token,
@@ -146,7 +142,7 @@ public class AuthenticationService : IAuthenticationService
                 foreach (var claim in additionalClaims)
                 {
                     // Use ClaimTypes.Role for role claim so [Authorize(Roles = "...")] works
-                    var claimType = claim.Key == "role" ? ClaimTypes.Role : claim.Key;
+                    var claimType = claim.Key == CustomClaimTypes.Role ? ClaimTypes.Role : claim.Key;
                     claims.Add(new Claim(claimType, claim.Value));
                 }
 

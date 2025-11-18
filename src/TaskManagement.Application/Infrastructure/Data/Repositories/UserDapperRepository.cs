@@ -7,11 +7,8 @@ namespace TaskManagement.Application.Infrastructure.Data.Repositories;
 /// <summary>
 ///     Dapper-based repository for User read operations.
 /// </summary>
-public class UserDapperRepository : DapperQueryRepository<User>
+public class UserDapperRepository(IConfiguration configuration) : DapperQueryRepository<User>(configuration)
 {
-    public UserDapperRepository(IConfiguration configuration) : base(configuration)
-    {
-    }
 
     /// <summary>
     ///     Gets a user by email.

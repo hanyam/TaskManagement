@@ -14,21 +14,14 @@ namespace TaskManagement.Application.Tasks.Commands.RejectTask;
 /// <summary>
 ///     Handler for rejecting an assigned task (employee).
 /// </summary>
-public class RejectTaskCommandHandler : ICommandHandler<RejectTaskCommand, TaskDto>
+public class RejectTaskCommandHandler(
+    TaskEfCommandRepository taskCommandRepository,
+    UserDapperRepository userQueryRepository,
+    TaskManagementDbContext context) : ICommandHandler<RejectTaskCommand, TaskDto>
 {
-    private readonly TaskManagementDbContext _context;
-    private readonly TaskEfCommandRepository _taskCommandRepository;
-    private readonly UserDapperRepository _userQueryRepository;
-
-    public RejectTaskCommandHandler(
-        TaskEfCommandRepository taskCommandRepository,
-        UserDapperRepository userQueryRepository,
-        TaskManagementDbContext context)
-    {
-        _taskCommandRepository = taskCommandRepository;
-        _userQueryRepository = userQueryRepository;
-        _context = context;
-    }
+    private readonly TaskManagementDbContext _context = context;
+    private readonly TaskEfCommandRepository _taskCommandRepository = taskCommandRepository;
+    private readonly UserDapperRepository _userQueryRepository = userQueryRepository;
 
     public async Task<Result<TaskDto>> Handle(RejectTaskCommand request, CancellationToken cancellationToken)
     {

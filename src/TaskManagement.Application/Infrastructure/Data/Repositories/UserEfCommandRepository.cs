@@ -6,9 +6,6 @@ namespace TaskManagement.Application.Infrastructure.Data.Repositories;
 /// <summary>
 ///     Specialized EF Core command repository for User entities.
 /// </summary>
-public class UserEfCommandRepository : EfCommandRepository<User>, IUserEfCommandRepository
+public class UserEfCommandRepository(TaskManagementDbContext context) : EfCommandRepository<User>(context), IUserEfCommandRepository
 {
-    public UserEfCommandRepository(TaskManagementDbContext context) : base(context)
-    {
-    }
 }

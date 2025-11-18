@@ -10,11 +10,8 @@ namespace TaskManagement.Application.Infrastructure.Data.Repositories;
 /// <summary>
 ///     Dapper-based repository for Task read operations with optimized queries.
 /// </summary>
-public class TaskDapperRepository : DapperQueryRepository<Task>
+public class TaskDapperRepository(IConfiguration configuration) : DapperQueryRepository<Task>(configuration)
 {
-    public TaskDapperRepository(IConfiguration configuration) : base(configuration)
-    {
-    }
 
     /// <summary>
     ///     Gets a task by ID with assigned user information.

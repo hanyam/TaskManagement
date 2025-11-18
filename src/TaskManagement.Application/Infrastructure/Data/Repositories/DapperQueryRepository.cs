@@ -9,15 +9,10 @@ namespace TaskManagement.Application.Infrastructure.Data.Repositories;
 ///     Generic Dapper-based query repository implementation.
 /// </summary>
 /// <typeparam name="T">The type of entity to query.</typeparam>
-public class DapperQueryRepository<T> : IQueryRepository<T> where T : BaseEntity
+public class DapperQueryRepository<T>(IConfiguration configuration) : IQueryRepository<T> where T : BaseEntity
 {
-    private readonly string _connectionString;
-
-    public DapperQueryRepository(IConfiguration configuration)
-    {
-        _connectionString = configuration.GetConnectionString("DefaultConnection")
-                            ?? throw new InvalidOperationException("DefaultConnection is not configured.");
-    }
+    private readonly string _connectionString = configuration.GetConnectionString("DefaultConnection")
+                                                ?? throw new InvalidOperationException("DefaultConnection is not configured.");
 
     public virtual async Task<T?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {

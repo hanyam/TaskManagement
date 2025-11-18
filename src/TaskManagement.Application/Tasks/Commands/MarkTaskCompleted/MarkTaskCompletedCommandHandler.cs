@@ -12,21 +12,14 @@ namespace TaskManagement.Application.Tasks.Commands.MarkTaskCompleted;
 /// <summary>
 ///     Handler for marking a task as completed (manager).
 /// </summary>
-public class MarkTaskCompletedCommandHandler : ICommandHandler<MarkTaskCompletedCommand, TaskDto>
+public class MarkTaskCompletedCommandHandler(
+    TaskEfCommandRepository taskCommandRepository,
+    UserDapperRepository userQueryRepository,
+    TaskManagementDbContext context) : ICommandHandler<MarkTaskCompletedCommand, TaskDto>
 {
-    private readonly TaskManagementDbContext _context;
-    private readonly TaskEfCommandRepository _taskCommandRepository;
-    private readonly UserDapperRepository _userQueryRepository;
-
-    public MarkTaskCompletedCommandHandler(
-        TaskEfCommandRepository taskCommandRepository,
-        UserDapperRepository userQueryRepository,
-        TaskManagementDbContext context)
-    {
-        _taskCommandRepository = taskCommandRepository;
-        _userQueryRepository = userQueryRepository;
-        _context = context;
-    }
+    private readonly TaskManagementDbContext _context = context;
+    private readonly TaskEfCommandRepository _taskCommandRepository = taskCommandRepository;
+    private readonly UserDapperRepository _userQueryRepository = userQueryRepository;
 
     public async Task<Result<TaskDto>> Handle(MarkTaskCompletedCommand request, CancellationToken cancellationToken)
     {
