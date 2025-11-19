@@ -1,13 +1,13 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { useCurrentLocale } from "@/core/routing/useCurrentLocale";
 import { useTasksQuery } from "@/features/tasks/api/queries";
 import { TasksTable } from "@/features/tasks/components/tables/TasksTable";
-import type { TaskListFilters } from "@/features/tasks/types";
+import type { TaskListFilters, TaskListViewFilter } from "@/features/tasks/types";
 import type { TaskPriority, TaskStatus } from "@/features/tasks/value-objects";
 import { Button } from "@/ui/components/Button";
 import { Input } from "@/ui/components/Input";
@@ -21,10 +21,27 @@ export function TasksListView() {
   const { t } = useTranslation(["tasks", "common"]);
   const locale = useCurrentLocale();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const filterParam = (searchParams.get("filter") as TaskListViewFilter | null) ?? "created";
   const [filters, setFilters] = useState<TaskListFilters>({
     page: 1,
-    pageSize: 25
+    pageSize: 25,
+    filter: filterParam
   });
+
+  useEffect(() => {
+    setFilters((current) => {
+      if (current.filter === filterParam) {
+        return current;
+      }
+
+      return {
+        ...current,
+        filter: filterParam,
+        page: 1
+      };
+    });
+  }, [filterParam]);
 
   const { data, isLoading, refetch } = useTasksQuery(filters);
 
@@ -64,15 +81,41 @@ export function TasksListView() {
     });
   }, [data, currentPage, filters.pageSize, t]);
 
+  const currentFilter = filters.filter ?? "created";
+
+  function handleFilterToggle(nextFilter: TaskListViewFilter) {
+    if (nextFilter === "assigned") {
+      router.push(`/${locale}/tasks?filter=assigned`);
+    } else {
+      router.push(`/${locale}/tasks`);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 rounded-xl border border-border bg-background p-5 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
+          <div className="space-y-1">
             <h1 className="font-heading text-xl text-foreground">{t("tasks:list.title")}</h1>
             <p className="text-sm text-muted-foreground">{t("tasks:list.subtitle")}</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1 rounded-md border border-border bg-muted p-1">
+              <Button
+                size="sm"
+                variant={currentFilter === "created" ? "default" : "ghost"}
+                onClick={() => handleFilterToggle("created")}
+              >
+                {t("tasks:list.filters.createdByMe")}
+              </Button>
+              <Button
+                size="sm"
+                variant={currentFilter === "assigned" ? "default" : "ghost"}
+                onClick={() => handleFilterToggle("assigned")}
+              >
+                {t("tasks:list.filters.assignedToMe")}
+              </Button>
+            </div>
             <Button onClick={() => router.push(`/${locale}/tasks/create`)}>
               {t("common:actions.create")}
             </Button>

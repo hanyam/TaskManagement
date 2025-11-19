@@ -32,6 +32,7 @@ public class GetTasksQueryHandler(TaskDapperRepository taskRepository) : IReques
             request.Status,
             request.Priority,
             request.AssignedUserId,
+            request.CreatedById,
             request.DueDateFrom,
             request.DueDateTo,
             request.Page,

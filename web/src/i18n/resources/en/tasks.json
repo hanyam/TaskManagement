@@ -19,7 +19,9 @@
     },
     "filters": {
       "quickSearch": "Quick search",
-      "showMyTasks": "Only tasks assigned to me"
+      "showMyTasks": "Only tasks assigned to me",
+      "createdByMe": "Created by me",
+      "assignedToMe": "Assigned to me"
     }
   },
   "details": {

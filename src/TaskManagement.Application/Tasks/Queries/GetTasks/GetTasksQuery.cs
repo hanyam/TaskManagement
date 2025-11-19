@@ -13,6 +13,7 @@ public record GetTasksQuery : IQuery<GetTasksResponse>
     public TaskStatus? Status { get; init; }
     public TaskPriority? Priority { get; init; }
     public Guid? AssignedUserId { get; init; }
+    public Guid? CreatedById { get; init; }
     public DateTime? DueDateFrom { get; init; }
     public DateTime? DueDateTo { get; init; }
     public int Page { get; init; } = 1;

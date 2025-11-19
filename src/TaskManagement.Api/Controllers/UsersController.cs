@@ -21,12 +21,14 @@ public class UsersController(
     GraphServiceClient? graphClient,
     ILogger<UsersController> logger,
     IRequestMediator requestMediator,
-    UserDapperRepository userRepository) : ControllerBase
+    UserDapperRepository userRepository,
+    ICurrentUserService? currentUserService = null) : ControllerBase
 {
     private readonly GraphServiceClient? _graphClient = graphClient;
     private readonly ILogger<UsersController> _logger = logger;
     private readonly IRequestMediator _requestMediator = requestMediator;
     private readonly UserDapperRepository _userRepository = userRepository;
+    private readonly ICurrentUserService? _currentUserService = currentUserService;
 
     /// <summary>
     ///     Searches for users managed by the current user (manager-employee relationship).
@@ -42,8 +44,9 @@ public class UsersController(
 
         try
         {
-            // Get current user's email from JWT claims
-            var userEmail = User.FindFirst(ClaimTypes.Email)?.Value ??
+            // Get current user's email (respects override for testing)
+            var userEmail = _currentUserService?.GetUserEmail() ??
+                            User.FindFirst(ClaimTypes.Email)?.Value ??
                             User.FindFirst(Email)?.Value;
 
             if (string.IsNullOrEmpty(userEmail))
@@ -202,6 +205,77 @@ public class UsersController(
                 HttpContext.TraceIdentifier));
         }
     }
+
+    /// <summary>
+    ///     Gets the current authenticated user information.
+    ///     Respects user override for testing purposes.
+    /// </summary>
+    /// <returns>Current user information.</returns>
+    [HttpGet("me")]
+    [ProducesResponseType(typeof(ApiResponse<CurrentUserDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GetCurrentUser()
+    {
+        try
+        {
+            // Get current user info (respects override for testing)
+            var userId = _currentUserService?.GetUserId();
+            var userEmail = _currentUserService?.GetUserEmail() ??
+                            User.FindFirst(ClaimTypes.Email)?.Value ??
+                            User.FindFirst(Email)?.Value;
+            var role = _currentUserService?.GetClaimValue(ClaimTypes.Role) ??
+                       User.FindFirst(ClaimTypes.Role)?.Value;
+
+            if (userId == null && string.IsNullOrEmpty(userEmail))
+            {
+                return Unauthorized(ApiResponse<object>.ErrorResponse(
+                    "User not authenticated",
+                    HttpContext.TraceIdentifier));
+            }
+
+            // If we have userId, fetch full user details from database
+            Domain.Entities.User? user = null;
+            if (userId.HasValue)
+            {
+                // Try to get user by ID first (if available)
+                // Note: UserDapperRepository doesn't have GetByIdAsync, so we'll use email
+            }
+
+            // If we don't have user from ID, try email
+            if (user == null && !string.IsNullOrEmpty(userEmail))
+            {
+                user = await _userRepository.GetByEmailAsync(userEmail, CancellationToken.None);
+            }
+
+            if (user == null)
+            {
+                // Return basic info from claims/override if user not in database
+                return Ok(ApiResponse<CurrentUserDto>.SuccessResponse(new CurrentUserDto
+                {
+                    Id = userId?.ToString() ?? string.Empty,
+                    Email = userEmail ?? string.Empty,
+                    DisplayName = User.FindFirst("display_name")?.Value ?? userEmail ?? string.Empty,
+                    Role = role
+                }));
+            }
+
+            // Return full user info from database
+            return Ok(ApiResponse<CurrentUserDto>.SuccessResponse(new CurrentUserDto
+            {
+                Id = user.Id.ToString(),
+                Email = user.Email,
+                DisplayName = user.DisplayName,
+                Role = user.Role.ToString()
+            }));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching current user");
+            return StatusCode(500, ApiResponse<CurrentUserDto>.ErrorResponse(
+                "An error occurred while fetching current user",
+                HttpContext.TraceIdentifier));
+        }
+    }
 }
 
 /// <summary>
@@ -214,4 +288,15 @@ public class UserSearchResult
     public string? Mail { get; set; }
     public string UserPrincipalName { get; set; } = string.Empty;
     public string? JobTitle { get; set; }
+}
+
+/// <summary>
+///     Represents the current authenticated user information.
+/// </summary>
+public class CurrentUserDto
+{
+    public string Id { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string DisplayName { get; set; } = string.Empty;
+    public string? Role { get; set; }
 }

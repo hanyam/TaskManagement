@@ -3,7 +3,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using TaskManagement.Application.Common.Constants;
 using TaskManagement.Application.Common.Services;
+using TaskManagement.Application.Infrastructure.Data.Repositories;
 using TaskManagement.Domain.Common;
+using TaskManagement.Domain.Errors.Users;
 
 namespace TaskManagement.Api.Controllers;
 
@@ -13,21 +15,26 @@ namespace TaskManagement.Api.Controllers;
 /// </summary>
 [ApiController]
 [Route("testing")]
-public class TestingController(IMemoryCache memoryCache) : ControllerBase
+public class TestingController(
+    IMemoryCache memoryCache,
+    UserDapperRepository userRepository) : ControllerBase
 {
     private readonly IMemoryCache _memoryCache = memoryCache;
+    private readonly UserDapperRepository _userRepository = userRepository;
 
     /// <summary>
     ///     Sets the current user override for testing purposes.
     ///     Only available in Development and Test environments.
+    ///     Accepts only email and fetches user information from the database.
     /// </summary>
-    /// <param name="request">The user override request.</param>
+    /// <param name="request">The user override request (email only).</param>
     /// <returns>Success or error response.</returns>
     [HttpPost("current-user")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public IActionResult SetCurrentUserOverride([FromBody] SetCurrentUserOverrideRequest request)
+    public async Task<IActionResult> SetCurrentUserOverride([FromBody] SetCurrentUserOverrideRequest request)
     {
         if (!IsTestingEnvironment())
         {
@@ -36,18 +43,29 @@ public class TestingController(IMemoryCache memoryCache) : ControllerBase
                 HttpContext.TraceIdentifier));
         }
 
-        if (request.UserId == null && string.IsNullOrEmpty(request.UserEmail))
+        if (string.IsNullOrWhiteSpace(request.UserEmail))
         {
             return BadRequest(ApiResponse<object>.ErrorResponse(
-                "Either UserId or UserEmail must be provided.",
+                new List<Error> { UserErrors.EmailRequired },
                 HttpContext.TraceIdentifier));
         }
 
+        // Query user from database by email
+        var user = await _userRepository.GetByEmailAsync(request.UserEmail, CancellationToken.None);
+
+        if (user == null)
+        {
+            return NotFound(ApiResponse<object>.ErrorResponse(
+                new List<Error> { UserErrors.NotFoundByEmail(request.UserEmail) },
+                HttpContext.TraceIdentifier));
+        }
+
+        // Create override value with data from database
         var overrideValue = new CurrentUserOverride
         {
-            UserId = request.UserId,
-            UserEmail = request.UserEmail,
-            Role = request.Role
+            UserId = user.Id,
+            UserEmail = user.Email,
+            Role = user.Role.ToString() // Converts UserRole enum to string (Employee, Manager, Admin)
         };
 
         // Store in cache with no expiration (cleared manually or on app restart)
@@ -223,23 +241,14 @@ public class TestingController(IMemoryCache memoryCache) : ControllerBase
 
 /// <summary>
 ///     Request model for setting current user override.
+///     Only email is required; user ID and role are fetched from the database.
 /// </summary>
 public class SetCurrentUserOverrideRequest
 {
     /// <summary>
-    ///     The user ID (Guid) to override with.
+    ///     The user email to override with. User ID and role will be fetched from the database.
     /// </summary>
-    public Guid? UserId { get; set; }
-
-    /// <summary>
-    ///     The user email/username to override with.
-    /// </summary>
-    public string? UserEmail { get; set; }
-
-    /// <summary>
-    ///     Optional: The user role to override with (e.g., "Admin", "Manager", "Employee").
-    /// </summary>
-    public string? Role { get; set; }
+    public string UserEmail { get; set; } = string.Empty;
 }
 
 /// <summary>

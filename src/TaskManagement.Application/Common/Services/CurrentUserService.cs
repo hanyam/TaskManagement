@@ -70,7 +70,9 @@ public class CurrentUserService(IHttpContextAccessor httpContextAccessor, IMemor
                 claims.Add(new Claim(ClaimTypes.Role, overrideValue.Role));
             }
 
-            return new ClaimsPrincipal(new ClaimsIdentity(claims, "Test"));
+            // Create authenticated identity for override (required for IsAuthenticated() to return true)
+            var identity = new ClaimsIdentity(claims, "Test", ClaimTypes.Name, ClaimTypes.Role);
+            return new ClaimsPrincipal(identity);
         }
 
         // Fall back to HttpContext

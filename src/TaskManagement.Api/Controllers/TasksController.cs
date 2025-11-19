@@ -4,8 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TaskManagement.Api.Attributes;
 using TaskManagement.Application.Common.Interfaces;
-using TaskManagement.Domain.Constants;
-using static TaskManagement.Domain.Constants.RoleNames;
 using TaskManagement.Application.Tasks.Commands.AcceptTask;
 using TaskManagement.Application.Tasks.Commands.AcceptTaskProgress;
 using TaskManagement.Application.Tasks.Commands.ApproveExtensionRequest;
@@ -22,9 +20,11 @@ using TaskManagement.Application.Tasks.Queries.GetTaskById;
 using TaskManagement.Application.Tasks.Queries.GetTasks;
 using TaskManagement.Application.Tasks.Services;
 using TaskManagement.Domain.Common;
+using TaskManagement.Domain.Constants;
 using TaskManagement.Domain.DTOs;
 using TaskManagement.Domain.Entities;
 using TaskManagement.Infrastructure.Data;
+using static TaskManagement.Domain.Constants.RoleNames;
 using Task = TaskManagement.Domain.Entities.Task;
 using TaskStatus = TaskManagement.Domain.Entities.TaskStatus;
 
@@ -40,8 +40,9 @@ public class TasksController(
     ICommandMediator commandMediator,
     IRequestMediator requestMediator,
     ITaskActionService taskActionService,
-    TaskManagementDbContext context)
-    : BaseController(commandMediator, requestMediator)
+    TaskManagementDbContext context,
+    ICurrentUserService currentUserService)
+    : BaseController(commandMediator, requestMediator, currentUserService)
 {
     private readonly TaskManagementDbContext _context = context;
     private readonly ITaskActionService _taskActionService = taskActionService;
@@ -76,33 +77,40 @@ public class TasksController(
     /// <summary>
     ///     Gets a list of tasks with optional filtering and pagination.
     /// </summary>
-    /// <param name="status">Filter by task status.</param>
-    /// <param name="priority">Filter by task priority.</param>
-    /// <param name="assignedUserId">Filter by assigned user ID.</param>
-    /// <param name="dueDateFrom">Filter by due date from.</param>
-    /// <param name="dueDateTo">Filter by due date to.</param>
-    /// <param name="page">Page number for pagination.</param>
-    /// <param name="pageSize">Number of items per page.</param>
+    /// <param name="request">Filter parameters for the task list.</param>
     /// <returns>List of tasks with pagination information.</returns>
     [HttpGet]
-    public async Task<IActionResult> GetTasks(
-        [FromQuery] TaskStatus? status = null,
-        [FromQuery] TaskPriority? priority = null,
-        [FromQuery] Guid? assignedUserId = null,
-        [FromQuery] DateTime? dueDateFrom = null,
-        [FromQuery] DateTime? dueDateTo = null,
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10)
+    [EnsureUserId]
+    public async Task<IActionResult> GetTasks([FromQuery] GetTasksRequest request)
     {
+        var userId = GetRequiredUserId();
+        var filter = (request.Filter ?? "created").ToLowerInvariant();
+
+        Guid? assignedUserId = request.AssignedUserId;
+        Guid? createdById = null;
+
+        switch (filter)
+        {
+            case "assigned":
+                assignedUserId ??= userId;
+                break;
+            case "created":
+            default:
+                filter = "created";
+                createdById = userId;
+                break;
+        }
+
         var query = new GetTasksQuery
         {
-            Status = status,
-            Priority = priority,
+            Status = request.Status,
+            Priority = request.Priority,
             AssignedUserId = assignedUserId,
-            DueDateFrom = dueDateFrom,
-            DueDateTo = dueDateTo,
-            Page = page,
-            PageSize = pageSize
+            CreatedById = createdById,
+            DueDateFrom = request.DueDateFrom,
+            DueDateTo = request.DueDateTo,
+            Page = request.Page,
+            PageSize = request.PageSize
         };
 
         var result = await _requestMediator.Send(query);
@@ -502,10 +510,10 @@ public class TasksController(
 /// <summary>
 ///     Request DTO for reviewing a completed task.
 /// </summary>
-public class ReviewCompletedTaskRequest
+public record ReviewCompletedTaskRequest
 {
-    public bool Accepted { get; set; }
-    public int Rating { get; set; }
-    public string? Feedback { get; set; }
-    public bool SendBackForRework { get; set; }
+    public bool Accepted { get; init; }
+    public int Rating { get; init; }
+    public string? Feedback { get; init; }
+    public bool SendBackForRework { get; init; }
 }

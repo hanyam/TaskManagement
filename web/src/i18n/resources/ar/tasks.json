@@ -19,7 +19,9 @@
     },
     "filters": {
       "quickSearch": "بحث سريع",
-      "showMyTasks": "عرض مهامي فقط"
+      "showMyTasks": "عرض مهامي فقط",
+      "createdByMe": "أنشأتها",
+      "assignedToMe": "مكلف بها"
     }
   },
   "details": {

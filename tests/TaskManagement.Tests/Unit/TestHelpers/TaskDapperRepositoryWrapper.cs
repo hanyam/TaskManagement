@@ -55,6 +55,7 @@ public class TaskDapperRepositoryWrapper : TaskDapperRepository
         DomainTaskStatus? status,
         TaskPriority? priority,
         Guid? assignedUserId,
+        Guid? createdById,
         DateTime? dueDateFrom,
         DateTime? dueDateTo,
         int page,
@@ -97,8 +98,9 @@ public class TaskDapperRepositoryWrapper : TaskDapperRepository
 
         if (assignedUserId.HasValue)
             filteredTasks = filteredTasks.Where(t => t.AssignedUserId == assignedUserId.Value);
-        else
-            filteredTasks = filteredTasks.Where(t => t.AssignedUserId == null);
+
+        if (createdById.HasValue)
+            filteredTasks = filteredTasks.Where(t => t.CreatedById == createdById.Value);
 
         if (dueDateFrom.HasValue)
             filteredTasks = filteredTasks.Where(t => t.DueDate >= dueDateFrom.Value);

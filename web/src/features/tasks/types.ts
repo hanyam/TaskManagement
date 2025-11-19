@@ -57,6 +57,8 @@ export interface GetTasksResponse {
   totalPages: number;
 }
 
+export type TaskListViewFilter = "created" | "assigned";
+
 export interface TaskListFilters {
   status?: TaskStatus;
   priority?: TaskPriority;
@@ -66,6 +68,7 @@ export interface TaskListFilters {
   page?: number;
   pageSize?: number;
   reminderLevel?: ReminderLevel;
+  filter?: TaskListViewFilter;
 }
 
 export interface ExtensionRequestDto {

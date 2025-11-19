@@ -34,48 +34,49 @@ public class TaskDto
 /// <summary>
 ///     Request DTO for creating a new task.
 /// </summary>
-public class CreateTaskRequest
+public record CreateTaskRequest
 {
-    public string Title { get; set; } = string.Empty;
-    public string? Description { get; set; }
-    public TaskPriority Priority { get; set; } = TaskPriority.Medium;
-    public DateTime? DueDate { get; set; }
-    public Guid? AssignedUserId { get; set; }
-    public TaskType Type { get; set; } = TaskType.Simple;
+    public string Title { get; init; } = string.Empty;
+    public string? Description { get; init; }
+    public TaskPriority Priority { get; init; } = TaskPriority.Medium;
+    public DateTime? DueDate { get; init; }
+    public Guid? AssignedUserId { get; init; }
+    public TaskType Type { get; init; } = TaskType.Simple;
 }
 
 /// <summary>
 ///     Request DTO for updating a task.
 /// </summary>
-public class UpdateTaskRequest
+public record UpdateTaskRequest
 {
-    public string Title { get; set; } = string.Empty;
-    public string? Description { get; set; }
-    public TaskPriority Priority { get; set; }
-    public DateTime? DueDate { get; set; }
-    public Guid? AssignedUserId { get; set; }
+    public string Title { get; init; } = string.Empty;
+    public string? Description { get; init; }
+    public TaskPriority Priority { get; init; }
+    public DateTime? DueDate { get; init; }
+    public Guid? AssignedUserId { get; init; }
 }
 
 /// <summary>
 ///     Request DTO for updating task status.
 /// </summary>
-public class UpdateTaskStatusRequest
+public record UpdateTaskStatusRequest
 {
-    public TaskStatus Status { get; set; }
+    public TaskStatus Status { get; init; }
 }
 
 /// <summary>
 ///     Request DTO for filtering tasks.
 /// </summary>
-public class TaskFilterRequest
+public record GetTasksRequest
 {
-    public TaskStatus? Status { get; set; }
-    public TaskPriority? Priority { get; set; }
-    public Guid? AssignedUserId { get; set; }
-    public DateTime? DueDateFrom { get; set; }
-    public DateTime? DueDateTo { get; set; }
-    public int Page { get; set; } = 1;
-    public int PageSize { get; set; } = 10;
+    public TaskStatus? Status { get; init; }
+    public TaskPriority? Priority { get; init; }
+    public Guid? AssignedUserId { get; init; }
+    public DateTime? DueDateFrom { get; init; }
+    public DateTime? DueDateTo { get; init; }
+    public int Page { get; init; } = 1;
+    public int PageSize { get; init; } = 10;
+    public string Filter { get; init; } = "created";
 }
 
 /// <summary>
@@ -160,65 +161,65 @@ public class ExtensionRequestDto
 /// <summary>
 ///     Request DTO for assigning a task.
 /// </summary>
-public class AssignTaskRequest
+public record AssignTaskRequest
 {
-    public List<Guid> UserIds { get; set; } = new();
+    public List<Guid> UserIds { get; init; } = new();
 }
 
 /// <summary>
 ///     Request DTO for updating task progress.
 /// </summary>
-public class UpdateTaskProgressRequest
+public record UpdateTaskProgressRequest
 {
-    public int ProgressPercentage { get; set; }
-    public string? Notes { get; set; }
+    public int ProgressPercentage { get; init; }
+    public string? Notes { get; init; }
 }
 
 /// <summary>
 ///     Request DTO for accepting task progress.
 /// </summary>
-public class AcceptTaskProgressRequest
+public record AcceptTaskProgressRequest
 {
-    public Guid ProgressHistoryId { get; set; }
+    public Guid ProgressHistoryId { get; init; }
 }
 
 /// <summary>
 ///     Request DTO for rejecting a task.
 /// </summary>
-public class RejectTaskRequest
+public record RejectTaskRequest
 {
-    public string? Reason { get; set; }
+    public string? Reason { get; init; }
 }
 
 /// <summary>
 ///     Request DTO for requesting more information.
 /// </summary>
-public class RequestMoreInfoRequest
+public record RequestMoreInfoRequest
 {
-    public string RequestMessage { get; set; } = string.Empty;
+    public string RequestMessage { get; init; } = string.Empty;
 }
 
 /// <summary>
 ///     Request DTO for reassigning a task.
 /// </summary>
-public class ReassignTaskRequest
+public record ReassignTaskRequest
 {
-    public List<Guid> NewUserIds { get; set; } = new();
+    public List<Guid> NewUserIds { get; init; } = new();
 }
 
 /// <summary>
 ///     Request DTO for requesting deadline extension.
 /// </summary>
-public class RequestDeadlineExtensionRequest
+public record RequestDeadlineExtensionRequest
 {
-    public DateTime RequestedDueDate { get; set; }
-    public string Reason { get; set; } = string.Empty;
+    public DateTime RequestedDueDate { get; init; }
+    public string Reason { get; init; } = string.Empty;
 }
 
 /// <summary>
 ///     Request DTO for approving extension request.
 /// </summary>
-public class ApproveExtensionRequestRequest
+public record ApproveExtensionRequestRequest
 {
-    public string? ReviewNotes { get; set; }
+    public string? ReviewNotes { get; init; }
 }

@@ -41,6 +41,7 @@ public class TaskDapperRepository(IConfiguration configuration) : DapperQueryRep
         TaskStatus? status = null,
         TaskPriority? priority = null,
         Guid? assignedUserId = null,
+        Guid? createdById = null,
         DateTime? dueDateFrom = null,
         DateTime? dueDateTo = null,
         int page = 1,
@@ -66,6 +67,12 @@ public class TaskDapperRepository(IConfiguration configuration) : DapperQueryRep
         {
             conditions.Add("T.AssignedUserId = @AssignedUserId");
             parameters.Add("AssignedUserId", assignedUserId.Value);
+        }
+
+        if (createdById.HasValue)
+        {
+            conditions.Add("T.CreatedById = @CreatedById");
+            parameters.Add("CreatedById", createdById.Value);
         }
 
         if (dueDateFrom.HasValue)
