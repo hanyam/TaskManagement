@@ -1,0 +1,79 @@
+### Database Management Endpoints
+### All endpoints require authentication (JWT token) and Admin role
+
+@baseUrl = http://localhost:5000
+@contentType = application/json
+
+### Generate JWT token for testing (run this first)
+# @name generateJwt
+POST {{baseUrl}}/testing/generate-jwt
+Content-Type: {{contentType}}
+
+{
+  "userEmail": "rhalzahrani@wtco.com.sa"
+}
+
+@authHeader = Bearer {{generateJwt.response.body.$.data.token}}
+
+### ============================================
+### Database Operations (POST/GET)
+### ============================================
+
+### Seed Database
+### POST /database/seed
+### Seeds the database with initial data from SQL script files
+### Scripts are executed in alphabetical order by filename
+### Requires: Admin role
+POST {{baseUrl}}/database/seed
+Authorization: {{authHeader}}
+Content-Type: {{contentType}}
+
+{
+  "scriptNames": []
+}
+
+### To execute specific scripts:
+### {
+###   "scriptNames": ["00-SeedEmployees.sql", "01-AddEmployees.sql"]
+### }
+### 
+### To execute all scripts, send empty array or omit scriptNames:
+### {}
+
+### Response Example:
+### {
+###   "success": true,
+###   "data": {
+###     "scriptsExecuted": ["00-SeedEmployees.sql", "01-AddEmployees.sql"],
+###     "totalScripts": 2,
+###     "executionResults": [
+###       {
+###         "scriptName": "00-SeedEmployees.sql",
+###         "success": true,
+###         "rowsAffected": 10,
+###         "executionTimeMs": 150
+###       }
+###     ]
+###   }
+### }
+
+###
+
+### Get Available Seeding Scripts
+### GET /database/seed/scripts
+### Gets a list of available SQL scripts in the seeding folder
+### Requires: Admin role
+GET {{baseUrl}}/database/seed/scripts
+Authorization: {{authHeader}}
+
+### Response Example:
+### {
+###   "success": true,
+###   "data": [
+###     "00-SeedEmployees.sql",
+###     "01-AddEmployees.sql"
+###   ]
+### }
+
+###
+

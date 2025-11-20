@@ -24,3 +24,4 @@ public class ManagerEmployee : BaseEntity
     public User? Manager { get; private set; }
     public User? Employee { get; private set; }
 }
+

@@ -108,16 +108,34 @@ public class Task : BaseEntity
 
     public void Accept()
     {
-        if (Status != TaskStatus.Assigned && Status != TaskStatus.UnderReview)
-            throw new InvalidOperationException("Task must be assigned or under review to be accepted");
+        if (Status != TaskStatus.Created && Status != TaskStatus.Assigned && Status != TaskStatus.UnderReview)
+            throw new InvalidOperationException("Task must be created, assigned, or under review to be accepted");
+
+        // If task is in Created status, transition to Assigned first, then to Accepted
+        if (Status == TaskStatus.Created)
+        {
+            if (!AssignedUserId.HasValue)
+                throw new InvalidOperationException("Task must have an assigned user to be accepted");
+
+            Status = TaskStatus.Assigned;
+        }
 
         Status = TaskStatus.Accepted;
     }
 
     public void Reject()
     {
-        if (Status != TaskStatus.Assigned && Status != TaskStatus.UnderReview)
-            throw new InvalidOperationException("Task must be assigned or under review to be rejected");
+        if (Status != TaskStatus.Created && Status != TaskStatus.Assigned && Status != TaskStatus.UnderReview)
+            throw new InvalidOperationException("Task must be created, assigned, or under review to be rejected");
+
+        // If task is in Created status, transition to Assigned first, then to Rejected
+        if (Status == TaskStatus.Created)
+        {
+            if (!AssignedUserId.HasValue)
+                throw new InvalidOperationException("Task must have an assigned user to be rejected");
+
+            Status = TaskStatus.Assigned;
+        }
 
         Status = TaskStatus.Rejected;
     }

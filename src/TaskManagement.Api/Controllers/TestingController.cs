@@ -5,7 +5,10 @@ using TaskManagement.Application.Common.Constants;
 using TaskManagement.Application.Common.Services;
 using TaskManagement.Application.Infrastructure.Data.Repositories;
 using TaskManagement.Domain.Common;
+using TaskManagement.Domain.Errors.Authentication;
 using TaskManagement.Domain.Errors.Users;
+using TaskManagement.Domain.Interfaces;
+using static TaskManagement.Domain.Constants.CustomClaimTypes;
 
 namespace TaskManagement.Api.Controllers;
 
@@ -17,10 +20,12 @@ namespace TaskManagement.Api.Controllers;
 [Route("testing")]
 public class TestingController(
     IMemoryCache memoryCache,
-    UserDapperRepository userRepository) : ControllerBase
+    UserDapperRepository userRepository,
+    IAuthenticationService authenticationService) : ControllerBase
 {
     private readonly IMemoryCache _memoryCache = memoryCache;
     private readonly UserDapperRepository _userRepository = userRepository;
+    private readonly IAuthenticationService _authenticationService = authenticationService;
 
     /// <summary>
     ///     Sets the current user override for testing purposes.
@@ -237,6 +242,70 @@ public class TestingController(
         var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
         return environment == "Development" || environment == "Test" || environment == "Testing";
     }
+
+    /// <summary>
+    ///     Generates a JWT token for the specified user email (testing only).
+    /// </summary>
+    /// <param name="request">The request containing the user email.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>JWT token that can be used for testing other endpoints.</returns>
+    [HttpPost("generate-jwt")]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GenerateJwtToken([FromBody] GenerateJwtTokenRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!IsTestingEnvironment())
+        {
+            return StatusCode(403, ApiResponse<object>.ErrorResponse(
+                "Testing endpoints are only available in Development or Test environments.",
+                HttpContext.TraceIdentifier));
+        }
+
+        if (string.IsNullOrWhiteSpace(request.UserEmail))
+        {
+            return BadRequest(ApiResponse<object>.ErrorResponse(
+                new List<Error> { UserErrors.EmailRequired },
+                HttpContext.TraceIdentifier));
+        }
+
+        var user = await _userRepository.GetByEmailAsync(request.UserEmail, cancellationToken);
+        if (user == null)
+        {
+            return NotFound(ApiResponse<object>.ErrorResponse(
+                new List<Error> { UserErrors.NotFoundByEmail(request.UserEmail) },
+                HttpContext.TraceIdentifier));
+        }
+
+        var additionalClaims = new Dictionary<string, string>
+        {
+            { UserId, user.Id.ToString() },
+            { "display_name", user.DisplayName },
+            { "first_name", user.FirstName },
+            { "last_name", user.LastName },
+            { "role", user.Role.ToString() }
+        };
+
+        var tokenResult = await _authenticationService.GenerateJwtTokenAsync(
+            user.Email,
+            additionalClaims,
+            cancellationToken);
+
+        if (tokenResult.IsFailure)
+        {
+            return StatusCode(500, ApiResponse<object>.ErrorResponse(
+                new List<Error> { tokenResult.Error ?? AuthenticationErrors.JwtTokenGenerationFailed },
+                HttpContext.TraceIdentifier));
+        }
+
+        return Ok(ApiResponse<object>.SuccessResponse(new
+        {
+            message = "JWT token generated successfully",
+            token = tokenResult.Value
+        }));
+    }
 }
 
 /// <summary>
@@ -260,6 +329,17 @@ public class SetCurrentDateOverrideRequest
     ///     The UTC date/time to override with.
     /// </summary>
     public DateTime UtcDate { get; set; }
+}
+
+/// <summary>
+///     Request model for generating JWT tokens in testing.
+/// </summary>
+public class GenerateJwtTokenRequest
+{
+    /// <summary>
+    ///     The user email to generate a JWT token for.
+    /// </summary>
+    public string UserEmail { get; set; } = string.Empty;
 }
 
 

@@ -1,0 +1,30 @@
+### Authentication Endpoints
+### These endpoints do not require authentication
+
+@baseUrl = http://localhost:5000
+@contentType = application/json
+
+### Authenticate User
+### POST /authentication/authenticate
+### Authenticates a user with Azure AD token and returns a JWT token
+POST {{baseUrl}}/authentication/authenticate
+Content-Type: {{contentType}}
+
+{
+  "azureAdToken": "your-azure-ad-token-here"
+}
+
+### Response Example:
+### {
+###   "success": true,
+###   "data": {
+###     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+###     "user": {
+###       "id": "guid",
+###       "email": "user@example.com",
+###       "displayName": "User Name",
+###       "role": "Employee"
+###     }
+###   }
+### }
+

@@ -1,0 +1,164 @@
+### Testing Endpoints
+### These endpoints are only available in Development and Test environments
+### Used for testing overrides (current user and date/time)
+
+@baseUrl = http://localhost:5000
+@contentType = application/json
+@u = rhalzahrani@wtco.com.sa
+### ============================================
+### Generate JWT Token for Testing
+### ============================================
+
+# @name generateJwt
+### Generate JWT Token by Email
+### POST /testing/generate-jwt
+### Generates a JWT token for the specified email
+### Only available in Development/Test environments
+POST {{baseUrl}}/testing/generate-jwt
+Content-Type: {{contentType}}
+
+{
+  "userEmail": "rhalzahrani@wtco.com.sa"
+}
+
+### Authorization header uses the latest token from generateJwt response
+@authHeader = Bearer {{generateJwt.response.body.$.data.token}}
+
+### Response Example:
+### {
+###   "success": true,
+###   "data": {
+###     "message": "JWT token generated successfully",
+###     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+###   }
+### }
+
+### ============================================
+### Current User Override (POST/GET/DELETE)
+### ============================================
+
+### Set Current User Override
+### POST /testing/current-user
+### Sets the current user override for testing purposes
+### Accepts only email and fetches user information from the database
+### Only available in Development and Test environments
+POST {{baseUrl}}/testing/current-user
+Content-Type: {{contentType}}
+
+{
+  "userEmail": "{{u}}"
+}
+
+### Response Example:
+### {
+###   "success": true,
+###   "data": {
+###     "message": "Current user override set successfully",
+###     "userId": "guid",
+###     "userEmail": "test@example.com",
+###     "role": "Employee"
+###   }
+### }
+
+###
+
+### Get Current User Override
+### GET /testing/current-user
+### Gets the current user override value
+### Only available in Development and Test environments
+GET {{baseUrl}}/testing/current-user
+
+
+### Response Example:
+### {
+###   "success": true,
+###   "data": {
+###     "userId": "guid",
+###     "userEmail": "test@example.com",
+###     "role": "Employee"
+###   }
+### }
+
+###
+
+### Remove Current User Override
+### DELETE /testing/current-user
+### Removes the current user override
+### Only available in Development and Test environments
+DELETE {{baseUrl}}/testing/current-user
+Authorization: {{authHeader}}
+
+### Response Example:
+### {
+###   "success": true,
+###   "data": {
+###     "message": "Current user override removed successfully"
+###   }
+### }
+
+###
+
+### ============================================
+### Current Date Override (POST/GET/DELETE)
+### ============================================
+
+### Set Current Date Override
+### POST /testing/current-date
+### Sets the current date/time override for testing purposes
+### Date should be in UTC format
+### Only available in Development and Test environments
+POST {{baseUrl}}/testing/current-date
+Authorization: {{authHeader}}
+Content-Type: {{contentType}}
+
+{
+  "utcDate": "2025-01-15T10:00:00Z"
+}
+
+### Response Example:
+### {
+###   "success": true,
+###   "data": {
+###     "message": "Current date override set successfully",
+###     "utcDate": "2025-01-15T10:00:00Z",
+###     "localDate": "2025-01-15T12:00:00+02:00"
+###   }
+### }
+
+###
+
+### Get Current Date Override
+### GET /testing/current-date
+### Gets the current date/time override value
+### Only available in Development and Test environments
+GET {{baseUrl}}/testing/current-date
+Authorization: {{authHeader}}
+
+### Response Example:
+### {
+###   "success": true,
+###   "data": {
+###     "utcDate": "2025-01-15T10:00:00Z",
+###     "localDate": "2025-01-15T12:00:00+02:00"
+###   }
+### }
+
+###
+
+### Remove Current Date Override
+### DELETE /testing/current-date
+### Removes the current date/time override
+### Only available in Development and Test environments
+DELETE {{baseUrl}}/testing/current-date
+Authorization: {{authHeader}}
+
+### Response Example:
+### {
+###   "success": true,
+###   "data": {
+###     "message": "Current date override removed successfully"
+###   }
+### }
+
+###
+

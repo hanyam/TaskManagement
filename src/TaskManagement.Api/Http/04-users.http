@@ -1,0 +1,72 @@
+### Users Endpoints
+### All endpoints require authentication (JWT token)
+
+@baseUrl = http://localhost:5000
+@contentType = application/json
+
+### Generate JWT token for testing (run this first)
+# @name generateJwt
+POST {{baseUrl}}/testing/generate-jwt
+Content-Type: {{contentType}}
+
+{
+  "userEmail": "rhalzahrani@wtco.com.sa"
+}
+
+@authHeader = Bearer {{generateJwt.response.body.$.data.token}}
+
+### ============================================
+### User Queries (GET)
+### ============================================
+
+### Search Users (Managed by Current User)
+### GET /users/search?query=john
+### Searches for users managed by the current user (manager-employee relationship)
+### Minimum 2 characters required
+GET {{baseUrl}}/users/search?query=john
+Authorization: {{authHeader}}
+
+### Response Example:
+### {
+###   "success": true,
+###   "data": [
+###     {
+###       "id": "guid",
+###       "displayName": "John Doe",
+###       "mail": "john.doe@example.com",
+###       "userPrincipalName": "john.doe@example.com",
+###       "jobTitle": "Software Engineer"
+###     }
+###   ]
+### }
+
+###
+
+### Get User by ID
+### GET /users/{id}
+### Gets a specific user by ID (Azure AD)
+GET {{baseUrl}}/users/00000000-0000-0000-0000-000000000000
+Authorization: {{authHeader}}
+
+###
+
+### Get Current User
+### GET /users/me
+### Gets the current authenticated user information
+### Respects user override for testing purposes
+GET {{baseUrl}}/users/me
+Authorization: {{authHeader}}
+
+### Response Example:
+### {
+###   "success": true,
+###   "data": {
+###     "id": "guid",
+###     "email": "user@example.com",
+###     "displayName": "User Name",
+###     "role": "Employee"
+###   }
+### }
+
+###
+

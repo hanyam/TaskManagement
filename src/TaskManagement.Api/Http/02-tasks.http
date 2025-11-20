@@ -1,0 +1,220 @@
+### Tasks Endpoints
+### All endpoints require authentication (JWT token)
+
+@contentType = application/json
+@currentUserEmail = rhalzahrani@wtco.com.sa
+### ============================================
+### Generate JWT Token for Testing
+### ============================================
+
+# @name generateJwt
+### Generate JWT Token by Email
+### POST /testing/generate-jwt
+### Generates a JWT token for the specified email
+### Only available in Development/Test environments
+POST {{baseUrl}}/testing/generate-jwt
+Content-Type: {{contentType}}
+
+{
+  "userEmail": {{currentUserEmail}}
+}
+
+### Authorization header uses the latest token from generateJwt response
+@authHeader = Bearer {{generateJwt.response.body.$.data.token}}
+
+### ============================================
+### Task Queries (GET)
+### ============================================
+
+### Get Task by ID
+### GET /tasks/{id}
+GET {{baseUrl}}/tasks/00000000-0000-0000-0000-000000000000
+Authorization: {{authHeader}}
+
+###
+
+### Get Tasks List
+### GET /tasks?filter=created&page=1&pageSize=25&status=Created&priority=High
+GET {{baseUrl}}/tasks?filter=created&page=1&pageSize=25
+Authorization: {{authHeader}}
+
+###
+
+### Get Tasks - Assigned to Me
+### GET /tasks?filter=assigned
+GET {{baseUrl}}/tasks?filter=assigned&page=1&pageSize=25
+Authorization: {{authHeader}}
+
+###
+
+### Get Tasks - With Filters
+### GET /tasks?status=Accepted&priority=High&dueDateFrom=2025-01-01&dueDateTo=2025-12-31
+GET {{baseUrl}}/tasks?filter=created&status=Accepted&priority=High&dueDateFrom=2025-01-01&dueDateTo=2025-12-31&page=1&pageSize=25
+Authorization: {{authHeader}}
+
+###
+
+### ============================================
+### Task Commands (POST/PUT)
+### ============================================
+
+### Create Task
+### POST /tasks
+### Requires: Manager/Admin role (or any authenticated user for creation)
+POST {{baseUrl}}/tasks
+Authorization: {{authHeader}}
+Content-Type: {{contentType}}
+
+{
+  "title": "New Task",
+  "description": "Task description",
+  "priority": 1,
+  "dueDate": "2025-12-31T23:59:59Z",
+  "assignedUserId": "00000000-0000-0000-0000-000000000000",
+  "type": 0
+}
+
+###
+
+### Assign Task
+### POST /tasks/{id}/assign
+### Requires: Manager/Admin role
+POST {{baseUrl}}/tasks/00000000-0000-0000-0000-000000000000/assign
+Authorization: {{authHeader}}
+Content-Type: {{contentType}}
+
+{
+  "userIds": [
+    "00000000-0000-0000-0000-000000000000"
+  ]
+}
+
+###
+
+### Accept Task
+### POST /tasks/{id}/accept
+### Requires: Employee/Manager role
+POST {{baseUrl}}/tasks/00000000-0000-0000-0000-000000000000/accept
+Authorization: {{authHeader}}
+
+###
+
+### Reject Task
+### POST /tasks/{id}/reject
+### Requires: Employee/Manager role
+POST {{baseUrl}}/tasks/00000000-0000-0000-0000-000000000000/reject
+Authorization: {{authHeader}}
+Content-Type: {{contentType}}
+
+{
+  "reason": "Cannot complete this task"
+}
+
+###
+
+### Update Task Progress
+### POST /tasks/{id}/progress
+### Requires: Employee/Manager role
+POST {{baseUrl}}/tasks/00000000-0000-0000-0000-000000000000/progress
+Authorization: {{authHeader}}
+Content-Type: {{contentType}}
+
+{
+  "progressPercentage": 50,
+  "notes": "Halfway through the task"
+}
+
+###
+
+### Accept Task Progress
+### POST /tasks/{id}/progress/accept
+### Requires: Manager role
+POST {{baseUrl}}/tasks/00000000-0000-0000-0000-000000000000/progress/accept
+Authorization: {{authHeader}}
+Content-Type: {{contentType}}
+
+{
+  "progressHistoryId": "00000000-0000-0000-0000-000000000000"
+}
+
+###
+
+### Request More Info
+### POST /tasks/{id}/request-info
+### Requires: Employee/Manager role
+POST {{baseUrl}}/tasks/00000000-0000-0000-0000-000000000000/request-info
+Authorization: {{authHeader}}
+Content-Type: {{contentType}}
+
+{
+  "requestMessage": "Need more details about the requirements"
+}
+
+###
+
+### Reassign Task
+### PUT /tasks/{id}/reassign
+### Requires: Manager role
+PUT {{baseUrl}}/tasks/00000000-0000-0000-0000-000000000000/reassign
+Authorization: {{authHeader}}
+Content-Type: {{contentType}}
+
+{
+  "newUserIds": [
+    "00000000-0000-0000-0000-000000000000"
+  ]
+}
+
+###
+
+### Request Deadline Extension
+### POST /tasks/{id}/extension-request
+### Requires: Employee/Manager role
+POST {{baseUrl}}/tasks/00000000-0000-0000-0000-000000000000/extension-request
+Authorization: {{authHeader}}
+Content-Type: {{contentType}}
+
+{
+  "requestedDueDate": "2026-01-31T23:59:59Z",
+  "reason": "Need more time to complete the task"
+}
+
+###
+
+### Approve Extension Request
+### POST /tasks/{id}/extension-request/{requestId}/approve
+### Requires: Manager role
+POST {{baseUrl}}/tasks/00000000-0000-0000-0000-000000000000/extension-request/00000000-0000-0000-0000-000000000000/approve
+Authorization: {{authHeader}}
+Content-Type: {{contentType}}
+
+{
+  "reviewNotes": "Extension approved"
+}
+
+###
+
+### Mark Task as Completed
+### POST /tasks/{id}/complete
+### Requires: Manager role
+POST {{baseUrl}}/tasks/00000000-0000-0000-0000-000000000000/complete
+Authorization: {{authHeader}}
+
+###
+
+### Review Completed Task
+### POST /tasks/{id}/review-completed
+### Requires: Manager/Admin role
+POST {{baseUrl}}/tasks/00000000-0000-0000-0000-000000000000/review-completed
+Authorization: {{authHeader}}
+Content-Type: {{contentType}}
+
+{
+  "accepted": true,
+  "rating": 5,
+  "feedback": "Excellent work!",
+  "sendBackForRework": false
+}
+
+###
+

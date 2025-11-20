@@ -39,6 +39,24 @@ public class TaskActionService : ITaskActionService
                         Method = "POST"
                     });
 
+                // Assigned user can accept or reject the task
+                if (isAssignedUser)
+                {
+                    links.Add(new ApiActionLink
+                    {
+                        Rel = "accept",
+                        Href = $"/tasks/{task.Id}/accept",
+                        Method = "POST"
+                    });
+
+                    links.Add(new ApiActionLink
+                    {
+                        Rel = "reject",
+                        Href = $"/tasks/{task.Id}/reject",
+                        Method = "POST"
+                    });
+                }
+
                 // Creator, Manager, or Admin can update
                 if (isCreator || isManager)
                     links.Add(new ApiActionLink

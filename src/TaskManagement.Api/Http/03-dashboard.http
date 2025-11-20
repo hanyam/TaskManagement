@@ -1,0 +1,50 @@
+### Dashboard Endpoints
+### All endpoints require authentication (JWT token)
+
+@baseUrl = http://localhost:5000
+@contentType = application/json
+
+### Generate JWT token for testing (run this request first)
+# @name generateJwt
+POST {{baseUrl}}/testing/generate-jwt
+Content-Type: {{contentType}}
+
+{
+  "userEmail": "rhalzahrani@wtco.com.sa"
+}
+
+@authHeader = Bearer {{generateJwt.response.body.$.data.token}}
+
+### ============================================
+### Dashboard Queries (GET)
+### ============================================
+
+### Get Dashboard Statistics
+### GET /dashboard/stats
+### Returns statistics for the current user:
+### - Tasks created by user
+### - Tasks completed
+### - Tasks near due date (within 3 days)
+### - Tasks delayed (past due date)
+### - Tasks in progress (assigned and accepted)
+### - Tasks under review
+### - Tasks pending acceptance
+GET {{baseUrl}}/dashboard/stats
+Authorization: {{authHeader}}
+
+### Response Example:
+### {
+###   "success": true,
+###   "data": {
+###     "tasksCreatedByUser": 10,
+###     "tasksCompleted": 5,
+###     "tasksNearDueDate": 3,
+###     "tasksDelayed": 1,
+###     "tasksInProgress": 2,
+###     "tasksUnderReview": 1,
+###     "tasksPendingAcceptance": 2
+###   }
+### }
+
+###
+

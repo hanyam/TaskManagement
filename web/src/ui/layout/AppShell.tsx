@@ -2,8 +2,8 @@
 
 import type { Route } from "next";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import type { PropsWithChildren, ReactNode } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useEffect, type PropsWithChildren, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import { useAuth } from "@/core/auth/AuthProvider";
@@ -19,12 +19,30 @@ interface AppShellProps extends PropsWithChildren {
 
 export function AppShell({ children, headerSlot }: AppShellProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { t } = useTranslation(["navigation", "common"]);
   const { session } = useAuth();
   const segments = pathname.split("/").filter(Boolean);
   const locale = segments[0] ?? "en";
 
   const role = session?.user.role ?? "Employee";
+
+  // Check if we're on a task details page
+  const isTaskDetailsPage = /^\/[^/]+\/tasks\/[^/]+$/.test(pathname);
+  // Check if we're on the tasks list page
+  const isTasksListPage = /^\/[^/]+\/tasks$/.test(pathname);
+
+  // Store the active menu context when on tasks list page
+  useEffect(() => {
+    if (isTasksListPage) {
+      const currentFilter = searchParams.get("filter");
+      if (currentFilter === "assigned") {
+        sessionStorage.setItem("lastActiveTasksMenu", "my-assignments");
+      } else {
+        sessionStorage.setItem("lastActiveTasksMenu", "tasks");
+      }
+    }
+  }, [isTasksListPage, searchParams]);
 
   const navItems = mainNavigation.filter((item) => {
     if (!item.roles?.length) {
@@ -47,7 +65,43 @@ export function AppShell({ children, headerSlot }: AppShellProps) {
           {navItems.map((item) => {
             const targetPath = `/${locale}${item.href}`;
             const normalizedTarget = targetPath.replace(/\?.*$/, "");
-            const isActive = item.exact ? pathname === targetPath : pathname.startsWith(normalizedTarget);
+            
+            // Parse query params from item.href
+            const queryString = item.href.includes("?") 
+              ? item.href.split("?")[1]?.split("#")[0] ?? ""
+              : "";
+            const targetParams = new URLSearchParams(queryString);
+            const targetFilter = targetParams.get("filter");
+            const currentFilter = searchParams.get("filter");
+            
+            // Check if pathname matches
+            const pathMatches = item.exact 
+              ? pathname === normalizedTarget 
+              : pathname.startsWith(normalizedTarget);
+            
+            // For items with query params, also check if the query params match
+            let isActive = pathMatches;
+            
+            // Handle task details pages - use stored context to preserve parent menu state
+            if (isTaskDetailsPage && normalizedTarget.includes("/tasks")) {
+              const lastActiveMenu = typeof window !== "undefined" 
+                ? sessionStorage.getItem("lastActiveTasksMenu")
+                : null;
+              if (targetFilter === "assigned") {
+                // My Assignments menu item
+                isActive = lastActiveMenu === "my-assignments";
+              } else if (targetFilter === null) {
+                // Tasks menu item (no filter) - default to "tasks" if no context stored
+                isActive = lastActiveMenu === "tasks" || lastActiveMenu === null;
+              }
+            } else if (targetFilter !== null) {
+              // This item has a filter query param, so check if current filter matches
+              isActive = pathMatches && currentFilter === targetFilter;
+            } else if (pathMatches && normalizedTarget.includes("/tasks")) {
+              // This is the tasks item without filter, so it should only be active if there's no filter or filter is not "assigned"
+              isActive = currentFilter !== "assigned";
+            }
+            
             const Icon = item.icon;
             const linkHref = targetPath as Route;
 

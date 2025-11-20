@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Domain.Common;
 using TaskManagement.Domain.DTOs;
+using TaskManagement.Domain.Entities;
 using TaskManagement.Infrastructure.Data;
 using TaskStatus = TaskManagement.Domain.Entities.TaskStatus;
 
@@ -50,20 +51,26 @@ public class GetDashboardStatsQueryHandler(TaskManagementDbContext context) : IR
                               t.Assignments.Any(a => a.UserId == request.UserId)), cancellationToken);
 
         // Tasks in progress (assigned and accepted)
+        // Note: Accepted tasks are actively being worked on, Assigned tasks are awaiting acceptance
         var tasksInProgress = await _context.Tasks
-            .CountAsync(t => (t.Status == TaskStatus.Assigned || t.Status == TaskStatus.Accepted) &&
-                             (t.AssignedUserId == request.UserId ||
-                              t.Assignments.Any(a => a.UserId == request.UserId)), cancellationToken);
+            .Where(t => (t.Status == TaskStatus.Assigned || t.Status == TaskStatus.Accepted) &&
+                        (t.AssignedUserId == request.UserId ||
+                         _context.Set<TaskAssignment>().Any(a => a.TaskId == t.Id && a.UserId == request.UserId)))
+            .CountAsync(cancellationToken);
 
-        // Tasks under review
+        // Tasks under review (includes both UnderReview and PendingManagerReview)
+        // UnderReview: tasks/progress updates awaiting manager review
+        // PendingManagerReview: tasks completed by employee, awaiting manager review with rating
         var tasksUnderReview = await _context.Tasks
-            .CountAsync(t => t.Status == TaskStatus.UnderReview &&
-                             (t.AssignedUserId == request.UserId ||
-                              t.Assignments.Any(a => a.UserId == request.UserId)), cancellationToken);
+            .Where(t => (t.Status == TaskStatus.UnderReview || t.Status == TaskStatus.PendingManagerReview) &&
+                        (t.AssignedUserId == request.UserId ||
+                         _context.Set<TaskAssignment>().Any(a => a.TaskId == t.Id && a.UserId == request.UserId) ||
+                         t.CreatedById == request.UserId))
+            .CountAsync(cancellationToken);
 
-        // Tasks pending acceptance (assigned but not accepted)
+        // Tasks pending acceptance (created with assigned user, awaiting acceptance)
         var tasksPendingAcceptance = await _context.Tasks
-            .CountAsync(t => t.Status == TaskStatus.Assigned &&
+            .CountAsync(t => t.Status == TaskStatus.Created &&
                              (t.AssignedUserId == request.UserId ||
                               t.Assignments.Any(a => a.UserId == request.UserId)), cancellationToken);
 

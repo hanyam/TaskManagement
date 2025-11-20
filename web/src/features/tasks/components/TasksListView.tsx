@@ -103,14 +103,14 @@ export function TasksListView() {
             <div className="flex items-center gap-1 rounded-md border border-border bg-muted p-1">
               <Button
                 size="sm"
-                variant={currentFilter === "created" ? "default" : "ghost"}
+                variant={currentFilter === "created" ? "primary" : "ghost"}
                 onClick={() => handleFilterToggle("created")}
               >
                 {t("tasks:list.filters.createdByMe")}
               </Button>
               <Button
                 size="sm"
-                variant={currentFilter === "assigned" ? "default" : "ghost"}
+                variant={currentFilter === "assigned" ? "primary" : "ghost"}
                 onClick={() => handleFilterToggle("assigned")}
               >
                 {t("tasks:list.filters.assignedToMe")}

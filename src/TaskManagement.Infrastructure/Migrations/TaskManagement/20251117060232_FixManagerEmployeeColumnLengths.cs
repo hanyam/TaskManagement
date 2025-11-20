@@ -62,3 +62,4 @@ public partial class FixManagerEmployeeColumnLengths : Migration
             ");
     }
 }
+

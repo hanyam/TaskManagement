@@ -11,3 +11,4 @@ public class UserSearchResultDto
     public string UserPrincipalName { get; set; } = string.Empty; // Email
     public string? JobTitle { get; set; }
 }
+
