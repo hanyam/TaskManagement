@@ -1036,7 +1036,7 @@ VALUES
 (N'9EEC7F4F-C11C-4895-895F-99773E39458A',N'alimasiri@wtco.com.sa',N'ALI',N'ASIRI',N'علي محمد عسيري',NULL,1,NULL,0,'2025-11-17 09:19:03.370',NULL,N'alimasiri@wtco.com.sa',NULL),
 (N'FB5CB71F-2F27-4ED4-A84F-D4FBED99C663',N'aalkour@wtco.com.sa',N'ASHRAF',N'ALKOUR',N'اشرف محمد الكور',NULL,1,NULL,0,'2025-11-17 09:19:03.370',NULL,N'aalkour@wtco.com.sa',NULL);
 
-
+SELECT * FROM TaskManagement.Tasks.Users;
 INSERT
 	INTO
 	TaskManagement.Tasks.Users

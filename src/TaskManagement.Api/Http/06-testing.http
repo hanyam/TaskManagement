@@ -86,7 +86,7 @@ GET {{baseUrl}}/testing/current-user
 ### Removes the current user override
 ### Only available in Development and Test environments
 DELETE {{baseUrl}}/testing/current-user
-Authorization: {{authHeader}}
+
 
 ### Response Example:
 ### {
