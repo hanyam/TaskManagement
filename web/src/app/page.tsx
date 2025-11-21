@@ -21,7 +21,7 @@ export default function Home() {
   const locale = normalizeLocale(storedLocale ?? browserLocale ?? DEFAULT_LOCALE);
   const token = cookieStore.get(AUTH_TOKEN_COOKIE)?.value;
 
-  // Auto-redirect: authenticated users go to dashboard, others go to sign-in
+  // Auto-sign in: redirect to dashboard if authenticated, otherwise to sign-in
   if (token) {
     redirect(`/${locale}/dashboard`);
   } else {

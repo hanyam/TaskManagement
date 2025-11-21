@@ -1,9 +1,15 @@
-using System.Text;
 using Azure.Identity;
+using Azure.Monitor.OpenTelemetry.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Graph;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using OpenTelemetry;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+using System.Text;
+using TaskManagement.Domain.Common;
 using TaskManagement.Domain.Options;
 
 namespace TaskManagement.Api;
@@ -49,7 +55,6 @@ public static class DependencyInjection
             });
 
         services.AddAuthorization();
-
         // Configure Swagger/OpenAPI
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen(c =>
@@ -64,12 +69,12 @@ public static class DependencyInjection
             // Add JWT authentication to Swagger
             c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
             {
-                Description =
-                    "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
                 Name = "Authorization",
+                Type = SecuritySchemeType.Http,
+                Scheme = "Bearer",
+                BearerFormat = "JWT",
                 In = ParameterLocation.Header,
-                Type = SecuritySchemeType.ApiKey,
-                Scheme = "Bearer"
+                Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\""
             });
 
             c.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -119,5 +124,45 @@ public static class DependencyInjection
         }
 
         return services;
+    }
+
+    public static WebApplicationBuilder AddObservability(this WebApplicationBuilder builder)
+    {
+        builder.Services.AddMetrics();
+        builder.Services.AddSingleton<TaskManagementMetrics>();
+
+        builder.Services.AddOpenTelemetry()
+            .ConfigureResource(resource => resource.AddService(builder.Environment.ApplicationName))
+            .WithTracing(tracing => tracing
+                .AddSource("DevHabit.Tracing")
+                .AddHttpClientInstrumentation()
+                .AddAspNetCoreInstrumentation()
+               // .AddSqlClientInstrumentation()
+                )
+            .WithMetrics(metrics => metrics
+                .AddMeter(TaskManagementMetrics.MeterName)
+                .AddHttpClientInstrumentation()
+                .AddAspNetCoreInstrumentation()
+                .AddRuntimeInstrumentation());
+
+        builder.Logging.AddOpenTelemetry(options =>
+        {
+            options.IncludeScopes = true;
+            options.IncludeFormattedMessage = true;
+            options.SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(builder.Environment.ApplicationName));
+        });
+        if (builder.Environment.IsDevelopment())
+        {
+            builder.Services.AddOpenTelemetry().UseOtlpExporter();
+        }
+        else
+        {
+            builder.Services.AddOpenTelemetry().UseAzureMonitor();
+        }
+
+        //builder.Services.AddHealthChecks()
+        //    .AddNpgSql(builder.Configuration.GetConnectionString("Database")!);
+
+        return builder;
     }
 }

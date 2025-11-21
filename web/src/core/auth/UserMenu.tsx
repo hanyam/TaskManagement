@@ -22,7 +22,7 @@ export function UserMenu() {
       credentials: "include"
     });
     clearSession();
-    router.push(`/${locale}/sign-in`);
+    router.push(`/${locale}/signed-out`);
     router.refresh();
   }
 

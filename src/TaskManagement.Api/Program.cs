@@ -19,6 +19,7 @@ Log.Logger = new LoggerConfiguration()
 builder.Host.UseSerilog();
 
 // Register services by layer
+builder.AddObservability();
 builder.Services.AddPresentation(builder.Configuration); // API/Presentation layer
 builder.Services.AddApplication(builder.Configuration); // Application layer
 builder.Services.AddInfrastructure(builder.Configuration); // Infrastructure layer

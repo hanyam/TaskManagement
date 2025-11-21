@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient, type UseQueryOptions } from "@tanstack/react-query";
 
 import { apiClient } from "@/core/api/client.browser";
+import { useAuth } from "@/core/auth/AuthProvider";
 import { useCurrentLocale } from "@/core/routing/useCurrentLocale";
 import type {
   GetTasksResponse,
@@ -64,8 +65,10 @@ export function useTaskDetailsQuery(taskId: string, enabled = true) {
 
 export function useDashboardStatsQuery() {
   const locale = useCurrentLocale();
+  const { isAuthenticated } = useAuth();
   return useQuery({
     queryKey: taskKeys.dashboard(),
+    enabled: isAuthenticated,
     queryFn: async ({ signal }) => {
       const { data } = await apiClient.request<DashboardStatsDto>({
         path: "/dashboard/stats",

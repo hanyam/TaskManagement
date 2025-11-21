@@ -16,6 +16,11 @@
     "createTask": "Create task",
     "taskDetails": "Task details",
     "back": "Go back"
+  },
+  "signedOut": {
+    "title": "You are signed out",
+    "message": "You can close this window now",
+    "closeWindow": "Close Window"
   }
 }
 

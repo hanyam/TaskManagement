@@ -30,6 +30,12 @@ services:
     ports:
       - "5000:8080"
     environment:
+      # Seq
+      # - OTEL_EXPORTER_OTLP_ENDPOINT=http://devhabit.seq:5341/ingest/otlp
+      # - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      # Aspire Dashboard
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://taskmanagement.aspire-dashboard:18889
+      - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_HTTP_PORTS=8080
       - ASPNETCORE_URLS=http://+:8080
@@ -62,7 +68,7 @@ services:
     restart: unless-stopped
 
   integration.tests:
-    image: mcr.microsoft.com/dotnet/sdk:9.0
+    image: mcr.microsoft.com/dotnet/sdk:10.0
     container_name: taskmanagement-tests
     working_dir: /src
     volumes:
@@ -82,6 +88,15 @@ services:
              FILTER_ARG=\"\" &&
              if [ -n \"${TEST_FILTER}\" ]; then FILTER_ARG=\"--filter ${TEST_FILTER}\"; fi &&
              dotnet test tests/TaskManagement.Tests/TaskManagement.Tests.csproj $FILTER_ARG"
+
+
+  taskmanagement.aspire-dashboard:
+    image: mcr.microsoft.com/dotnet/aspire-dashboard:9.0
+    environment:
+     DOTNET_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS: true
+    ports:
+      - 18888:18888
+
 
 volumes:
   sqlserver_data:

@@ -17,8 +17,10 @@ export function middleware(request: NextRequest) {
   // If accessing root, redirect based on auth status
   if (pathname === "/") {
     if (token) {
+      // Auto-sign in: redirect to dashboard if authenticated
       return NextResponse.redirect(new URL(`/${locale}/dashboard`, request.url));
     } else {
+      // Auto-sign in: redirect to sign-in if not authenticated
       return NextResponse.redirect(new URL(`/${locale}/sign-in`, request.url));
     }
   }
@@ -26,10 +28,17 @@ export function middleware(request: NextRequest) {
   // If accessing locale root (e.g., /en or /ar), redirect based on auth status
   if (pathname === `/${locale}`) {
     if (token) {
+      // Auto-sign in: redirect to dashboard if authenticated
       return NextResponse.redirect(new URL(`/${locale}/dashboard`, request.url));
     } else {
+      // Auto-sign in: redirect to sign-in if not authenticated
       return NextResponse.redirect(new URL(`/${locale}/sign-in`, request.url));
     }
+  }
+
+  // Allow signed-out page (public route)
+  if (pathname.startsWith(`/${locale}/signed-out`)) {
+    return NextResponse.next();
   }
 
   // Protect app routes - require authentication
