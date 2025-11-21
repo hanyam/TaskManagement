@@ -24,7 +24,6 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import type { ApiErrorResponse } from "@/core/api/types";
-import { useCurrentLocale } from "@/core/routing/useCurrentLocale";
 import {
   useAssignTaskMutation,
   useAcceptTaskMutation,
@@ -41,7 +40,6 @@ import { ReviewCompletedTaskModal } from "@/features/tasks/components/ReviewComp
 import { TaskStatusBadge } from "@/features/tasks/components/TaskStatusBadge";
 import type { AssignTaskRequest } from "@/features/tasks/types";
 import { getTaskTypeString, getTaskPriorityString } from "@/features/tasks/value-objects";
-import { Breadcrumb } from "@/ui/components/Breadcrumb";
 import { Button } from "@/ui/components/Button";
 import { DatePicker } from "@/ui/components/DatePicker";
 import { FormFieldError } from "@/ui/components/FormFieldError";
@@ -94,7 +92,6 @@ function displayApiError(error: unknown, fallbackMessage: string) {
 export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
   const { t } = useTranslation(["tasks", "common", "navigation"]);
   const router = useRouter();
-  const locale = useCurrentLocale();
   const { data: response, isLoading, error, refetch } = useTaskDetailsQuery(taskId, Boolean(taskId));
   
   const task = response?.data;
@@ -227,12 +224,6 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
 
   return (
     <div className="space-y-6">
-      <Breadcrumb
-        items={[
-          { label: t("navigation:breadcrumbs.tasks"), href: `/${locale}/tasks` },
-          { label: task?.title ?? t("navigation:breadcrumbs.taskDetails") }
-        ]}
-      />
       <header className="flex flex-col gap-4 rounded-xl border border-border bg-background p-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex flex-col gap-2">

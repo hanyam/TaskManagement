@@ -1,6 +1,7 @@
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 
+import { AUTH_TOKEN_COOKIE } from "@/core/auth/constants";
 import {
   DEFAULT_LOCALE,
   LOCALE_COOKIE_KEY,
@@ -18,6 +19,12 @@ export default function Home() {
   const browserLocale = resolveLocaleFromAcceptLanguage(acceptLanguage) ?? undefined;
 
   const locale = normalizeLocale(storedLocale ?? browserLocale ?? DEFAULT_LOCALE);
+  const token = cookieStore.get(AUTH_TOKEN_COOKIE)?.value;
 
-  redirect(`/${locale}/sign-in`);
+  // Auto-redirect: authenticated users go to dashboard, others go to sign-in
+  if (token) {
+    redirect(`/${locale}/dashboard`);
+  } else {
+    redirect(`/${locale}/sign-in`);
+  }
 }

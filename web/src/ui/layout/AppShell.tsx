@@ -11,6 +11,7 @@ import { UserMenu } from "@/core/auth/UserMenu";
 import { mainNavigation } from "@/core/navigation/nav-items";
 import { LocaleSwitcher } from "@/core/routing/LocaleSwitcher";
 import { ThemeToggle } from "@/core/theme/ThemeToggle";
+import { BreadcrumbNav } from "@/ui/layout/BreadcrumbNav";
 import { cn } from "@/ui/utils/cn";
 
 interface AppShellProps extends PropsWithChildren {
@@ -140,6 +141,10 @@ export function AppShell({ children, headerSlot }: AppShellProps) {
         {headerSlot ? (
           <div className="border-b border-border bg-background/60 px-6 py-4">{headerSlot}</div>
         ) : null}
+
+        <div className="border-b border-border bg-background/60 px-6 py-4">
+          <BreadcrumbNav />
+        </div>
 
         <main className="flex flex-1 flex-col gap-6 bg-muted/10 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
       </div>

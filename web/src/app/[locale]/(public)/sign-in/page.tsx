@@ -1,5 +1,11 @@
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+
+import { AUTH_TOKEN_COOKIE } from "@/core/auth/constants";
 import { normalizeLocale, type SupportedLocale } from "@/core/routing/locales";
 import { SignInForm } from "@/features/auth/components/SignInForm";
+
+export const dynamic = "force-dynamic";
 
 interface SignInPageProps {
   params: {
@@ -10,6 +16,13 @@ interface SignInPageProps {
 
 export default function SignInPage({ params, searchParams }: SignInPageProps) {
   const locale = normalizeLocale(params.locale) as SupportedLocale;
+  const token = cookies().get(AUTH_TOKEN_COOKIE)?.value;
+
+  // If already authenticated, redirect to dashboard (middleware should handle this, but double-check)
+  if (token) {
+    redirect(`/${locale}/dashboard`);
+  }
+
   const redirectTo = typeof searchParams.redirect === "string" ? searchParams.redirect : undefined;
 
   return (

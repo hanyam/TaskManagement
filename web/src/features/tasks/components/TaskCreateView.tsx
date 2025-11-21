@@ -13,7 +13,6 @@ import { useCreateTaskMutation } from "@/features/tasks/api/queries";
 import { UserSearchInput } from "@/features/tasks/components/UserSearchInput";
 import type { TaskPriority, TaskType } from "@/features/tasks/value-objects";
 import { TaskPriorityEnum, TaskTypeEnum } from "@/features/tasks/value-objects";
-import { Breadcrumb } from "@/ui/components/Breadcrumb";
 import { Button } from "@/ui/components/Button";
 import { DatePicker } from "@/ui/components/DatePicker";
 import { FormFieldError } from "@/ui/components/FormFieldError";
@@ -87,12 +86,6 @@ export function TaskCreateView() {
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-6">
-      <Breadcrumb
-        items={[
-          { label: t("navigation:breadcrumbs.tasks"), href: `/${locale}/tasks` },
-          { label: t("navigation:breadcrumbs.createTask") }
-        ]}
-      />
       <div className="rounded-xl border border-border bg-background p-6 shadow-sm">
         <div>
           <h1 className="font-heading text-2xl text-foreground">{t("tasks:forms.create.title")}</h1>
