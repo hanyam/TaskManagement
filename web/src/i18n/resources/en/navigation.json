@@ -14,7 +14,8 @@
     "home": "Home",
     "tasks": "Tasks",
     "createTask": "Create task",
-    "taskDetails": "Task details"
+    "taskDetails": "Task details",
+    "back": "Go back"
   }
 }
 

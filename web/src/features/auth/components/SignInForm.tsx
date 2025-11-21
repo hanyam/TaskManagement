@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowRightIcon, CloudIcon } from "@heroicons/react/24/outline";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import type { Route } from "next";
@@ -151,7 +152,13 @@ export function SignInForm({ locale, redirectTo }: SignInFormProps) {
         </div>
       </div>
 
-      <Button type="submit" className={cn("w-full")} disabled={isPending}>
+      <Button
+        type="submit"
+        className={cn("w-full")}
+        disabled={isPending}
+        icon={!isPending ? <ArrowRightIcon /> : undefined}
+        iconPosition="right"
+      >
         {isPending ? (
           <span className="flex items-center justify-center gap-2">
             <Spinner size="sm" />
@@ -172,6 +179,7 @@ export function SignInForm({ locale, redirectTo }: SignInFormProps) {
           className="w-full"
           disabled={!isAzureConfigured || isAzureLoading || isPending}
           onClick={handleAzureAdSignIn}
+          icon={!isAzureLoading ? <CloudIcon /> : undefined}
         >
           {isAzureLoading ? (
             <span className="flex items-center justify-center gap-2">

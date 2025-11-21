@@ -79,6 +79,7 @@
     "assigned": "Assigned",
     "underReview": "Under review",
     "accepted": "Accepted",
+    "acceptedByManager": "Accepted by Manager",
     "rejected": "Rejected",
     "completed": "Completed",
     "cancelled": "Cancelled",

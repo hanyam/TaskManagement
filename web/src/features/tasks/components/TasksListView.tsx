@@ -1,5 +1,13 @@
 "use client";
 
+import {
+  ArrowLeftIcon,
+  ArrowPathIcon,
+  ArrowRightIcon,
+  PlusIcon,
+  UserGroupIcon,
+  UserIcon
+} from "@heroicons/react/24/outline";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -10,9 +18,10 @@ import { TasksTable } from "@/features/tasks/components/tables/TasksTable";
 import type { TaskListFilters, TaskListViewFilter } from "@/features/tasks/types";
 import type { TaskPriority, TaskStatus } from "@/features/tasks/value-objects";
 import { Button } from "@/ui/components/Button";
-import { Input } from "@/ui/components/Input";
+import { DatePicker } from "@/ui/components/DatePicker";
+import { Select } from "@/ui/components/Select";
 
-const STATUS_OPTIONS: TaskStatus[] = ["Created", "Assigned", "UnderReview", "Accepted", "Rejected", "Completed", "Cancelled"];
+const STATUS_OPTIONS: TaskStatus[] = ["Created", "Assigned", "UnderReview", "Accepted", "Rejected", "Completed", "Cancelled", "PendingManagerReview", "RejectedByManager"];
 const PRIORITY_OPTIONS: TaskPriority[] = ["Low", "Medium", "High", "Critical"];
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50];
@@ -22,6 +31,7 @@ export function TasksListView() {
   const locale = useCurrentLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [selectedTaskId, setSelectedTaskId] = useState<string | undefined>(undefined);
   const filterParam = (searchParams.get("filter") as TaskListViewFilter | null) ?? "created";
   const [filters, setFilters] = useState<TaskListFilters>({
     page: 1,
@@ -105,6 +115,7 @@ export function TasksListView() {
                 size="sm"
                 variant={currentFilter === "created" ? "primary" : "ghost"}
                 onClick={() => handleFilterToggle("created")}
+                icon={<UserIcon />}
               >
                 {t("tasks:list.filters.createdByMe")}
               </Button>
@@ -112,14 +123,15 @@ export function TasksListView() {
                 size="sm"
                 variant={currentFilter === "assigned" ? "primary" : "ghost"}
                 onClick={() => handleFilterToggle("assigned")}
+                icon={<UserGroupIcon />}
               >
                 {t("tasks:list.filters.assignedToMe")}
               </Button>
             </div>
-            <Button onClick={() => router.push(`/${locale}/tasks/create`)}>
+            <Button onClick={() => router.push(`/${locale}/tasks/create`)} icon={<PlusIcon />}>
               {t("common:actions.create")}
             </Button>
-            <Button variant="outline" onClick={() => refetch()}>
+            <Button variant="outline" onClick={() => refetch()} icon={<ArrowPathIcon />}>
               {t("common:actions.refresh")}
             </Button>
           </div>
@@ -130,96 +142,98 @@ export function TasksListView() {
             <label htmlFor="status-filter" className="text-xs font-medium text-muted-foreground">
               {t("common:filters.status")}
             </label>
-            <select
+            <Select
               id="status-filter"
-              className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground"
+              options={[
+                { value: "", label: t("common:forms.select") },
+                ...STATUS_OPTIONS.map((option) => ({
+                  value: option,
+                  label: t(`common:taskStatus.${option.charAt(0).toLowerCase()}${option.slice(1)}`)
+                }))
+              ]}
               value={filters.status ?? ""}
-              onChange={(event) =>
-                handleFilterChange("status", event.target.value ? (event.target.value as TaskStatus) : undefined)
+              onChange={(value) =>
+                handleFilterChange("status", value ? (value as TaskStatus) : undefined)
               }
-            >
-              <option value="">{t("common:forms.select")}</option>
-              {STATUS_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {t(`common:taskStatus.${option.charAt(0).toLowerCase()}${option.slice(1)}`)}
-                </option>
-              ))}
-            </select>
+            />
           </div>
 
           <div className="flex flex-col gap-2">
             <label htmlFor="priority-filter" className="text-xs font-medium text-muted-foreground">
               {t("common:filters.priority")}
             </label>
-            <select
+            <Select
               id="priority-filter"
-              className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground"
+              options={[
+                { value: "", label: t("common:forms.select") },
+                ...PRIORITY_OPTIONS.map((option) => ({
+                  value: option,
+                  label: t(`common:priority.${option.toLowerCase()}`)
+                }))
+              ]}
               value={filters.priority ?? ""}
-              onChange={(event) =>
-                handleFilterChange(
-                  "priority",
-                  event.target.value ? (event.target.value as TaskPriority) : undefined
-                )
+              onChange={(value) =>
+                handleFilterChange("priority", value ? (value as TaskPriority) : undefined)
               }
-            >
-              <option value="">{t("common:forms.select")}</option>
-              {PRIORITY_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {t(`common:priority.${option.toLowerCase()}`)}
-                </option>
-              ))}
-            </select>
+            />
           </div>
 
           <div className="flex flex-col gap-2">
             <label htmlFor="dueDateFrom" className="text-xs font-medium text-muted-foreground">
               {t("common:filters.dueDate")} — {t("common:date.today")}
             </label>
-            <Input
+            <DatePicker
               id="dueDateFrom"
-              type="date"
               value={filters.dueDateFrom ?? ""}
-              onChange={(event) => handleFilterChange("dueDateFrom", event.target.value || undefined)}
+              onChange={(value) => handleFilterChange("dueDateFrom", value || undefined)}
+              placeholder={t("common:filters.dueDate")}
             />
           </div>
           <div className="flex flex-col gap-2">
             <label htmlFor="dueDateTo" className="text-xs font-medium text-muted-foreground">
               {t("common:filters.dueDate")} — {t("common:date.overdueBy", { count: 0 })}
             </label>
-            <Input
+            <DatePicker
               id="dueDateTo"
-              type="date"
               value={filters.dueDateTo ?? ""}
-              onChange={(event) => handleFilterChange("dueDateTo", event.target.value || undefined)}
+              onChange={(value) => handleFilterChange("dueDateTo", value || undefined)}
+              placeholder={t("common:filters.dueDate")}
             />
           </div>
         </div>
       </div>
 
-      <TasksTable data={data?.tasks ?? []} isLoading={isLoading} />
+      <TasksTable
+        data={data?.tasks ?? []}
+        isLoading={isLoading}
+        selectedTaskId={selectedTaskId}
+        onSelectTask={setSelectedTaskId}
+        onRowClick={(task) => {
+          router.push(`/${locale}/tasks/${task.id}`);
+        }}
+      />
 
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-background px-4 py-3 shadow-sm">
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">{paginationLabel}</span>
         </div>
         <div className="flex items-center gap-3">
-          <select
-            className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground"
-            value={filters.pageSize}
-            onChange={(event) => handleFilterChange("pageSize", Number(event.target.value))}
-          >
-            {PAGE_SIZE_OPTIONS.map((size) => (
-              <option key={size} value={size}>
-                {t("common:forms.perPage", { count: size })}
-              </option>
-            ))}
-          </select>
+          <Select<number>
+            options={PAGE_SIZE_OPTIONS.map((size) => ({
+              value: size,
+              label: t("common:forms.perPage", { count: size })
+            }))}
+            value={filters.pageSize ?? PAGE_SIZE_OPTIONS[0]}
+            onChange={(value) => handleFilterChange("pageSize", value)}
+            className="min-w-[120px]"
+          />
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
               disabled={currentPage <= 1}
               onClick={() => handleFilterChange("page", Math.max(1, currentPage - 1))}
+              icon={<ArrowLeftIcon />}
             >
               {t("common:actions.previous")}
             </Button>
@@ -231,6 +245,8 @@ export function TasksListView() {
               size="sm"
               disabled={currentPage >= totalPages}
               onClick={() => handleFilterChange("page", Math.min(totalPages, currentPage + 1))}
+              icon={<ArrowRightIcon />}
+              iconPosition="right"
             >
               {t("common:actions.next")}
             </Button>

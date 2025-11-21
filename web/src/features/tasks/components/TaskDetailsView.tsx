@@ -1,15 +1,30 @@
 "use client";
 
 import { Dialog, Transition } from "@headlessui/react";
+import {
+  ArrowPathIcon,
+  CheckCircleIcon,
+  CheckIcon,
+  ClipboardDocumentCheckIcon,
+  ClockIcon,
+  InformationCircleIcon,
+  PencilIcon,
+  StarIcon,
+  StopIcon,
+  UserPlusIcon,
+  XMarkIcon,
+  ChartBarIcon
+} from "@heroicons/react/24/outline";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { Fragment, useEffect, useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { z } from "zod";
 
 import type { ApiErrorResponse } from "@/core/api/types";
+import { useCurrentLocale } from "@/core/routing/useCurrentLocale";
 import {
   useAssignTaskMutation,
   useAcceptTaskMutation,
@@ -22,10 +37,13 @@ import {
   useTaskDetailsQuery,
   useUpdateTaskProgressMutation
 } from "@/features/tasks/api/queries";
+import { ReviewCompletedTaskModal } from "@/features/tasks/components/ReviewCompletedTaskModal";
 import { TaskStatusBadge } from "@/features/tasks/components/TaskStatusBadge";
 import type { AssignTaskRequest } from "@/features/tasks/types";
 import { getTaskTypeString, getTaskPriorityString } from "@/features/tasks/value-objects";
+import { Breadcrumb } from "@/ui/components/Breadcrumb";
 import { Button } from "@/ui/components/Button";
+import { DatePicker } from "@/ui/components/DatePicker";
 import { FormFieldError } from "@/ui/components/FormFieldError";
 import { Input } from "@/ui/components/Input";
 import { Label } from "@/ui/components/Label";
@@ -74,8 +92,9 @@ function displayApiError(error: unknown, fallbackMessage: string) {
 }
 
 export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
-  const { t } = useTranslation(["tasks", "common"]);
+  const { t } = useTranslation(["tasks", "common", "navigation"]);
   const router = useRouter();
+  const locale = useCurrentLocale();
   const { data: response, isLoading, error, refetch } = useTaskDetailsQuery(taskId, Boolean(taskId));
   
   const task = response?.data;
@@ -105,6 +124,7 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
   const [isExtensionOpen, setExtensionOpen] = useState(false);
   const [isMoreInfoOpen, setMoreInfoOpen] = useState(false);
   const [isApproveExtensionOpen, setApproveExtensionOpen] = useState(false);
+  const [isReviewCompletedOpen, setReviewCompletedOpen] = useState(false);
 
   const metadata = useMemo(() => {
     if (!task) {
@@ -157,7 +177,7 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
     return (
       <div className="rounded-xl border border-border bg-background p-6 text-center">
         <p className="text-sm text-destructive">{t("common:states.error")}</p>
-        <Button variant="outline" className="mt-4" onClick={() => refetch()}>
+        <Button variant="outline" className="mt-4" onClick={() => refetch()} icon={<ArrowPathIcon />}>
           {t("common:actions.retry")}
         </Button>
       </div>
@@ -207,12 +227,18 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
 
   return (
     <div className="space-y-6">
+      <Breadcrumb
+        items={[
+          { label: t("navigation:breadcrumbs.tasks"), href: `/${locale}/tasks` },
+          { label: task?.title ?? t("navigation:breadcrumbs.taskDetails") }
+        ]}
+      />
       <header className="flex flex-col gap-4 rounded-xl border border-border bg-background p-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-3">
               <h1 className="font-heading text-2xl text-foreground">{task.title}</h1>
-              <TaskStatusBadge status={task.status} />
+              <TaskStatusBadge status={task.status} managerRating={task.managerRating ?? null} />
             </div>
             <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
               <span>
@@ -228,59 +254,85 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {hasLink("update") && (
-              <Button variant="secondary" onClick={handleEditTask}>
+            {/* Hide edit and action buttons if task is in final reviewed state */}
+            {hasLink("update") && !(task.status === 3 && task.managerRating != null) && task.status !== 8 && (
+              <Button variant="secondary" onClick={handleEditTask} icon={<PencilIcon />}>
                 {t("common:actions.edit")}
               </Button>
             )}
-            {hasLink("cancel") && (
-              <Button variant="destructive" onClick={() => setCancelDialogOpen(true)}>
+            {/* Hide action buttons if task is in final reviewed state */}
+            {hasLink("cancel") && !(task.status === 3 && task.managerRating != null) && task.status !== 8 && (
+              <Button variant="destructive" onClick={() => setCancelDialogOpen(true)} icon={<StopIcon />}>
                 {t("common:actions.cancel")}
               </Button>
             )}
-            {hasLink("accept") && (
-              <Button variant="primary" onClick={handleAcceptTask} disabled={acceptMutation.isPending}>
+            {hasLink("accept") && !(task.status === 3 && task.managerRating != null) && task.status !== 8 && (
+              <Button
+                variant="primary"
+                onClick={handleAcceptTask}
+                disabled={acceptMutation.isPending}
+                icon={<CheckIcon />}
+              >
                 {t("tasks:details.actions.accept")}
               </Button>
             )}
-            {hasLink("reject") && (
-              <Button variant="outline" onClick={handleRejectTask} disabled={rejectMutation.isPending}>
+            {hasLink("reject") && !(task.status === 3 && task.managerRating != null) && task.status !== 8 && (
+              <Button
+                variant="outline"
+                onClick={handleRejectTask}
+                disabled={rejectMutation.isPending}
+                icon={<XMarkIcon />}
+              >
                 {t("tasks:details.actions.reject")}
               </Button>
             )}
-            {hasLink("assign") && (
-              <Button variant="outline" onClick={() => setAssignOpen(true)}>
+            {hasLink("assign") && !(task.status === 3 && task.managerRating != null) && task.status !== 8 && (
+              <Button variant="outline" onClick={() => setAssignOpen(true)} icon={<UserPlusIcon />}>
                 {t("tasks:forms.assign.title")}
               </Button>
             )}
-            {hasLink("reassign") && (
-              <Button variant="outline" onClick={() => setReassignOpen(true)}>
+            {hasLink("reassign") && !(task.status === 3 && task.managerRating != null) && task.status !== 8 && (
+              <Button variant="outline" onClick={() => setReassignOpen(true)} icon={<UserPlusIcon />}>
                 {t("tasks:forms.assign.title")}
               </Button>
             )}
-            {hasLink("update-progress") && (
-              <Button variant="secondary" onClick={() => setProgressOpen(true)}>
+            {hasLink("update-progress") && !(task.status === 3 && task.managerRating != null) && task.status !== 8 && (
+              <Button variant="secondary" onClick={() => setProgressOpen(true)} icon={<ChartBarIcon />}>
                 {t("tasks:details.actions.updateProgress")}
               </Button>
             )}
-            {hasLink("mark-completed") && (
-              <Button variant="destructive" onClick={handleMarkCompleted} disabled={markCompleteMutation.isPending}>
+            {hasLink("mark-completed") && !(task.status === 3 && task.managerRating != null) && task.status !== 8 && (
+              <Button
+                variant="destructive"
+                onClick={handleMarkCompleted}
+                disabled={markCompleteMutation.isPending}
+                icon={<CheckCircleIcon />}
+              >
                 {t("tasks:details.actions.markCompleted")}
               </Button>
             )}
-            {hasLink("request-extension") && (
-              <Button variant="outline" onClick={() => setExtensionOpen(true)}>
+            {hasLink("request-extension") && !(task.status === 3 && task.managerRating != null) && task.status !== 8 && (
+              <Button variant="outline" onClick={() => setExtensionOpen(true)} icon={<ClockIcon />}>
                 {t("tasks:details.actions.requestExtension")}
               </Button>
             )}
-            {hasLink("approve-extension") && (
-              <Button variant="outline" onClick={() => setApproveExtensionOpen(true)}>
+            {hasLink("approve-extension") && !(task.status === 3 && task.managerRating != null) && task.status !== 8 && (
+              <Button
+                variant="outline"
+                onClick={() => setApproveExtensionOpen(true)}
+                icon={<CheckCircleIcon />}
+              >
                 {t("tasks:details.actions.approveExtension")}
               </Button>
             )}
-            {hasLink("request-more-info") && (
-              <Button variant="outline" onClick={() => setMoreInfoOpen(true)}>
+            {hasLink("request-more-info") && !(task.status === 3 && task.managerRating != null) && task.status !== 8 && (
+              <Button variant="outline" onClick={() => setMoreInfoOpen(true)} icon={<InformationCircleIcon />}>
                 {t("tasks:details.actions.requestInfo")}
+              </Button>
+            )}
+            {hasLink("review-completed") && (
+              <Button variant="primary" onClick={() => setReviewCompletedOpen(true)} icon={<ClipboardDocumentCheckIcon />}>
+                {t("tasks:details.actions.review")}
               </Button>
             )}
           </div>
@@ -291,6 +343,39 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
         <section className="space-y-4 rounded-xl border border-border bg-background p-6 shadow-sm lg:col-span-2">
           <h2 className="text-lg font-semibold text-foreground">{t("tasks:details.sections.description")}</h2>
           <p className="text-sm text-muted-foreground">{task.description ?? t("common:states.empty")}</p>
+
+          {/* Manager Review Section */}
+          {(task.managerRating != null || task.managerFeedback) && (
+            <div className="space-y-3 rounded-lg border border-border bg-muted/20 p-4">
+              <h3 className="text-base font-semibold text-foreground">{t("tasks:details.sections.managerReview")}</h3>
+              {task.managerRating != null && (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">{t("tasks:details.managerReview.rating")}:</span>
+                  <div className="flex items-center gap-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <StarIcon
+                        key={star}
+                        className={`h-5 w-5 ${
+                          star <= task.managerRating!
+                            ? "text-warning fill-warning"
+                            : "text-muted-foreground"
+                        }`}
+                      />
+                    ))}
+                    <span className="ml-1 text-sm font-medium text-foreground">
+                      {task.managerRating}/5
+                    </span>
+                  </div>
+                </div>
+              )}
+              {task.managerFeedback && (
+                <div>
+                  <span className="text-sm text-muted-foreground">{t("tasks:details.managerReview.feedback")}:</span>
+                  <p className="mt-1 text-sm text-foreground">{task.managerFeedback}</p>
+                </div>
+              )}
+            </div>
+          )}
 
           <h3 className="text-base font-semibold text-foreground">{t("tasks:details.sections.assignments")}</h3>
           <div className="space-y-2 text-sm">
@@ -350,6 +435,17 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
       <RequestExtensionDialog open={isExtensionOpen} onOpenChange={setExtensionOpen} taskId={task.id} />
       <RequestMoreInfoDialog open={isMoreInfoOpen} onOpenChange={setMoreInfoOpen} taskId={task.id} />
       <ApproveExtensionDialog open={isApproveExtensionOpen} onOpenChange={setApproveExtensionOpen} taskId={task.id} />
+      {task && (
+        <ReviewCompletedTaskModal
+          taskId={task.id}
+          taskTitle={task.title}
+          isOpen={isReviewCompletedOpen}
+          onClose={() => {
+            setReviewCompletedOpen(false);
+            router.refresh();
+          }}
+        />
+      )}
       
       {/* Cancel Task Confirmation Dialog */}
       <Dialog open={isCancelDialogOpen} onClose={setCancelDialogOpen} as="div" className="relative z-50">
@@ -373,10 +469,15 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
                 {t("tasks:details.actions.cancelTaskConfirm")}
               </p>
               <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => setCancelDialogOpen(false)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setCancelDialogOpen(false)}
+                  icon={<XMarkIcon />}
+                >
                   {t("common:actions.close")}
                 </Button>
-                <Button type="button" variant="destructive" onClick={handleCancelTask}>
+                <Button type="button" variant="destructive" onClick={handleCancelTask} icon={<StopIcon />}>
                   {t("tasks:details.actions.cancelTask")}
                 </Button>
               </div>
@@ -480,10 +581,10 @@ function AssignTaskDialog({ open, onOpenChange, mutation, mode = "assign" }: Ass
                 ) : null}
               </div>
               <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                <Button type="button" variant="outline" onClick={() => onOpenChange(false)} icon={<XMarkIcon />}>
                   {t("common:actions.cancel")}
                 </Button>
-                <Button type="submit" disabled={mutation.isPending}>
+                <Button type="submit" disabled={mutation.isPending} icon={<CheckIcon />}>
                   {t("common:actions.save")}
                 </Button>
               </div>
@@ -565,10 +666,10 @@ function UpdateProgressDialog({ open, onOpenChange, taskId }: ModalProps) {
                 />
               </div>
               <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                <Button type="button" variant="outline" onClick={() => onOpenChange(false)} icon={<XMarkIcon />}>
                   {t("common:actions.cancel")}
                 </Button>
-                <Button type="submit" disabled={mutation.isPending}>
+                <Button type="submit" disabled={mutation.isPending} icon={<CheckIcon />}>
                   {t("common:actions.save")}
                 </Button>
               </div>
@@ -633,7 +734,18 @@ function RequestExtensionDialog({ open, onOpenChange, taskId }: ModalProps) {
             <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
               <div className="grid gap-2">
                 <Label htmlFor="extensionDueDate">{t("tasks:forms.extension.fields.requestedDueDate")}</Label>
-                <Input id="extensionDueDate" type="date" {...form.register("requestedDueDate")} />
+                <Controller
+                  name="requestedDueDate"
+                  control={form.control}
+                  render={({ field }) => (
+                    <DatePicker
+                      id="extensionDueDate"
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder={t("tasks:forms.extension.fields.requestedDueDate")}
+                    />
+                  )}
+                />
                 {form.formState.errors.requestedDueDate ? (
                   <FormFieldError
                     message={t(form.formState.errors.requestedDueDate.message ?? "validation:required", {
@@ -659,10 +771,10 @@ function RequestExtensionDialog({ open, onOpenChange, taskId }: ModalProps) {
                 ) : null}
               </div>
               <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                <Button type="button" variant="outline" onClick={() => onOpenChange(false)} icon={<XMarkIcon />}>
                   {t("common:actions.cancel")}
                 </Button>
-                <Button type="submit" disabled={mutation.isPending}>
+                <Button type="submit" disabled={mutation.isPending} icon={<CheckIcon />}>
                   {t("common:actions.save")}
                 </Button>
               </div>
@@ -734,10 +846,10 @@ function RequestMoreInfoDialog({ open, onOpenChange, taskId }: ModalProps) {
                 ) : null}
               </div>
               <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                <Button type="button" variant="outline" onClick={() => onOpenChange(false)} icon={<XMarkIcon />}>
                   {t("common:actions.cancel")}
                 </Button>
-                <Button type="submit" disabled={mutation.isPending}>
+                <Button type="submit" disabled={mutation.isPending} icon={<CheckIcon />}>
                   {t("common:actions.save")}
                 </Button>
               </div>
@@ -820,10 +932,10 @@ function ApproveExtensionDialog({ open, onOpenChange, taskId }: ModalProps) {
                 />
               </div>
               <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                <Button type="button" variant="outline" onClick={() => onOpenChange(false)} icon={<XMarkIcon />}>
                   {t("common:actions.cancel")}
                 </Button>
-                <Button type="submit" disabled={mutation.isPending}>
+                <Button type="submit" disabled={mutation.isPending} icon={<CheckIcon />}>
                   {t("common:actions.save")}
                 </Button>
               </div>

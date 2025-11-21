@@ -1026,6 +1026,13 @@ const { t } = useTranslation(["tasks", "common"]);
 **RTL Support:**
 - `I18nProvider` sets `<html dir={locale === "ar" ? "rtl" : "ltr"}>`
 - Use Tailwind logical utilities (`start`, `end`, `ms`, `me`)
+- Select dropdowns automatically flip arrow position (CSS in `globals.css`)
+- DatePicker component fully supports RTL with proper calendar positioning
+
+**UI Components:**
+- **DatePicker** (`src/ui/components/DatePicker.tsx`): Beautiful calendar component using `react-day-picker` with RTL and i18n support. Use with React Hook Form `Controller` for form integration.
+- **LocaleSwitcher** (`src/core/routing/LocaleSwitcher.tsx`): Button component showing opposite language indicator ("ع" for English, "en" for Arabic) for quick locale switching.
+- All select dropdowns have automatic RTL arrow positioning via CSS.
 
 ---
 
@@ -1074,7 +1081,9 @@ const { t } = useTranslation(["tasks", "common"]);
 - ✅ Constants centralized (no hardcoded strings)
 - ✅ Tests use ErrorAssertionExtensions
 - ✅ Frontend uses TanStack Query, RHF+Zod
+- ✅ DatePicker used for date inputs (not native `<input type="date">`)
 - ✅ i18n resources updated (en/ar)
+- ✅ RTL support tested (selects, DatePicker, LocaleSwitcher)
 - ✅ Tailwind classes use tokens
 - ✅ ESLint/Prettier passes
 
@@ -1109,6 +1118,8 @@ const { t } = useTranslation(["tasks", "common"]);
 - **Providers**: `web/src/core/providers/AppProviders.tsx`
 - **Auth**: `web/src/core/auth/session.ts`
 - **i18n Config**: `web/src/i18n/config.ts`
+- **UI Components**: `web/src/ui/components/**` (DatePicker, Button, Input, etc.)
+- **LocaleSwitcher**: `web/src/core/routing/LocaleSwitcher.tsx`
 - **Task Feature**: `web/src/features/tasks/**`
 
 ---

@@ -1,11 +1,11 @@
 import { cva, type VariantProps } from "class-variance-authority";
 import { forwardRef } from "react";
-import type { ButtonHTMLAttributes } from "react";
+import type { ButtonHTMLAttributes, ReactNode } from "react";
 
 import { cn } from "@/ui/utils/cn";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center rounded-md font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-60",
+  "inline-flex items-center justify-center gap-2 rounded-md font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-60",
   {
     variants: {
       variant: {
@@ -30,13 +30,23 @@ const buttonVariants = cva(
   }
 );
 
-type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & VariantProps<typeof buttonVariants>;
+type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> &
+  VariantProps<typeof buttonVariants> & {
+    icon?: ReactNode;
+    iconPosition?: "left" | "right";
+  };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, children, ...props }, ref) => {
+  ({ className, variant, size, children, icon, iconPosition = "left", ...props }, ref) => {
     return (
       <button ref={ref} className={cn(buttonVariants({ variant, size }), className)} {...props}>
+        {icon && iconPosition === "left" && (
+          <span className={cn("flex-shrink-0", size === "sm" ? "h-4 w-4" : "h-5 w-5")}>{icon}</span>
+        )}
         {children}
+        {icon && iconPosition === "right" && (
+          <span className={cn("flex-shrink-0", size === "sm" ? "h-4 w-4" : "h-5 w-5")}>{icon}</span>
+        )}
       </button>
     );
   }

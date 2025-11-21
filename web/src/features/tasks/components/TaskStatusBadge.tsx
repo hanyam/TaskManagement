@@ -6,6 +6,7 @@ import { cn } from "@/ui/utils/cn";
 
 interface TaskStatusBadgeProps {
   status: number; // Numeric enum from backend
+  managerRating?: number | null | undefined; // If present and status is Accepted, show "Accepted by Manager"
 }
 
 const STATUS_STYLES: Record<TaskStatus, string> = {
@@ -20,9 +21,14 @@ const STATUS_STYLES: Record<TaskStatus, string> = {
   RejectedByManager: "bg-red-100 text-red-900 dark:bg-red-900/60 dark:text-red-100"
 };
 
-export function TaskStatusBadge({ status }: TaskStatusBadgeProps) {
+export function TaskStatusBadge({ status, managerRating }: TaskStatusBadgeProps) {
   const { t } = useTranslation("common");
   const statusString = getTaskStatusString(status);
+  
+  // If status is Accepted (3) and has managerRating, show "Accepted by Manager"
+  const displayStatus = status === 3 && managerRating != null 
+    ? "acceptedByManager" 
+    : statusString;
   
   return (
     <span
@@ -31,7 +37,9 @@ export function TaskStatusBadge({ status }: TaskStatusBadgeProps) {
         STATUS_STYLES[statusString]
       )}
     >
-      {t(`taskStatus.${statusString.charAt(0).toLowerCase()}${statusString.slice(1) as string}`)}
+      {displayStatus === "acceptedByManager" 
+        ? t("taskStatus.acceptedByManager")
+        : t(`taskStatus.${statusString.charAt(0).toLowerCase()}${statusString.slice(1) as string}`)}
     </span>
   );
 }

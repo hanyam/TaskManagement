@@ -4,7 +4,8 @@
 
 @baseUrl = http://localhost:5000
 @contentType = application/json
-@u = rhalzahrani@wtco.com.sa
+@currentUserEmail=rhalzahrani@wtco.com.sa
+
 ### ============================================
 ### Generate JWT Token for Testing
 ### ============================================
@@ -46,7 +47,7 @@ POST {{baseUrl}}/testing/current-user
 Content-Type: {{contentType}}
 
 {
-  "userEmail": "{{u}}"
+  "userEmail": "{{currentUserEmail}}"
 }
 
 ### Response Example:

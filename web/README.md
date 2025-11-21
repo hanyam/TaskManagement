@@ -74,11 +74,18 @@ src/
 ## Key Features
 
 - **Internationalization:** react-i18next + i18next-icu with locale-aware formatting, dynamic locale switching, and RTL support.
+  - Language switcher button (shows opposite language indicator)
+  - RTL-aware UI components (selects, date pickers, navigation)
+  - Automatic date formatting based on locale
 - **State Management:** TanStack Query for server state, minimal local state for view concerns.
 - **Unified API Client:** Envelope parsing, centralized error taxonomy, automatic auth header injection, idempotency support.
 - **Tasks Module:** Paginated virtualized table, full lifecycle actions (assign, progress updates, extensions), detail view with action modals.
 - **Dashboard:** KPI cards driven by `/dashboard/stats`.
 - **Auth:** Azure AD token exchange with direct backend API communication and client-side session management.
+- **UI Components:** 
+  - Beautiful calendar date picker (`DatePicker`) with RTL support using `react-day-picker`
+  - RTL-aware select dropdowns with proper arrow positioning
+  - Consistent design system with Tailwind CSS
 - **Tooling:** ESLint (a11y, security, Tailwind), Prettier, Vitest + RTL, strict TypeScript.
 
 ## Testing
@@ -99,6 +106,7 @@ Vitest runs in `jsdom` with React Testing Library. Add new tests under `src/**/_
 - [Azure AD Setup Guide](./docs/AZURE_AD_SETUP.md) - Detailed authentication configuration
 - [Direct Backend Authentication](./docs/DIRECT_BACKEND_AUTH.md) - How authentication works (updated flow)
 - [I18n & RTL Guide](./docs/I18N.md) - Internationalization best practices
+- [UI Components Guide](./docs/UI_COMPONENTS.md) - Reusable UI components (DatePicker, LocaleSwitcher, etc.)
 - [Action Modals Guide](./docs/ActionModals.md) - Extending task action modals
 - `docs/` in the repository root for API domain knowledge
 - `features-map.json` for endpoint/UI alignment

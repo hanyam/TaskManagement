@@ -39,7 +39,12 @@
       "description": "الوصف",
       "assignments": "التكليفات",
       "progressHistory": "سجل التقدم",
-      "extensions": "طلبات التمديد"
+      "extensions": "طلبات التمديد",
+      "managerReview": "مراجعة المدير"
+    },
+    "managerReview": {
+      "rating": "التقييم",
+      "feedback": "التعليقات"
     },
     "actions": {
       "accept": "قبول المهمة",
@@ -49,6 +54,7 @@
       "updateProgress": "تحديث التقدم",
       "requestExtension": "طلب تمديد",
       "approveExtension": "اعتماد طلب التمديد",
+      "review": "مراجعة",
       "reviewCompleted": "مراجعة وتقييم",
       "sendBackForRework": "إعادة للتعديل",
       "cancelTask": "إلغاء المهمة",

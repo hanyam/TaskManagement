@@ -1,5 +1,6 @@
 "use client";
 
+import { CheckIcon } from "@heroicons/react/24/outline";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
@@ -12,10 +13,13 @@ import { useCreateTaskMutation } from "@/features/tasks/api/queries";
 import { UserSearchInput } from "@/features/tasks/components/UserSearchInput";
 import type { TaskPriority, TaskType } from "@/features/tasks/value-objects";
 import { TaskPriorityEnum, TaskTypeEnum } from "@/features/tasks/value-objects";
+import { Breadcrumb } from "@/ui/components/Breadcrumb";
 import { Button } from "@/ui/components/Button";
+import { DatePicker } from "@/ui/components/DatePicker";
 import { FormFieldError } from "@/ui/components/FormFieldError";
 import { Input } from "@/ui/components/Input";
 import { Label } from "@/ui/components/Label";
+import { Select } from "@/ui/components/Select";
 
 const createTaskSchema = z.object({
   title: z.string().min(1, "validation:required"),
@@ -40,7 +44,7 @@ const PRIORITY_OPTIONS: TaskPriority[] = ["Low", "Medium", "High", "Critical"];
 const TYPE_OPTIONS: TaskType[] = ["Simple", "WithDueDate", "WithProgress", "WithAcceptedProgress"];
 
 export function TaskCreateView() {
-  const { t } = useTranslation(["tasks", "common", "validation"]);
+  const { t } = useTranslation(["tasks", "common", "validation", "navigation"]);
   const router = useRouter();
   const locale = useCurrentLocale();
   const { mutateAsync, isPending } = useCreateTaskMutation();
@@ -82,11 +86,18 @@ export function TaskCreateView() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-6 rounded-xl border border-border bg-background p-6 shadow-sm">
-      <div>
-        <h1 className="font-heading text-2xl text-foreground">{t("tasks:forms.create.title")}</h1>
-        <p className="text-sm text-muted-foreground">{instructions}</p>
-      </div>
+    <div className="mx-auto w-full max-w-3xl space-y-6">
+      <Breadcrumb
+        items={[
+          { label: t("navigation:breadcrumbs.tasks"), href: `/${locale}/tasks` },
+          { label: t("navigation:breadcrumbs.createTask") }
+        ]}
+      />
+      <div className="rounded-xl border border-border bg-background p-6 shadow-sm">
+        <div>
+          <h1 className="font-heading text-2xl text-foreground">{t("tasks:forms.create.title")}</h1>
+          <p className="text-sm text-muted-foreground">{instructions}</p>
+        </div>
 
       <form onSubmit={form.handleSubmit(handleSubmit)} className="grid gap-6" noValidate>
         <div className="grid gap-2">
@@ -122,39 +133,58 @@ export function TaskCreateView() {
         <div className="grid gap-4 md:grid-cols-2">
           <div className="grid gap-2">
             <Label htmlFor="priority">{t("tasks:forms.create.fields.priority")}</Label>
-            <select
-              id="priority"
-              className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground"
-              {...form.register("priority")}
-            >
-              {PRIORITY_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {t(`common:priority.${option.toLowerCase()}`)}
-                </option>
-              ))}
-            </select>
+            <Controller
+              name="priority"
+              control={form.control}
+              render={({ field }) => (
+                <Select
+                  id="priority"
+                  options={PRIORITY_OPTIONS.map((option) => ({
+                    value: option,
+                    label: t(`common:priority.${option.toLowerCase()}`)
+                  }))}
+                  value={field.value}
+                  onChange={field.onChange}
+                />
+              )}
+            />
           </div>
 
           <div className="grid gap-2">
             <Label htmlFor="type">{t("tasks:forms.create.fields.type")}</Label>
-            <select
-              id="type"
-              className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground"
-              {...form.register("type")}
-            >
-              {TYPE_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {t(`common:taskType.${option.charAt(0).toLowerCase()}${option.slice(1)}`)}
-                </option>
-              ))}
-            </select>
+            <Controller
+              name="type"
+              control={form.control}
+              render={({ field }) => (
+                <Select
+                  id="type"
+                  options={TYPE_OPTIONS.map((option) => ({
+                    value: option,
+                    label: t(`common:taskType.${option.charAt(0).toLowerCase()}${option.slice(1)}`)
+                  }))}
+                  value={field.value}
+                  onChange={field.onChange}
+                />
+              )}
+            />
           </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
           <div className="grid gap-2">
             <Label htmlFor="dueDate">{t("tasks:forms.create.fields.dueDate")}</Label>
-            <Input id="dueDate" type="date" {...form.register("dueDate")} />
+            <Controller
+              name="dueDate"
+              control={form.control}
+              render={({ field }) => (
+                <DatePicker
+                  id="dueDate"
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder={t("tasks:forms.create.fields.dueDate")}
+                />
+              )}
+            />
             {form.formState.errors.dueDate ? (
               <FormFieldError
                 message={t(form.formState.errors.dueDate.message ?? "validation:futureDate", {
@@ -188,11 +218,12 @@ export function TaskCreateView() {
         </div>
 
         <div className="flex justify-end gap-3">
-          <Button type="submit" disabled={isPending}>
+          <Button type="submit" disabled={isPending} icon={<CheckIcon />}>
             {t("common:actions.save")}
           </Button>
         </div>
       </form>
+      </div>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { Dialog, DialogPanel, DialogTitle, Description } from "@headlessui/react";
-import { XMarkIcon, StarIcon } from "@heroicons/react/24/outline";
+import { StarIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { StarIcon as StarIconSolid } from "@heroicons/react/24/solid";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
@@ -125,30 +125,30 @@ export function ReviewCompletedTaskModal({
 
   return (
     <Dialog open={isOpen} onClose={handleClose} className="relative z-50">
-      <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+      <div className="fixed inset-0 bg-black/40" aria-hidden="true" />
       
       <div className="fixed inset-0 flex items-center justify-center p-4">
-        <DialogPanel className="mx-auto max-w-lg w-full rounded-lg bg-white dark:bg-gray-800 shadow-xl">
-          <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 px-6 py-4">
-            <DialogTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+        <DialogPanel className="mx-auto max-w-lg w-full rounded-xl border border-border bg-background shadow-lg">
+          <div className="flex items-center justify-between border-b border-border px-6 py-4">
+            <DialogTitle className="text-lg font-semibold text-foreground">
               {t("forms.reviewCompleted.title")}
             </DialogTitle>
             <button
               type="button"
               onClick={handleClose}
-              className="rounded-md text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
+              className="rounded-md text-muted-foreground hover:text-foreground transition-colors"
             >
               <XMarkIcon className="h-5 w-5" />
             </button>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="px-6 py-4">
-            <Description className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            <Description className="text-sm text-muted-foreground mb-4">
               {t("forms.reviewCompleted.description")}
             </Description>
 
-            <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-md">
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <div className="mb-4 p-3 bg-muted rounded-md">
+              <p className="text-sm font-medium text-foreground">
                 {taskTitle}
               </p>
             </div>
@@ -157,38 +157,38 @@ export function ReviewCompletedTaskModal({
             <div className="mb-6">
               <Label htmlFor="decision">{t("forms.reviewCompleted.decision")}</Label>
               <div className="mt-2 space-y-2">
-                <label className="flex items-center space-x-3 p-3 rounded-md border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                <label className="flex items-center gap-3 p-3 rounded-md border border-border cursor-pointer transition-colors hover:bg-muted">
                   <input
                     {...register("decision")}
                     type="radio"
                     value="accept"
-                    className="h-4 w-4 text-emerald-600 focus:ring-emerald-500"
+                    className="h-4 w-4 text-primary focus:ring-primary"
                   />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                  <span className="text-sm text-foreground">
                     {t("forms.reviewCompleted.decisionOptions.accept")}
                   </span>
                 </label>
                 
-                <label className="flex items-center space-x-3 p-3 rounded-md border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                <label className="flex items-center gap-3 p-3 rounded-md border border-border cursor-pointer transition-colors hover:bg-muted">
                   <input
                     {...register("decision")}
                     type="radio"
                     value="reject"
-                    className="h-4 w-4 text-red-600 focus:ring-red-500"
+                    className="h-4 w-4 text-destructive focus:ring-destructive"
                   />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                  <span className="text-sm text-foreground">
                     {t("forms.reviewCompleted.decisionOptions.reject")}
                   </span>
                 </label>
                 
-                <label className="flex items-center space-x-3 p-3 rounded-md border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                <label className="flex items-center gap-3 p-3 rounded-md border border-border cursor-pointer transition-colors hover:bg-muted">
                   <input
                     {...register("decision")}
                     type="radio"
                     value="sendBack"
-                    className="h-4 w-4 text-orange-600 focus:ring-orange-500"
+                    className="h-4 w-4 text-warning focus:ring-warning"
                   />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                  <span className="text-sm text-foreground">
                     {t("forms.reviewCompleted.decisionOptions.sendBack")}
                   </span>
                 </label>
@@ -212,13 +212,13 @@ export function ReviewCompletedTaskModal({
                     className="focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 rounded"
                   >
                     {star <= (hoveredRating || rating) ? (
-                      <StarIconSolid className="h-8 w-8 text-amber-400" />
+                      <StarIconSolid className="h-8 w-8 text-warning" />
                     ) : (
-                      <StarIcon className="h-8 w-8 text-gray-300 dark:text-gray-600" />
+                      <StarIcon className="h-8 w-8 text-muted-foreground" />
                     )}
                   </button>
                 ))}
-                <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">
+                <span className="ml-2 text-sm text-muted-foreground">
                   {rating > 0 ? `${rating}/5` : t("forms.reviewCompleted.fields.ratingRequired")}
                 </span>
               </div>
@@ -234,7 +234,7 @@ export function ReviewCompletedTaskModal({
                 {...register("feedback")}
                 id="feedback"
                 rows={4}
-                className="mt-2 block w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:ring-primary"
+                className="mt-2 flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm transition placeholder:text-muted-foreground focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
                 placeholder={t("forms.reviewCompleted.fields.feedbackPlaceholder")}
               />
               {errors.feedback?.message && (
@@ -243,24 +243,25 @@ export function ReviewCompletedTaskModal({
             </div>
 
             {/* Actions */}
-            <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex justify-end gap-3 pt-4 border-t border-border">
               <Button
                 type="button"
-                variant="secondary"
+                variant="outline"
                 onClick={handleClose}
                 disabled={isSubmitting}
+                icon={<XMarkIcon />}
               >
                 {t("forms.reviewCompleted.actions.cancel")}
               </Button>
               <Button
                 type="submit"
                 disabled={isSubmitting || rating === 0}
-                className={
+                variant={
                   decision === "accept"
-                    ? "bg-emerald-600 hover:bg-emerald-700"
+                    ? "primary"
                     : decision === "reject"
-                    ? "bg-red-600 hover:bg-red-700"
-                    : "bg-orange-600 hover:bg-orange-700"
+                    ? "destructive"
+                    : "secondary"
                 }
               >
                 {isSubmitting ? (

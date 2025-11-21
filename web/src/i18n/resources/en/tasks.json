@@ -39,7 +39,12 @@
       "description": "Description",
       "assignments": "Assignments",
       "progressHistory": "Progress history",
-      "extensions": "Deadline extensions"
+      "extensions": "Deadline extensions",
+      "managerReview": "Manager Review"
+    },
+    "managerReview": {
+      "rating": "Rating",
+      "feedback": "Feedback"
     },
     "actions": {
       "accept": "Accept task",
@@ -49,6 +54,7 @@
       "updateProgress": "Update progress",
       "requestExtension": "Request extension",
       "approveExtension": "Approve extension",
+      "review": "Review",
       "reviewCompleted": "Review & Rate",
       "sendBackForRework": "Send Back for Rework",
       "cancelTask": "Cancel Task",

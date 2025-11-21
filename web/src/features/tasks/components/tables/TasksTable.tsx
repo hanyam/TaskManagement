@@ -1,6 +1,6 @@
+import { EyeIcon } from "@heroicons/react/24/outline";
 import { createColumnHelper, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import Link from "next/link";
 import { useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -8,6 +8,8 @@ import { useCurrentLocale } from "@/core/routing/useCurrentLocale";
 import { TaskStatusBadge } from "@/features/tasks/components/TaskStatusBadge";
 import type { TaskDto } from "@/features/tasks/types";
 import { getTaskPriorityString, getReminderLevelString } from "@/features/tasks/value-objects";
+import { Button } from "@/ui/components/Button";
+import { cn } from "@/ui/utils/cn";
 
 const columnHelper = createColumnHelper<TaskDto>();
 
@@ -15,6 +17,8 @@ interface TasksTableProps {
   data: TaskDto[];
   isLoading?: boolean;
   onRowClick?: (task: TaskDto) => void;
+  selectedTaskId?: string | undefined;
+  onSelectTask?: ((taskId: string | undefined) => void) | undefined;
 }
 
 function formatDate(value?: string | null, locale?: string): string {
@@ -32,13 +36,20 @@ function formatDate(value?: string | null, locale?: string): string {
   }
 }
 
-export function TasksTable({ data, isLoading, onRowClick }: TasksTableProps) {
+export function TasksTable({
+  data,
+  isLoading,
+  onRowClick,
+  selectedTaskId,
+  onSelectTask
+}: TasksTableProps) {
   const { t } = useTranslation(["tasks", "common"]);
   const locale = useCurrentLocale();
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   const columns = useMemo(
-    () => [
+    () => {
+      const cols = [
       columnHelper.accessor("title", {
         header: () => t("tasks:list.table.columns.title"),
         cell: (info) => (
@@ -76,16 +87,25 @@ export function TasksTable({ data, isLoading, onRowClick }: TasksTableProps) {
         id: "actions",
         header: () => t("tasks:list.table.columns.actions"),
         cell: (info) => (
-          <Link
-            href={`/${locale}/tasks/${info.row.original.id}`}
-            className="text-sm font-medium text-primary hover:underline"
+          <Button
+            variant="outline"
+            size="sm"
+            icon={<EyeIcon />}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (onRowClick) {
+                onRowClick(info.row.original);
+              }
+            }}
           >
             {t("common:actions.viewDetails")}
-          </Link>
+          </Button>
         )
       })
-    ],
-    [locale, t]
+    ];
+      return cols;
+    },
+    [locale, t, onRowClick]
   );
 
   const table = useReactTable({
@@ -125,9 +145,10 @@ export function TasksTable({ data, isLoading, onRowClick }: TasksTableProps) {
         <div style={{ height: `${totalSize}px`, position: "relative" }}>
           {virtualRows.map((virtualRow) => {
             const row = rows[virtualRow.index];
-            const handleActivate = () => {
-              if (onRowClick) {
-                onRowClick(row.original);
+            const isSelected = selectedTaskId === row.original.id;
+            const handleRowClick = () => {
+              if (onSelectTask) {
+                onSelectTask(isSelected ? undefined : row.original.id);
               }
             };
 
@@ -136,24 +157,46 @@ export function TasksTable({ data, isLoading, onRowClick }: TasksTableProps) {
                 key={row.id}
                 data-index={virtualRow.index}
                 role="row"
-                className="absolute inset-x-0 grid cursor-pointer border-b border-border bg-background px-4 py-4 text-sm transition-colors hover:bg-secondary/40"
+                className={cn(
+                  "absolute inset-x-0 grid cursor-pointer border-b border-border px-4 py-4 text-sm transition-colors",
+                  isSelected
+                    ? "bg-primary/10 hover:bg-primary/15 border-primary/20"
+                    : "bg-background hover:bg-secondary/40"
+                )}
                 style={{
                   transform: `translateY(${virtualRow.start}px)`,
                   gridTemplateColumns: columnTemplate
                 }}
-                tabIndex={onRowClick ? 0 : -1}
-                onClick={handleActivate}
+                tabIndex={0}
+                onClick={handleRowClick}
                 onKeyDown={(event) => {
                   if (event.key === "Enter" || event.key === " ") {
                     event.preventDefault();
-                    handleActivate();
+                    handleRowClick();
                   }
                 }}
               >
                 {row.getVisibleCells().map((cell) => {
                   const renderCell = cell.column.columnDef.cell;
+                  const isActionCell = cell.column.id === "actions";
                   return (
-                    <div key={cell.id} className="flex items-center" role="gridcell">
+                    <div
+                      key={cell.id}
+                      className="flex items-center"
+                      role={isActionCell ? undefined : "gridcell"}
+                      onClick={(e) => {
+                        // Prevent row selection when clicking on action button
+                        if (isActionCell) {
+                          e.stopPropagation();
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        // Prevent row selection when interacting with action button
+                        if (isActionCell) {
+                          e.stopPropagation();
+                        }
+                      }}
+                    >
                       {typeof renderCell === "function" ? renderCell(cell.getContext()) : renderCell ?? null}
                     </div>
                   );

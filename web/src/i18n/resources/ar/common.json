@@ -79,6 +79,7 @@
     "assigned": "مُسند",
     "underReview": "قيد المراجعة",
     "accepted": "مقبول",
+    "acceptedByManager": "مقبول من المدير",
     "rejected": "مرفوض",
     "completed": "مكتمل",
     "cancelled": "ملغى",

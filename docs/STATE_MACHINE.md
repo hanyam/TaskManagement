@@ -105,7 +105,7 @@ This document describes the complete state machine for task management in the sy
 **Description**: Employee marked task as completed. Manager must review, rate (1-5 stars), and provide feedback.
 
 **Available Actions**:
-- **Review Completed** with options:
+- **Review Completed** (via HATEOAS link `review-completed`) with options:
   - **Accept with rating** → `Accepted` (Terminal state with positive outcome)
   - **Reject with rating** → `RejectedByManager` (Terminal state with negative outcome)
   - **Send back for rework** → `Assigned` (Task needs more work)
@@ -115,13 +115,36 @@ This document describes the complete state machine for task management in the sy
 - Feedback is optional (max 1000 characters)
 - Cannot both accept and send back for rework simultaneously
 - This is a critical decision point in the workflow
+- Only managers/admins can review completed tasks
+- The `review-completed` link is only available when task status is `PendingManagerReview` (7)
 
 **Transition Details**:
 ```
 PendingManagerReview + Accept → Accepted (with rating & feedback)
+  - Status becomes Accepted (3)
+  - managerRating and managerFeedback are set
+  - UI shows "Accepted by Manager" badge
+  - Task becomes read-only (no edit/action buttons)
+
 PendingManagerReview + Reject → RejectedByManager (with rating & feedback)
+  - Status becomes RejectedByManager (8)
+  - managerRating and managerFeedback are set
+  - Task becomes read-only (no edit/action buttons)
+
 PendingManagerReview + SendBack → Assigned (with feedback for improvement)
+  - Status returns to Assigned (1) - same status as before employee marked complete
+  - managerFeedback is set (for improvement guidance)
+  - managerRating is NOT set (task is not accepted/rejected, just sent back)
+  - Task remains editable - employee can continue working
 ```
+
+**UI Implementation**:
+- When task status is `PendingManagerReview` (7) and user has manager/admin role, the "Review" button appears
+- Clicking the button opens `ReviewCompletedTaskModal` with:
+  - Decision selection (Accept/Reject/Send Back)
+  - 5-star rating system (required)
+  - Feedback textarea (optional, max 1000 characters)
+  - Submit button that changes color based on decision (green for accept, red for reject, orange for send back)
 
 ---
 
@@ -136,6 +159,9 @@ PendingManagerReview + SendBack → Assigned (with feedback for improvement)
 - Task has `managerRating` (1-5)
 - Task may have `managerFeedback`
 - No further state transitions allowed
+- **UI Display**: Status badge shows "Accepted by Manager" (not just "Accepted") when `managerRating` is present
+- **UI Behavior**: All action buttons (edit, cancel, assign, etc.) are hidden - task is read-only
+- **Manager Review Display**: Rating (stars) and feedback are displayed in a dedicated section in task details
 
 ---
 
@@ -151,6 +177,8 @@ PendingManagerReview + SendBack → Assigned (with feedback for improvement)
 - Task should have `managerFeedback` explaining rejection
 - No further state transitions allowed
 - Task is considered closed/failed
+- **UI Behavior**: All action buttons (edit, cancel, assign, etc.) are hidden - task is read-only
+- **Manager Review Display**: Rating (stars) and feedback are displayed in a dedicated section in task details
 
 ---
 
