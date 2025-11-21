@@ -1,9 +1,10 @@
 "use client";
 
+import { useTranslation } from "react-i18next";
+
+import { useCurrentLocale } from "@/core/routing/useCurrentLocale";
 import { TaskCreateView } from "@/features/tasks/components/TaskCreateView";
 import { BreadcrumbProvider } from "@/ui/layout/BreadcrumbNav";
-import { useCurrentLocale } from "@/core/routing/useCurrentLocale";
-import { useTranslation } from "react-i18next";
 
 export default function TaskCreatePage() {
   const locale = useCurrentLocale();

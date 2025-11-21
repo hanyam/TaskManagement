@@ -1,10 +1,11 @@
 "use client";
 
-import { TaskDetailsView } from "@/features/tasks/components/TaskDetailsView";
-import { BreadcrumbProvider } from "@/ui/layout/BreadcrumbNav";
+import { useTranslation } from "react-i18next";
+
 import { useCurrentLocale } from "@/core/routing/useCurrentLocale";
 import { useTaskDetailsQuery } from "@/features/tasks/api/queries";
-import { useTranslation } from "react-i18next";
+import { TaskDetailsView } from "@/features/tasks/components/TaskDetailsView";
+import { BreadcrumbProvider } from "@/ui/layout/BreadcrumbNav";
 
 interface TaskDetailsPageProps {
   params: {
