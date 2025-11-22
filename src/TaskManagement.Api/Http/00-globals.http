@@ -2,7 +2,7 @@
 ### These variables are used across all HTTP files
 ### Update the JWT token after authentication
 
-@baseUrl = http://localhost:5000
+@baseUrl = http://localhost:5050
 
 ### JWT token is stored in http-client.env.json (defaults to empty string)
 ### You can update it manually or run the testing JWT generator

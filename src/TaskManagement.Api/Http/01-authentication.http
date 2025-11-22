@@ -1,7 +1,7 @@
 ### Authentication Endpoints
 ### These endpoints do not require authentication
 
-@baseUrl = http://localhost:5000
+@baseUrl = http://localhost:5050
 @contentType = application/json
 
 ### Authenticate User

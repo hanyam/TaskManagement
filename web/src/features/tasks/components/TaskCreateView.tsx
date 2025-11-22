@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { z } from "zod";
 
 import { useAuth } from "@/core/auth/AuthProvider";
@@ -22,7 +23,6 @@ import { FormFieldError } from "@/ui/components/FormFieldError";
 import { Input } from "@/ui/components/Input";
 import { Label } from "@/ui/components/Label";
 import { Select } from "@/ui/components/Select";
-import { toast } from "sonner";
 
 const createTaskSchema = z.object({
   title: z.string().min(1, "validation:required"),
@@ -57,17 +57,18 @@ export function TaskCreateView() {
   // Check if user can upload files (Managers and Admins)
   const canUploadFiles = useMemo(() => {
     // First try to get role from session user object
-    let role = session?.user?.role;
-    
+    let role: string | undefined = session?.user?.role;
+
     // Fallback: extract role from JWT token if not in session
     if (!role && session?.token) {
-      role = getRoleFromToken(session.token);
+      const tokenRole = getRoleFromToken(session.token);
+      role = tokenRole ?? undefined; // Convert null to undefined
       // If we found role in token, update the session user object for future use
       if (role && session.user) {
         session.user.role = role;
       }
     }
-    
+
     if (!role) {
       console.warn("[TaskCreateView] No role found in session or token:", {
         hasSession: !!session,
@@ -76,11 +77,11 @@ export function TaskCreateView() {
       });
       return false;
     }
-    
+
     // Case-insensitive role check
     const roleLower = role.toLowerCase();
     const canUpload = roleLower === "manager" || roleLower === "admin";
-    
+
     return canUpload;
   }, [session?.user?.role, session?.token, session]);
 
@@ -104,8 +105,8 @@ export function TaskCreateView() {
         title: values.title,
         description: values.description ? values.description : null,
         priority: TaskPriorityEnum[values.priority], // Convert string to numeric enum
-        assignedUserId: values.assignedUserId && values.assignedUserId.trim() !== "" 
-          ? values.assignedUserId 
+        assignedUserId: values.assignedUserId && values.assignedUserId.trim() !== ""
+          ? values.assignedUserId
           : null, // Null for draft tasks
         type: TaskTypeEnum[values.type], // Convert string to numeric enum
         dueDate: values.dueDate ? new Date(values.dueDate).toISOString() : null
@@ -195,7 +196,7 @@ export function TaskCreateView() {
               duration: 10000 // Show for 10 seconds so user can read it
             }
           );
-          
+
           // Redirect to task details page so user can retry uploading
           router.push(`/${locale}/tasks/${task.id}`);
           router.refresh();
@@ -223,147 +224,147 @@ export function TaskCreateView() {
           <p className="text-sm text-muted-foreground">{instructions}</p>
         </div>
 
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="grid gap-6" noValidate>
-        <div className="grid gap-2">
-          <Label htmlFor="title">{t("tasks:forms.create.fields.title")}</Label>
-          <Input id="title" {...form.register("title")} />
-          {form.formState.errors.title ? (
-            <FormFieldError
-              message={t(form.formState.errors.title.message ?? "validation:required", {
-                field: t("tasks:forms.create.fields.title")
-              })}
-            />
-          ) : null}
-        </div>
-
-        <div className="grid gap-2">
-          <Label htmlFor="description">{t("tasks:forms.create.fields.description")}</Label>
-          <textarea
-            id="description"
-            rows={4}
-            className="rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-            {...form.register("description")}
-          />
-          {form.formState.errors.description ? (
-            <FormFieldError
-              message={t(form.formState.errors.description.message ?? "validation:maxLength", {
-                field: t("tasks:forms.create.fields.description"),
-                count: 1000
-              })}
-            />
-          ) : null}
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2">
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="grid gap-6" noValidate>
           <div className="grid gap-2">
-            <Label htmlFor="priority">{t("tasks:forms.create.fields.priority")}</Label>
-            <Controller
-              name="priority"
-              control={form.control}
-              render={({ field }) => (
-                <Select
-                  id="priority"
-                  options={PRIORITY_OPTIONS.map((option) => ({
-                    value: option,
-                    label: t(`common:priority.${option.toLowerCase()}`)
-                  }))}
-                  value={field.value}
-                  onChange={field.onChange}
-                />
-              )}
-            />
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="type">{t("tasks:forms.create.fields.type")}</Label>
-            <Controller
-              name="type"
-              control={form.control}
-              render={({ field }) => (
-                <Select
-                  id="type"
-                  options={TYPE_OPTIONS.map((option) => ({
-                    value: option,
-                    label: t(`common:taskType.${option.charAt(0).toLowerCase()}${option.slice(1)}`)
-                  }))}
-                  value={field.value}
-                  onChange={field.onChange}
-                />
-              )}
-            />
-          </div>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="grid gap-2">
-            <Label htmlFor="dueDate">{t("tasks:forms.create.fields.dueDate")}</Label>
-            <Controller
-              name="dueDate"
-              control={form.control}
-              render={({ field }) => (
-                <DatePicker
-                  id="dueDate"
-                  value={field.value}
-                  onChange={field.onChange}
-                  placeholder={t("tasks:forms.create.fields.dueDate")}
-                />
-              )}
-            />
-            {form.formState.errors.dueDate ? (
+            <Label htmlFor="title">{t("tasks:forms.create.fields.title")}</Label>
+            <Input id="title" {...form.register("title")} />
+            {form.formState.errors.title ? (
               <FormFieldError
-                message={t(form.formState.errors.dueDate.message ?? "validation:futureDate", {
-                  field: t("tasks:forms.create.fields.dueDate")
+                message={t(form.formState.errors.title.message ?? "validation:required", {
+                  field: t("tasks:forms.create.fields.title")
                 })}
               />
             ) : null}
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="assignedUserId">
-              {t("tasks:forms.create.fields.assignedUserId")}
-              <span className="ml-1 text-xs text-muted-foreground">({t("common:optional")})</span>
-            </Label>
-            <Controller
-              name="assignedUserId"
-              control={form.control}
-              render={({ field }) => (
-                <UserSearchInput
-                  value={field.value}
-                  onChange={field.onChange}
-                  placeholder={t("tasks:forms.create.fields.searchUserPlaceholder")}
-                  error={!!form.formState.errors.assignedUserId}
-                />
-              )}
+            <Label htmlFor="description">{t("tasks:forms.create.fields.description")}</Label>
+            <textarea
+              id="description"
+              rows={4}
+              className="rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              {...form.register("description")}
             />
-            {form.formState.errors.assignedUserId ? (
-              <FormFieldError message={t(form.formState.errors.assignedUserId.message ?? "validation:required")} />
+            {form.formState.errors.description ? (
+              <FormFieldError
+                message={t(form.formState.errors.description.message ?? "validation:maxLength", {
+                  field: t("tasks:forms.create.fields.description"),
+                  count: 1000
+                })}
+              />
             ) : null}
           </div>
-        </div>
 
-        {/* File Upload Section - Only for Managers/Admins */}
-        {canUploadFiles && (
-          <div className="grid gap-2">
-            <Label>{t("tasks:attachments.sections.managerUploaded")}</Label>
-            <FileUpload
-              files={files}
-              onFilesChange={setFiles}
-              maxSize={50 * 1024 * 1024} // 50MB
-            />
-            {files.length > 0 && (
-              <p className="text-xs text-muted-foreground">
-                {files.length} {files.length === 1 ? "file" : "files"} selected
-              </p>
-            )}
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-2">
+              <Label htmlFor="priority">{t("tasks:forms.create.fields.priority")}</Label>
+              <Controller
+                name="priority"
+                control={form.control}
+                render={({ field }) => (
+                  <Select
+                    id="priority"
+                    options={PRIORITY_OPTIONS.map((option) => ({
+                      value: option,
+                      label: t(`common:priority.${option.toLowerCase()}`)
+                    }))}
+                    value={field.value}
+                    onChange={field.onChange}
+                  />
+                )}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="type">{t("tasks:forms.create.fields.type")}</Label>
+              <Controller
+                name="type"
+                control={form.control}
+                render={({ field }) => (
+                  <Select
+                    id="type"
+                    options={TYPE_OPTIONS.map((option) => ({
+                      value: option,
+                      label: t(`common:taskType.${option.charAt(0).toLowerCase()}${option.slice(1)}`)
+                    }))}
+                    value={field.value}
+                    onChange={field.onChange}
+                  />
+                )}
+              />
+            </div>
           </div>
-        )}
 
-        <div className="flex justify-end gap-3">
-          <Button type="submit" disabled={isPending} icon={<CheckIcon />}>
-            {t("common:actions.save")}
-          </Button>
-        </div>
-      </form>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-2">
+              <Label htmlFor="dueDate">{t("tasks:forms.create.fields.dueDate")}</Label>
+              <Controller
+                name="dueDate"
+                control={form.control}
+                render={({ field }) => (
+                  <DatePicker
+                    id="dueDate"
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder={t("tasks:forms.create.fields.dueDate")}
+                  />
+                )}
+              />
+              {form.formState.errors.dueDate ? (
+                <FormFieldError
+                  message={t(form.formState.errors.dueDate.message ?? "validation:futureDate", {
+                    field: t("tasks:forms.create.fields.dueDate")
+                  })}
+                />
+              ) : null}
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="assignedUserId">
+                {t("tasks:forms.create.fields.assignedUserId")}
+                <span className="ml-1 text-xs text-muted-foreground">({t("common:optional")})</span>
+              </Label>
+              <Controller
+                name="assignedUserId"
+                control={form.control}
+                render={({ field }) => (
+                  <UserSearchInput
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder={t("tasks:forms.create.fields.searchUserPlaceholder")}
+                    error={!!form.formState.errors.assignedUserId}
+                  />
+                )}
+              />
+              {form.formState.errors.assignedUserId ? (
+                <FormFieldError message={t(form.formState.errors.assignedUserId.message ?? "validation:required")} />
+              ) : null}
+            </div>
+          </div>
+
+          {/* File Upload Section - Only for Managers/Admins */}
+          {canUploadFiles && (
+            <div className="grid gap-2">
+              <Label>{t("tasks:attachments.sections.managerUploaded")}</Label>
+              <FileUpload
+                files={files}
+                onFilesChange={setFiles}
+                maxSize={50 * 1024 * 1024} // 50MB
+              />
+              {files.length > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  {files.length} {files.length === 1 ? "file" : "files"} selected
+                </p>
+              )}
+            </div>
+          )}
+
+          <div className="flex justify-end gap-3">
+            <Button type="submit" disabled={isPending} icon={<CheckIcon />}>
+              {t("common:actions.save")}
+            </Button>
+          </div>
+        </form>
       </div>
     </div>
   );

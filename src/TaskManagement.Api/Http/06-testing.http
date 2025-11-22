@@ -2,7 +2,7 @@
 ### These endpoints are only available in Development and Test environments
 ### Used for testing overrides (current user and date/time)
 
-@baseUrl = http://localhost:5000
+@baseUrl = http://localhost:5050
 @contentType = application/json
 @currentUserEmail=rhalzahrani@wtco.com.sa
 

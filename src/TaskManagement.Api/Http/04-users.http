@@ -1,7 +1,7 @@
 ### Users Endpoints
 ### All endpoints require authentication (JWT token)
 
-@baseUrl = http://localhost:5000
+@baseUrl = http://localhost:5050
 @contentType = application/json
 
 ### Generate JWT token for testing (run this first)

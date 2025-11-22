@@ -14,7 +14,11 @@ services:
       - sqlserver_data:/var/opt/mssql
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P YourStrong@Passw0rd -Q \"SELECT 1\" || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          '/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P YourStrong@Passw0rd -Q "SELECT 1" || exit 1',
+        ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -24,8 +28,8 @@ services:
     image: datalust/seq:2024.2
     container_name: taskmanagement-seq
     ports:
-      - "5341:5341"  # Seq ingestion endpoint
-      - "8081:80"    # Seq web UI
+      - "5341:5341" # Seq ingestion endpoint
+      - "8081:80" # Seq web UI
     environment:
       - ACCEPT_EULA=Y
     volumes:
@@ -44,7 +48,6 @@ services:
         reservations:
           memory: 256M
 
-
   taskmanagement.api:
     image: ${DOCKER_REGISTRY-}taskmanagementapi
     build:
@@ -52,7 +55,7 @@ services:
       dockerfile: src/TaskManagement.Api/Dockerfile
     container_name: taskmanagement-api
     ports:
-      - "5000:8080"
+      - "5050:8080"
     environment:
       # Seq
       - Serilog__WriteTo__2__Args__serverUrl=http://seq:5341
@@ -63,6 +66,11 @@ services:
       - ASPNETCORE_HTTP_PORTS=8080
       - ASPNETCORE_URLS=http://+:8080
       - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=TaskManagement;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True;
+      # Azure AD Configuration (replace with your actual values from .env file)
+      - AzureAd__TenantId=${AZURE_AD_TENANT_ID:-FAKE-DATA}
+      - AzureAd__ClientId=${AZURE_AD_CLIENT_ID:-FAKE-DATA}
+      - AzureAd__ClientSecret=${AZURE_AD_CLIENT_SECRET:-FAKE-DATA}
+      - AzureAd__Issuer=${AZURE_AD_ISSUER:-https://login.microsoftonline.com/FAKE-DATA/v2.0}
     depends_on:
       sqlserver:
         condition: service_healthy
@@ -78,7 +86,7 @@ services:
       args:
         # These will read from .env file in the repository root
         # Or you can set them directly here
-        - NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL:-http://localhost:5000}
+        - NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL:-http://localhost:5050}
         - NEXT_PUBLIC_APP_NAME=${NEXT_PUBLIC_APP_NAME:-Task Management Console}
         - NEXT_PUBLIC_AZURE_AD_CLIENT_ID=${NEXT_PUBLIC_AZURE_AD_CLIENT_ID}
         - NEXT_PUBLIC_AZURE_AD_TENANT_ID=${NEXT_PUBLIC_AZURE_AD_TENANT_ID}
@@ -115,14 +123,12 @@ services:
              if [ -n \"${TEST_FILTER}\" ]; then FILTER_ARG=\"--filter ${TEST_FILTER}\"; fi &&
              dotnet test tests/TaskManagement.Tests/TaskManagement.Tests.csproj $FILTER_ARG"
 
-
   taskmanagement.aspire-dashboard:
     image: mcr.microsoft.com/dotnet/aspire-dashboard:9.0
     environment:
-     DOTNET_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS: true
+      DOTNET_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS: true
     ports:
       - 18888:18888
-
 
 volumes:
   sqlserver_data:

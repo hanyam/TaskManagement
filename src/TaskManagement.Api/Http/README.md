@@ -19,7 +19,7 @@ This folder contains HTTP request files for testing all API endpoints. The files
 Open `00-globals.http` and update the variables:
 
 ```http
-@baseUrl = http://localhost:5000
+@baseUrl = http://localhost:5050
 @jwtToken = your-jwt-token-here
 ```
 

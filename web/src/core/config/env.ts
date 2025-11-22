@@ -4,7 +4,7 @@ const envSchema = z.object({
   NEXT_PUBLIC_API_BASE_URL: z
     .string()
     .url()
-    .default("http://localhost:5000"),
+    .default("http://localhost:5050"),
   NEXT_PUBLIC_APP_NAME: z.string().default("Task Management Console"),
   NEXT_PUBLIC_AZURE_AD_CLIENT_ID: z.string().optional(),
   NEXT_PUBLIC_AZURE_AD_TENANT_ID: z.string().optional(),
@@ -25,18 +25,25 @@ type EnvConfig = {
 
 let cachedEnv: EnvConfig | undefined;
 
+// Helper to convert empty strings to undefined for proper default handling
+function normalizeEnvValue(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  const trimmed = value.trim();
+  return trimmed !== "" ? trimmed : undefined;
+}
+
 export function getEnvConfig(): EnvConfig {
   if (cachedEnv) {
     return cachedEnv;
   }
 
   const parsed = envSchema.safeParse({
-    NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
-    NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME,
-    NEXT_PUBLIC_AZURE_AD_CLIENT_ID: process.env.NEXT_PUBLIC_AZURE_AD_CLIENT_ID,
-    NEXT_PUBLIC_AZURE_AD_TENANT_ID: process.env.NEXT_PUBLIC_AZURE_AD_TENANT_ID,
-    NEXT_PUBLIC_AZURE_AD_REDIRECT_URI: process.env.NEXT_PUBLIC_AZURE_AD_REDIRECT_URI,
-    NEXT_PUBLIC_AZURE_AD_SCOPES: process.env.NEXT_PUBLIC_AZURE_AD_SCOPES
+    NEXT_PUBLIC_API_BASE_URL: normalizeEnvValue(process.env.NEXT_PUBLIC_API_BASE_URL),
+    NEXT_PUBLIC_APP_NAME: normalizeEnvValue(process.env.NEXT_PUBLIC_APP_NAME),
+    NEXT_PUBLIC_AZURE_AD_CLIENT_ID: normalizeEnvValue(process.env.NEXT_PUBLIC_AZURE_AD_CLIENT_ID),
+    NEXT_PUBLIC_AZURE_AD_TENANT_ID: normalizeEnvValue(process.env.NEXT_PUBLIC_AZURE_AD_TENANT_ID),
+    NEXT_PUBLIC_AZURE_AD_REDIRECT_URI: normalizeEnvValue(process.env.NEXT_PUBLIC_AZURE_AD_REDIRECT_URI),
+    NEXT_PUBLIC_AZURE_AD_SCOPES: normalizeEnvValue(process.env.NEXT_PUBLIC_AZURE_AD_SCOPES)
   });
 
   if (!parsed.success) {
@@ -47,15 +54,15 @@ export function getEnvConfig(): EnvConfig {
   const azureAd =
     parsed.data.NEXT_PUBLIC_AZURE_AD_CLIENT_ID && parsed.data.NEXT_PUBLIC_AZURE_AD_TENANT_ID
       ? {
-          clientId: parsed.data.NEXT_PUBLIC_AZURE_AD_CLIENT_ID,
-          tenantId: parsed.data.NEXT_PUBLIC_AZURE_AD_TENANT_ID,
-          scopes: parsed.data.NEXT_PUBLIC_AZURE_AD_SCOPES
-            ? parsed.data.NEXT_PUBLIC_AZURE_AD_SCOPES.split(",").map((scope) => scope.trim()).filter(Boolean)
-            : [`api://${parsed.data.NEXT_PUBLIC_AZURE_AD_CLIENT_ID}/.default`],
-          ...(parsed.data.NEXT_PUBLIC_AZURE_AD_REDIRECT_URI
-            ? { redirectUri: parsed.data.NEXT_PUBLIC_AZURE_AD_REDIRECT_URI }
-            : {})
-        }
+        clientId: parsed.data.NEXT_PUBLIC_AZURE_AD_CLIENT_ID,
+        tenantId: parsed.data.NEXT_PUBLIC_AZURE_AD_TENANT_ID,
+        scopes: parsed.data.NEXT_PUBLIC_AZURE_AD_SCOPES
+          ? parsed.data.NEXT_PUBLIC_AZURE_AD_SCOPES.split(",").map((scope) => scope.trim()).filter(Boolean)
+          : [`api://${parsed.data.NEXT_PUBLIC_AZURE_AD_CLIENT_ID}/.default`],
+        ...(parsed.data.NEXT_PUBLIC_AZURE_AD_REDIRECT_URI
+          ? { redirectUri: parsed.data.NEXT_PUBLIC_AZURE_AD_REDIRECT_URI }
+          : {})
+      }
       : undefined;
 
   cachedEnv = {
