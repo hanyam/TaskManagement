@@ -1,11 +1,13 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using TaskManagement.Api.Attributes;
+using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Http;
+using TaskManagement.Presentation.Attributes;
 using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Application.Tasks.Queries.GetDashboardStats;
 using TaskManagement.Domain.Common;
 
-namespace TaskManagement.Api.Controllers;
+namespace TaskManagement.Presentation.Controllers;
 
 /// <summary>
 ///     Controller for dashboard operations.

@@ -1,6 +1,8 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Graph;
 using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Application.Infrastructure.Data.Repositories;
@@ -9,7 +11,7 @@ using TaskManagement.Domain.Common;
 using TaskManagement.Domain.Constants;
 using static TaskManagement.Domain.Constants.CustomClaimTypes;
 
-namespace TaskManagement.Api.Controllers;
+namespace TaskManagement.Presentation.Controllers;
 
 /// <summary>
 ///     Controller for user operations (Database-based user search with manager-employee relationship).

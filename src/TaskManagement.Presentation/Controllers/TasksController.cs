@@ -1,8 +1,10 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
-using TaskManagement.Api.Attributes;
+using TaskManagement.Presentation.Attributes;
 using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Application.Tasks.Commands.AcceptTask;
 using TaskManagement.Application.Tasks.Commands.AcceptTaskProgress;
@@ -28,7 +30,7 @@ using static TaskManagement.Domain.Constants.RoleNames;
 using Task = TaskManagement.Domain.Entities.Task;
 using TaskStatus = TaskManagement.Domain.Entities.TaskStatus;
 
-namespace TaskManagement.Api.Controllers;
+namespace TaskManagement.Presentation.Controllers;
 
 /// <summary>
 ///     Controller for handling task operations.

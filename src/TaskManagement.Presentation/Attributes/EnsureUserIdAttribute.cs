@@ -5,7 +5,7 @@ using TaskManagement.Domain.Common;
 using TaskManagement.Domain.Constants;
 using static TaskManagement.Domain.Constants.CustomClaimTypes;
 
-namespace TaskManagement.Api.Attributes;
+namespace TaskManagement.Presentation.Attributes;
 
 /// <summary>
 ///     Authorization filter that ensures the current user ID exists.
@@ -22,7 +22,7 @@ public class EnsureUserIdAttribute : Attribute, IAuthorizationFilter
     public void OnAuthorization(AuthorizationFilterContext context)
     {
         // Get ICurrentUserService from DI
-        var currentUserService = context.HttpContext.RequestServices.GetService<ICurrentUserService>();
+        var currentUserService = context.HttpContext.RequestServices.GetService(typeof(ICurrentUserService)) as ICurrentUserService;
 
         Guid? userId;
 

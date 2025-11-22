@@ -10,6 +10,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TaskManagement.Domain", "sr
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TaskManagement.Infrastructure", "src\TaskManagement.Infrastructure\TaskManagement.Infrastructure.csproj", "{5D55890D-538B-4D56-B49C-EF6A6B1C0F66}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TaskManagement.Presentation", "src\TaskManagement.Presentation\TaskManagement.Presentation.csproj", "{F7E8A9B0-C1D2-4E3F-9A5B-6C7D8E9F0A1B}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TaskManagement.Tests", "tests\TaskManagement.Tests\TaskManagement.Tests.csproj", "{E6ED1C9F-22D6-4ADC-93EF-B88F6CA2E051}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{7879002A-3E88-444D-989D-5B30FA31DDEE}"
@@ -61,6 +63,10 @@ Global
 		{5D55890D-538B-4D56-B49C-EF6A6B1C0F66}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5D55890D-538B-4D56-B49C-EF6A6B1C0F66}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5D55890D-538B-4D56-B49C-EF6A6B1C0F66}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F7E8A9B0-C1D2-4E3F-9A5B-6C7D8E9F0A1B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F7E8A9B0-C1D2-4E3F-9A5B-6C7D8E9F0A1B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F7E8A9B0-C1D2-4E3F-9A5B-6C7D8E9F0A1B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F7E8A9B0-C1D2-4E3F-9A5B-6C7D8E9F0A1B}.Release|Any CPU.Build.0 = Release|Any CPU
 		{E6ED1C9F-22D6-4ADC-93EF-B88F6CA2E051}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{E6ED1C9F-22D6-4ADC-93EF-B88F6CA2E051}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E6ED1C9F-22D6-4ADC-93EF-B88F6CA2E051}.Release|Any CPU.ActiveCfg = Release|Any CPU

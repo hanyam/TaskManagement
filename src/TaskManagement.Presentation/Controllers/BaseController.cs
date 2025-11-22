@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Http;
 using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Domain.Common;
 using TaskManagement.Domain.Constants;
 using static TaskManagement.Domain.Constants.CustomClaimTypes;
 
-namespace TaskManagement.Api.Controllers;
+namespace TaskManagement.Presentation.Controllers;
 
 /// <summary>
 ///     Base controller with common functionality for all API controllers.

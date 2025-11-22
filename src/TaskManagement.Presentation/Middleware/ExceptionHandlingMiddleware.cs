@@ -1,8 +1,10 @@
 using System.Net;
 using System.Text.Json;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using TaskManagement.Domain.Common;
 
-namespace TaskManagement.Api.Middleware;
+namespace TaskManagement.Presentation.Middleware;
 
 /// <summary>
 ///     Global exception handling middleware for standardized error responses.

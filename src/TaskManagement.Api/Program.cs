@@ -1,7 +1,7 @@
 using Serilog;
-using TaskManagement.Api;
-using TaskManagement.Api.Extensions;
-using TaskManagement.Api.Middleware;
+using TaskManagement.Presentation;
+using TaskManagement.Presentation.Extensions;
+using TaskManagement.Presentation.Middleware;
 using TaskManagement.Application;
 using TaskManagement.Infrastructure;
 using TaskManagement.Infrastructure.Data;

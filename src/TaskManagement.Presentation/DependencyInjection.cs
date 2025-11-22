@@ -1,6 +1,10 @@
 using Azure.Identity;
 using Azure.Monitor.OpenTelemetry.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Graph;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -12,15 +16,15 @@ using System.Text;
 using TaskManagement.Domain.Common;
 using TaskManagement.Domain.Options;
 
-namespace TaskManagement.Api;
+namespace TaskManagement.Presentation;
 
 /// <summary>
-///     Dependency injection configuration for API/Presentation layer.
+///     Dependency injection configuration for Presentation layer.
 /// </summary>
 public static class DependencyInjection
 {
     /// <summary>
-    ///     Registers all API/Presentation layer services.
+    ///     Registers all Presentation layer services.
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <param name="configuration">The configuration.</param>
@@ -131,7 +135,7 @@ public static class DependencyInjection
         builder.Services.AddMetrics();
         builder.Services.AddSingleton<TaskManagementMetrics>();
 
-        builder.Services.AddOpenTelemetry()
+        var openTelemetryBuilder = builder.Services.AddOpenTelemetry()
             .ConfigureResource(resource => resource.AddService(builder.Environment.ApplicationName))
             .WithTracing(tracing => tracing
                 .AddSource("DevHabit.Tracing")
@@ -145,20 +149,17 @@ public static class DependencyInjection
                 .AddHttpClientInstrumentation()
                 .AddAspNetCoreInstrumentation()
                 .AddRuntimeInstrumentation());
-
-        builder.Logging.AddOpenTelemetry(options =>
-        {
-            options.IncludeScopes = true;
-            options.IncludeFormattedMessage = true;
-            options.SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(builder.Environment.ApplicationName));
-        });
+        
+        // Note: Logging is handled by Serilog (configured in Program.cs)
+        // OpenTelemetry logging can be added via Serilog.Sinks.OpenTelemetry if needed
+        
         if (builder.Environment.IsDevelopment())
         {
-            builder.Services.AddOpenTelemetry().UseOtlpExporter();
+            openTelemetryBuilder.UseOtlpExporter();
         }
         else
         {
-            builder.Services.AddOpenTelemetry().UseAzureMonitor();
+            openTelemetryBuilder.UseAzureMonitor();
         }
 
         //builder.Services.AddHealthChecks()
@@ -167,3 +168,4 @@ public static class DependencyInjection
         return builder;
     }
 }
+

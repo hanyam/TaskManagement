@@ -1,7 +1,11 @@
+using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using TaskManagement.Infrastructure.Data;
 
-namespace TaskManagement.Api.Extensions;
+namespace TaskManagement.Presentation.Extensions;
 
 /// <summary>
 ///     Extension methods for database operations.
@@ -21,7 +25,8 @@ public static class DatabaseExtensions
 
         using var scope = app.Services.CreateScope();
         var services = scope.ServiceProvider;
-        var logger = services.GetRequiredService<ILogger<Program>>();
+        var loggerFactory = services.GetRequiredService<ILoggerFactory>();
+        var logger = loggerFactory.CreateLogger("DatabaseExtensions");
 
         try
         {

@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Http;
 using TaskManagement.Application.Authentication.Commands.AuthenticateUser;
 using TaskManagement.Application.Common.Interfaces;
 
-namespace TaskManagement.Api.Controllers;
+namespace TaskManagement.Presentation.Controllers;
 
 /// <summary>
 ///     Controller for handling authentication operations.

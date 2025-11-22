@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Caching.Memory;
 using TaskManagement.Application.Common.Constants;
 using TaskManagement.Application.Common.Services;
@@ -10,7 +12,7 @@ using TaskManagement.Domain.Errors.Users;
 using TaskManagement.Domain.Interfaces;
 using static TaskManagement.Domain.Constants.CustomClaimTypes;
 
-namespace TaskManagement.Api.Controllers;
+namespace TaskManagement.Presentation.Controllers;
 
 /// <summary>
 ///     Controller for testing overrides (current user and date/time).

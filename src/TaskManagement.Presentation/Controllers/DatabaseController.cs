@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Http;
 using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Application.DatabaseSeeding.Commands.SeedDatabase;
 using TaskManagement.Domain.Common;
@@ -7,7 +9,7 @@ using TaskManagement.Domain.Constants;
 using TaskManagement.Domain.DTOs;
 using static TaskManagement.Domain.Constants.RoleNames;
 
-namespace TaskManagement.Api.Controllers;
+namespace TaskManagement.Presentation.Controllers;
 
 /// <summary>
 ///     Controller for database management operations.
