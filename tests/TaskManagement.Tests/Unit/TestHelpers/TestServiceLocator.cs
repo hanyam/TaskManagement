@@ -67,7 +67,7 @@ public class TestServiceLocator : IServiceLocator
         var taskEfRepository = new TaskEfQueryRepository(_context);
         var userEfRepository = new UserEfQueryRepository(_context);
         var userQueryRepository = new UserDapperRepositoryWrapper(userEfRepository);
-        var taskRepository = new TaskDapperRepositoryWrapper(taskEfRepository);
+        var taskRepository = new TaskDapperRepositoryWrapper(taskEfRepository, _context);
 
         // Create ReminderCalculationService with default options
         var reminderOptions = Options.Create(new ReminderOptions());
@@ -154,7 +154,7 @@ public class TestServiceLocator : IServiceLocator
 
         if (serviceType == typeof(IRequestHandler<GetDashboardStatsQuery, DashboardStatsDto>))
         {
-            return new GetDashboardStatsQueryHandler(_context);
+            return new GetDashboardStatsQueryHandler(taskRepository);
         }
 
         if (serviceType == typeof(IRequestHandler<GetTaskProgressHistoryQuery, List<TaskProgressDto>>))

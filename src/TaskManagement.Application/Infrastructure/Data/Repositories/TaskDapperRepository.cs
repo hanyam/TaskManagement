@@ -113,4 +113,103 @@ public class TaskDapperRepository(IConfiguration configuration) : DapperQueryRep
 
         return (tasks, totalCount);
     }
+
+    /// <summary>
+    ///     Gets dashboard statistics for a user using a single optimized SQL query.
+    ///     Calculates all 7 counts in one database round trip using conditional aggregation.
+    /// </summary>
+    public virtual async Task<DashboardStatsDto> GetDashboardStatsAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        var now = DateTime.UtcNow;
+        var nearDueDateThreshold = now.AddDays(3);
+
+        var sql = @"
+            WITH TaskWithAssignment AS (
+                SELECT 
+                    T.Id,
+                    T.CreatedById,
+                    T.AssignedUserId,
+                    T.Status,
+                    T.DueDate,
+                    CASE WHEN TA.TaskId IS NOT NULL THEN 1 ELSE 0 END AS HasAssignment
+                FROM [Tasks].[Tasks] AS T
+                LEFT JOIN [Tasks].[TaskAssignments] AS TA ON TA.TaskId = T.Id AND TA.UserId = @UserId
+                WHERE T.CreatedById = @UserId
+                   OR T.AssignedUserId = @UserId
+                   OR TA.TaskId IS NOT NULL
+            )
+            SELECT 
+                -- Tasks created by user
+                COUNT(CASE WHEN CreatedById = @UserId THEN 1 END) AS TasksCreatedByUser,
+                
+                -- Tasks completed (assigned to or created by user, or has assignment)
+                COUNT(CASE 
+                    WHEN Status = 5 -- Completed
+                        AND (AssignedUserId = @UserId 
+                             OR CreatedById = @UserId 
+                             OR HasAssignment = 1)
+                    THEN 1 
+                END) AS TasksCompleted,
+                
+                -- Tasks near due date (within 3 days)
+                COUNT(CASE 
+                    WHEN DueDate IS NOT NULL
+                        AND DueDate >= @Now
+                        AND DueDate <= @NearDueDateThreshold
+                        AND Status NOT IN (5, 6) -- Not Completed or Cancelled
+                        AND (AssignedUserId = @UserId 
+                             OR CreatedById = @UserId 
+                             OR HasAssignment = 1)
+                    THEN 1 
+                END) AS TasksNearDueDate,
+                
+                -- Tasks delayed (past due date)
+                COUNT(CASE 
+                    WHEN DueDate IS NOT NULL
+                        AND DueDate < @Now
+                        AND Status NOT IN (5, 6) -- Not Completed or Cancelled
+                        AND (AssignedUserId = @UserId 
+                             OR CreatedById = @UserId 
+                             OR HasAssignment = 1)
+                    THEN 1 
+                END) AS TasksDelayed,
+                
+                -- Tasks in progress (Assigned or Accepted)
+                COUNT(CASE 
+                    WHEN Status IN (1, 3) -- Assigned or Accepted
+                        AND (AssignedUserId = @UserId 
+                             OR HasAssignment = 1)
+                    THEN 1 
+                END) AS TasksInProgress,
+                
+                -- Tasks under review (UnderReview or PendingManagerReview)
+                COUNT(CASE 
+                    WHEN Status IN (2, 7) -- UnderReview or PendingManagerReview
+                        AND (AssignedUserId = @UserId 
+                             OR CreatedById = @UserId 
+                             OR HasAssignment = 1)
+                    THEN 1 
+                END) AS TasksUnderReview,
+                
+                -- Tasks pending acceptance (Created status)
+                COUNT(CASE 
+                    WHEN Status = 0 -- Created
+                        AND (AssignedUserId = @UserId 
+                             OR HasAssignment = 1)
+                    THEN 1 
+                END) AS TasksPendingAcceptance
+            FROM TaskWithAssignment";
+
+        var parameters = new
+        {
+            UserId = userId,
+            Now = now,
+            NearDueDateThreshold = nearDueDateThreshold
+        };
+
+        using var connection = CreateConnection();
+        return await connection.QueryFirstOrDefaultAsync<DashboardStatsDto>(
+            new CommandDefinition(sql, parameters, cancellationToken: cancellationToken)) 
+            ?? new DashboardStatsDto();
+    }
 }

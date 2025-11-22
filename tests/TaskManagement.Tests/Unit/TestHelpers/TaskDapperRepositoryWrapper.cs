@@ -1,7 +1,9 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using TaskManagement.Application.Infrastructure.Data.Repositories;
 using TaskManagement.Domain.DTOs;
 using TaskManagement.Domain.Entities;
+using TaskManagement.Infrastructure.Data;
 using DomainTaskStatus = TaskManagement.Domain.Entities.TaskStatus;
 
 namespace TaskManagement.Tests.Unit.TestHelpers;
@@ -13,8 +15,9 @@ namespace TaskManagement.Tests.Unit.TestHelpers;
 public class TaskDapperRepositoryWrapper : TaskDapperRepository
 {
     private readonly TaskEfQueryRepository _efRepository;
+    private readonly TaskManagementDbContext _context;
 
-    public TaskDapperRepositoryWrapper(TaskEfQueryRepository efRepository)
+    public TaskDapperRepositoryWrapper(TaskEfQueryRepository efRepository, TaskManagementDbContext context)
         : base(new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
@@ -23,6 +26,7 @@ public class TaskDapperRepositoryWrapper : TaskDapperRepository
             .Build()) // Dummy config with connection string
     {
         _efRepository = efRepository;
+        _context = context;
     }
 
     public override async Task<TaskDto?> GetTaskWithUserAsync(Guid id, CancellationToken cancellationToken = default)
@@ -115,5 +119,64 @@ public class TaskDapperRepositoryWrapper : TaskDapperRepository
             .ToList();
 
         return (pagedTasks, totalCount);
+    }
+
+    public override async Task<DashboardStatsDto> GetDashboardStatsAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        var now = DateTime.UtcNow;
+        var nearDueDateThreshold = now.AddDays(3);
+
+        // Use EF Core to calculate stats (for testing purposes)
+        var tasksCreatedByUser = await _context.Tasks
+            .CountAsync(t => t.CreatedById == userId, cancellationToken);
+
+        var tasksCompleted = await _context.Tasks
+            .CountAsync(t => t.Status == DomainTaskStatus.Completed &&
+                             (t.AssignedUserId == userId || t.CreatedById == userId ||
+                              _context.Set<TaskAssignment>().Any(a => a.TaskId == t.Id && a.UserId == userId)), cancellationToken);
+
+        var tasksNearDueDate = await _context.Tasks
+            .CountAsync(t => t.DueDate.HasValue &&
+                             t.DueDate.Value >= now &&
+                             t.DueDate.Value <= nearDueDateThreshold &&
+                             t.Status != DomainTaskStatus.Completed &&
+                             t.Status != DomainTaskStatus.Cancelled &&
+                             (t.AssignedUserId == userId || t.CreatedById == userId ||
+                              _context.Set<TaskAssignment>().Any(a => a.TaskId == t.Id && a.UserId == userId)), cancellationToken);
+
+        var tasksDelayed = await _context.Tasks
+            .CountAsync(t => t.DueDate.HasValue &&
+                             t.DueDate.Value < now &&
+                             t.Status != DomainTaskStatus.Completed &&
+                             t.Status != DomainTaskStatus.Cancelled &&
+                             (t.AssignedUserId == userId || t.CreatedById == userId ||
+                              _context.Set<TaskAssignment>().Any(a => a.TaskId == t.Id && a.UserId == userId)), cancellationToken);
+
+        var tasksInProgress = await _context.Tasks
+            .CountAsync(t => (t.Status == DomainTaskStatus.Assigned || t.Status == DomainTaskStatus.Accepted) &&
+                             (t.AssignedUserId == userId ||
+                              _context.Set<TaskAssignment>().Any(a => a.TaskId == t.Id && a.UserId == userId)), cancellationToken);
+
+        var tasksUnderReview = await _context.Tasks
+            .CountAsync(t => (t.Status == DomainTaskStatus.UnderReview || t.Status == DomainTaskStatus.PendingManagerReview) &&
+                             (t.AssignedUserId == userId ||
+                              _context.Set<TaskAssignment>().Any(a => a.TaskId == t.Id && a.UserId == userId) ||
+                              t.CreatedById == userId), cancellationToken);
+
+        var tasksPendingAcceptance = await _context.Tasks
+            .CountAsync(t => t.Status == DomainTaskStatus.Created &&
+                             (t.AssignedUserId == userId ||
+                              _context.Set<TaskAssignment>().Any(a => a.TaskId == t.Id && a.UserId == userId)), cancellationToken);
+
+        return new DashboardStatsDto
+        {
+            TasksCreatedByUser = tasksCreatedByUser,
+            TasksCompleted = tasksCompleted,
+            TasksNearDueDate = tasksNearDueDate,
+            TasksDelayed = tasksDelayed,
+            TasksInProgress = tasksInProgress,
+            TasksUnderReview = tasksUnderReview,
+            TasksPendingAcceptance = tasksPendingAcceptance
+        };
     }
 }
