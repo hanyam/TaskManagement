@@ -18,7 +18,7 @@ namespace TaskManagement.Infrastructure.Migrations.TaskManagement
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Tasks")
-                .HasAnnotation("ProductVersion", "9.0.0")
+                .HasAnnotation("ProductVersion", "10.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -238,6 +238,70 @@ namespace TaskManagement.Infrastructure.Migrations.TaskManagement
                     b.ToTable("TaskAssignments", "Tasks");
                 });
 
+            modelBuilder.Entity("TaskManagement.Domain.Entities.TaskAttachment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<long>("FileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("OriginalFileName")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("StoragePath")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<Guid>("TaskId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<Guid>("UploadedById")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TaskId");
+
+                    b.HasIndex("UploadedById");
+
+                    b.HasIndex("TaskId", "Type");
+
+                    b.ToTable("TaskAttachments", "Tasks");
+                });
+
             modelBuilder.Entity("TaskManagement.Domain.Entities.TaskProgressHistory", b =>
                 {
                     b.Property<Guid>("Id")
@@ -438,6 +502,25 @@ namespace TaskManagement.Infrastructure.Migrations.TaskManagement
                     b.Navigation("Task");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("TaskManagement.Domain.Entities.TaskAttachment", b =>
+                {
+                    b.HasOne("TaskManagement.Domain.Entities.Task", "Task")
+                        .WithMany()
+                        .HasForeignKey("TaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TaskManagement.Domain.Entities.User", "UploadedBy")
+                        .WithMany()
+                        .HasForeignKey("UploadedById")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Task");
+
+                    b.Navigation("UploadedBy");
                 });
 
             modelBuilder.Entity("TaskManagement.Domain.Entities.TaskProgressHistory", b =>

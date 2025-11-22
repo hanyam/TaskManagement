@@ -24,6 +24,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import type { ApiErrorResponse } from "@/core/api/types";
+import { useAuth } from "@/core/auth/AuthProvider";
 import {
   useAssignTaskMutation,
   useAcceptTaskMutation,
@@ -34,14 +35,21 @@ import {
   useRequestExtensionMutation,
   useRequestMoreInfoMutation,
   useTaskDetailsQuery,
-  useUpdateTaskProgressMutation
+  useUpdateTaskProgressMutation,
+  useTaskAttachmentsQuery,
+  useUploadAttachmentMutation,
+  useDeleteAttachmentMutation,
+  downloadAttachment
 } from "@/features/tasks/api/queries";
+import { FileAttachmentList } from "@/features/tasks/components/FileAttachmentList";
 import { ReviewCompletedTaskModal } from "@/features/tasks/components/ReviewCompletedTaskModal";
 import { TaskStatusBadge } from "@/features/tasks/components/TaskStatusBadge";
 import type { AssignTaskRequest } from "@/features/tasks/types";
-import { getTaskTypeString, getTaskPriorityString } from "@/features/tasks/value-objects";
+import { canViewAttachment, canUploadAttachment, canDeleteAttachment } from "@/features/tasks/utils/attachmentAccess";
+import { getTaskTypeString, getTaskPriorityString, AttachmentTypeEnum } from "@/features/tasks/value-objects";
 import { Button } from "@/ui/components/Button";
 import { DatePicker } from "@/ui/components/DatePicker";
+import { FileUpload, type FileUploadItem } from "@/ui/components/FileUpload";
 import { FormFieldError } from "@/ui/components/FormFieldError";
 import { Input } from "@/ui/components/Input";
 import { Label } from "@/ui/components/Label";
@@ -92,13 +100,39 @@ function displayApiError(error: unknown, fallbackMessage: string) {
 export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
   const { t } = useTranslation(["tasks", "common", "navigation"]);
   const router = useRouter();
+  const { session } = useAuth();
   const { data: response, isLoading, error, refetch } = useTaskDetailsQuery(taskId, Boolean(taskId));
+  const { data: attachments = [], refetch: refetchAttachments } = useTaskAttachmentsQuery(taskId);
   
   const task = response?.data;
   const links = response?.links ?? [];
   
   // Helper to check if a HATEOAS link relation exists
   const hasLink = (rel: string) => links.some(link => link.rel === rel);
+
+  const currentUserId = session?.user?.id || "";
+  const userRole = session?.user?.role || "";
+
+  // Filter attachments based on access control
+  const accessibleAttachments = task
+    ? attachments.filter((attachment) => canViewAttachment(attachment, task, userRole))
+    : [];
+
+  const uploadMutation = useUploadAttachmentMutation(taskId);
+  const deleteAttachmentMutation = useDeleteAttachmentMutation(taskId);
+  const [uploadFiles, setUploadFiles] = useState<FileUploadItem[]>([]);
+
+  const handleDeleteAttachment = async (attachmentId: string) => {
+    if (confirm(t("tasks:attachments.actions.deleteConfirm"))) {
+      try {
+        await deleteAttachmentMutation.mutateAsync(attachmentId);
+        await refetchAttachments();
+        toast.success(t("common:actions.deleted"));
+      } catch (error) {
+        displayApiError(error, t("tasks:attachments.actions.delete"));
+      }
+    }
+  };
 
   const acceptMutation = useAcceptTaskMutation(taskId);
   const assignMutation = useAssignTaskMutation(taskId);
@@ -395,6 +429,84 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
             ) : (
               <p className="text-sm text-muted-foreground">{t("common:states.empty")}</p>
             )}
+          </div>
+
+          {/* Attachments Section */}
+          <div className="space-y-4">
+            <h3 className="text-base font-semibold text-foreground">{t("tasks:details.sections.attachments")}</h3>
+            
+            {/* Show attachments list if user can view */}
+            {accessibleAttachments.length > 0 && (
+              <FileAttachmentList
+                attachments={accessibleAttachments}
+                onDownload={async (attachmentId) => {
+                  try {
+                    const blob = await downloadAttachment(taskId, attachmentId);
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    const attachment = accessibleAttachments.find((a) => a.id === attachmentId);
+                    a.download = attachment?.originalFileName || "download";
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                  } catch (error) {
+                    toast.error(t("tasks:attachments.actions.download"));
+                  }
+                }}
+                onDelete={handleDeleteAttachment}
+                canDelete={(attachment) =>
+                  task ? canDeleteAttachment(attachment, task, currentUserId, userRole) : false
+                }
+              />
+            )}
+
+            {/* Show upload section if user can upload */}
+            {task && canUploadAttachment(task, userRole, currentUserId) && (
+              <div className="space-y-2">
+                <FileUpload
+                  files={uploadFiles}
+                  onFilesChange={setUploadFiles}
+                  maxSize={50 * 1024 * 1024} // 50MB
+                />
+                {uploadFiles.length > 0 && (
+                  <Button
+                    type="button"
+                    onClick={async () => {
+                      for (const fileItem of uploadFiles) {
+                        if (!fileItem.error) {
+                          try {
+                            const attachmentType =
+                              userRole === "Manager" || userRole === "Admin"
+                                ? AttachmentTypeEnum.ManagerUploaded
+                                : AttachmentTypeEnum.EmployeeUploaded;
+                            await uploadMutation.mutateAsync({
+                              file: fileItem.file,
+                              type: attachmentType
+                            });
+                            toast.success(t("tasks:attachments.upload.success"));
+                          } catch (error) {
+                            displayApiError(error, t("tasks:attachments.upload.error"));
+                          }
+                        }
+                      }
+                      setUploadFiles([]);
+                      await refetchAttachments();
+                    }}
+                    disabled={uploadMutation.isPending}
+                  >
+                    {t("tasks:attachments.upload.title")}
+                  </Button>
+                )}
+              </div>
+            )}
+
+            {accessibleAttachments.length === 0 &&
+              task &&
+              !canUploadAttachment(task, userRole, currentUserId) && (
+                <p className="text-sm text-muted-foreground">{t("tasks:attachments.empty")}</p>
+              )}
           </div>
         </section>
 

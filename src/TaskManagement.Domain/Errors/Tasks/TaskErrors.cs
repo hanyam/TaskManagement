@@ -63,4 +63,12 @@ public static class TaskErrors
             "You do not have access to this task. Tasks can only be accessed by the creator, assigned user, or users in the assignment chain.");
 
     public static Error NotFoundById(Guid id) => Error.NotFound($"Task with ID '{id}'", "Id");
+
+    // Task attachment errors
+    public static Error FileSizeExceeded => Error.Validation("File size exceeds the maximum allowed size", "File");
+    public static Error FileUploadFailed => Error.Internal("Failed to upload file");
+    public static Error FileNotFound => Error.NotFound("File attachment", "AttachmentId");
+    public static Error UnauthorizedFileAccess => Error.Forbidden("You do not have permission to access this file attachment");
+    public static Error InvalidFileName => Error.Validation("File name is invalid", "FileName");
+    public static Error AttachmentNotFound => Error.NotFound("Attachment", "AttachmentId");
 }

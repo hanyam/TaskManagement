@@ -1,4 +1,6 @@
+using Microsoft.Extensions.Logging;
 using TaskManagement.Application.Common.Interfaces;
+using TaskManagement.Application.Common.Services;
 using TaskManagement.Infrastructure.Data.Repositories;
 using TaskManagement.Domain.Common;
 using TaskManagement.Domain.DTOs;
@@ -15,14 +17,25 @@ namespace TaskManagement.Application.Tasks.Commands.CreateTask;
 public class CreateTaskCommandHandler(
     TaskEfCommandRepository taskCommandRepository,
     UserDapperRepository userQueryRepository,
-    TaskManagementDbContext context) : ICommandHandler<CreateTaskCommand, TaskDto>
+    TaskManagementDbContext context,
+    ILogger<CreateTaskCommandHandler> logger,
+    IAuditLogService auditLogService) : ICommandHandler<CreateTaskCommand, TaskDto>
 {
     private readonly TaskManagementDbContext _context = context;
     private readonly TaskEfCommandRepository _taskCommandRepository = taskCommandRepository;
     private readonly UserDapperRepository _userQueryRepository = userQueryRepository;
+    private readonly ILogger<CreateTaskCommandHandler> _logger = logger;
+    private readonly IAuditLogService _auditLogService = auditLogService;
 
     public async Task<Result<TaskDto>> Handle(CreateTaskCommand request, CancellationToken cancellationToken)
     {
+        _logger.LogInformation(
+            "Creating task with title {Title} by user {CreatedById}. AssignedUserId: {AssignedUserId}, Type: {Type}",
+            request.Title,
+            request.CreatedById,
+            request.AssignedUserId,
+            request.Type);
+
         var errors = new List<Error>();
 
         // Validate that the assigned user exists only if AssignedUserId is provided (not a draft)
@@ -80,6 +93,10 @@ public class CreateTaskCommandHandler(
         // If there are any validation errors, return them all
         if (errors.Any())
         {
+            _logger.LogWarning(
+                "Task creation failed validation. Errors: {ErrorCount}, CreatedById: {CreatedById}",
+                errors.Count,
+                request.CreatedById);
             return Result<TaskDto>.Failure(errors);
         }
 
@@ -98,6 +115,18 @@ public class CreateTaskCommandHandler(
         // Add to repository using EF Core (for change tracking and complex operations)
         await _taskCommandRepository.AddAsync(task, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Successfully created task {TaskId} with title {Title} by user {CreatedById}",
+            task.Id,
+            task.Title,
+            request.CreatedById);
+
+        // Audit log
+        _auditLogService.LogTaskCreated(
+            task.Id,
+            request.CreatedById.ToString(),
+            request.CreatedBy);
 
         // Return the created task as DTO
         return new TaskDto

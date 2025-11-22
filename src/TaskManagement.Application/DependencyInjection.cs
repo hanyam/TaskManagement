@@ -55,11 +55,15 @@ public static class DependencyInjection
         // Register options
         services.Configure<ReminderOptions>(configuration.GetSection(ReminderOptions.SectionName));
         services.Configure<ExtensionPolicyOptions>(configuration.GetSection(ExtensionPolicyOptions.SectionName));
+        services.Configure<FileStorageOptions>(configuration.GetSection(FileStorageOptions.SectionName));
 
         // Register business services
         services.AddScoped<IReminderCalculationService, ReminderCalculationService>();
         services.AddScoped<ITaskActionService,
             TaskActionService>();
+
+        // Register audit logging service
+        services.AddScoped<IAuditLogService, AuditLogService>();
 
         // Register current user and date services (with override support for testing)
         services.AddHttpContextAccessor(); // Required for CurrentUserService

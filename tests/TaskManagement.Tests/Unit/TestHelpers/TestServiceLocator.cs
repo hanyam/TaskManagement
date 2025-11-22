@@ -77,7 +77,9 @@ public class TestServiceLocator : IServiceLocator
         if (serviceType == typeof(ICommandHandler<CreateTaskCommand, TaskDto>) ||
             serviceType == typeof(IRequestHandler<CreateTaskCommand, TaskDto>))
         {
-            return new CreateTaskCommandHandler(taskCommandRepository, userQueryRepository, _context);
+            var mockLogger = new Moq.Mock<Microsoft.Extensions.Logging.ILogger<CreateTaskCommandHandler>>();
+            var mockAuditLogService = new Moq.Mock<TaskManagement.Application.Common.Services.IAuditLogService>();
+            return new CreateTaskCommandHandler(taskCommandRepository, userQueryRepository, _context, mockLogger.Object, mockAuditLogService.Object);
         }
 
         // Handle command handlers as both ICommandHandler and IRequestHandler

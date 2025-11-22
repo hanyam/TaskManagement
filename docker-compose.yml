@@ -20,6 +20,30 @@ services:
       retries: 5
       start_period: 30s
 
+  seq:
+    image: datalust/seq:2024.2
+    container_name: taskmanagement-seq
+    ports:
+      - "5341:5341"  # Seq ingestion endpoint
+      - "8081:80"    # Seq web UI
+    environment:
+      - ACCEPT_EULA=Y
+    volumes:
+      - seq_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5341/api || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
 
   taskmanagement.api:
     image: ${DOCKER_REGISTRY-}taskmanagementapi
@@ -31,8 +55,7 @@ services:
       - "5000:8080"
     environment:
       # Seq
-      # - OTEL_EXPORTER_OTLP_ENDPOINT=http://devhabit.seq:5341/ingest/otlp
-      # - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - Serilog__WriteTo__2__Args__serverUrl=http://seq:5341
       # Aspire Dashboard
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://taskmanagement.aspire-dashboard:18889
       - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
@@ -41,7 +64,10 @@ services:
       - ASPNETCORE_URLS=http://+:8080
       - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=TaskManagement;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True;
     depends_on:
-      - sqlserver
+      sqlserver:
+        condition: service_healthy
+      seq:
+        condition: service_started
     restart: unless-stopped
 
   taskmanagement.web:
@@ -100,4 +126,5 @@ services:
 
 volumes:
   sqlserver_data:
+  seq_data:
   nuget_packages:

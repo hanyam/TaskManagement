@@ -18,6 +18,7 @@
     <!-- Azure & Microsoft Graph -->
     <PackageVersion Include="Microsoft.Graph" Version="5.97.0" />
     <PackageVersion Include="Azure.Identity" Version="1.17.1" />
+    <PackageVersion Include="Azure.Storage.Blobs" Version="12.20.0" />
     <!-- Validation -->
     <!--<PackageVersion Include="FluentValidation" Version="12.1.0" />-->
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.0" />
@@ -45,11 +46,15 @@
     <!--<PackageVersion Include="Refit.Newtonsoft.Json" Version="8.0.0" />-->
     <!--<PackageVersion Include="Scalar.AspNetCore" Version="2.9.0" />-->
     <!-- Logging & Monitoring -->
+    <PackageVersion Include="Serilog" Version="4.2.0" />
     <PackageVersion Include="Serilog.AspNetCore" Version="9.0.0" />
     <PackageVersion Include="Serilog.Sinks.Console" Version="6.1.1" />
     <PackageVersion Include="Serilog.Sinks.File" Version="7.0.0" />
     <PackageVersion Include="Serilog.Sinks.Seq" Version="9.0.0" />
-    <PackageVersion Include="Serilog.Enrichers.Environment" Version="3.1.0" />
+    <PackageVersion Include="Serilog.Enrichers.Environment" Version="3.0.1" />
+    <PackageVersion Include="Serilog.Enrichers.Thread" Version="4.0.0" />
+    <PackageVersion Include="Serilog.Enrichers.CorrelationId" Version="3.0.1" />
+    <PackageVersion Include="Serilog.Sinks.ApplicationInsights" Version="4.0.0" />
     <PackageVersion Include="Serilog.Sinks.OpenTelemetry" Version="4.2.0" />
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="9.0.10" />
     <!-- Testing -->

@@ -1,6 +1,8 @@
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Moq;
+using TaskManagement.Application.Common.Services;
 using TaskManagement.Infrastructure.Data.Repositories;
 using TaskManagement.Application.Tasks.Commands.CreateTask;
 using TaskManagement.Domain.Entities;
@@ -35,8 +37,14 @@ public class CreateTaskCommandHandlerTests
             })
             .Build();
         _mockUserQueryRepository = new Mock<UserDapperRepository>(configuration);
-        _handler = new CreateTaskCommandHandler(_mockTaskCommandRepository.Object, _mockUserQueryRepository.Object,
-            _mockContext.Object);
+        var mockLogger = new Mock<ILogger<CreateTaskCommandHandler>>();
+        var mockAuditLogService = new Mock<IAuditLogService>();
+        _handler = new CreateTaskCommandHandler(
+            _mockTaskCommandRepository.Object,
+            _mockUserQueryRepository.Object,
+            _mockContext.Object,
+            mockLogger.Object,
+            mockAuditLogService.Object);
     }
 
     [Fact]

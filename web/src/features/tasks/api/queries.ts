@@ -16,7 +16,8 @@ import type {
   CreateTaskRequest,
   ExtensionRequestDto,
   TaskProgressDto,
-  ReviewCompletedTaskRequest
+  ReviewCompletedTaskRequest,
+  TaskAttachmentDto
 } from "@/features/tasks/types";
 
 
@@ -25,7 +26,8 @@ export const taskKeys = {
   lists: () => [...taskKeys.all, "list"] as const,
   list: (filters: TaskListFilters) => [...taskKeys.lists(), filters] as const,
   detail: (taskId: string) => [...taskKeys.all, "detail", taskId] as const,
-  dashboard: () => [...taskKeys.all, "dashboard"] as const
+  dashboard: () => [...taskKeys.all, "dashboard"] as const,
+  attachments: (taskId: string) => [...taskKeys.all, "attachments", taskId] as const
 };
 
 export function useTasksQuery(filters: TaskListFilters, options?: Partial<UseQueryOptions<GetTasksResponse>>) {
@@ -302,5 +304,124 @@ export function useReviewCompletedTaskMutation(taskId: string) {
       await queryClient.invalidateQueries({ queryKey: taskKeys.dashboard() });
     }
   });
+}
+
+// Attachment hooks
+export function useTaskAttachmentsQuery(taskId: string) {
+  const locale = useCurrentLocale();
+  return useQuery({
+    queryKey: taskKeys.attachments(taskId),
+    queryFn: async ({ signal }) => {
+      const { data } = await apiClient.request<TaskAttachmentDto[]>({
+        path: `/tasks/${taskId}/attachments`,
+        method: "GET",
+        signal,
+        locale
+      });
+      return data;
+    }
+  });
+}
+
+export function useUploadAttachmentMutation(taskId: string) {
+  const locale = useCurrentLocale();
+  const queryClient = useQueryClient();
+  const { session } = useAuth();
+
+  return useMutation({
+    mutationFn: async ({ file, type }: { file: File; type: number }) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("type", type.toString());
+
+      // Use fetch directly for file uploads since apiClient expects JSON
+      const token = session?.token;
+      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+      const url = `${baseUrl}/api/tasks/${taskId}/attachments`;
+
+      const headers = new Headers();
+      if (token) {
+        headers.set("Authorization", `Bearer ${token}`);
+      }
+      if (locale) {
+        headers.set("Accept-Language", locale);
+        headers.set("X-Locale", locale);
+      }
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers,
+        body: formData,
+        credentials: "include"
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to upload file");
+      }
+
+      const result = await response.json();
+      return result.data as TaskAttachmentDto;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: taskKeys.attachments(taskId) });
+      await queryClient.invalidateQueries({ queryKey: taskKeys.detail(taskId) });
+    }
+  });
+}
+
+export function useDeleteAttachmentMutation(taskId: string) {
+  const locale = useCurrentLocale();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (attachmentId: string) => {
+      await apiClient.request<void>({
+        path: `/tasks/${taskId}/attachments/${attachmentId}`,
+        method: "DELETE",
+        locale
+      });
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: taskKeys.attachments(taskId) });
+      await queryClient.invalidateQueries({ queryKey: taskKeys.detail(taskId) });
+    }
+  });
+}
+
+/**
+ * Downloads an attachment file and returns it as a Blob.
+ * This is a standalone function that can be called directly.
+ */
+export async function downloadAttachment(taskId: string, attachmentId: string): Promise<Blob> {
+  const { getClientSession } = await import("@/core/auth/session.client");
+  const session = getClientSession();
+  const locale = typeof window !== "undefined" ? window.location.pathname.split("/")[1] || "en" : "en";
+
+  const token = session?.token;
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+  const url = `${baseUrl}/api/tasks/${taskId}/attachments/${attachmentId}/download`;
+
+  const headers = new Headers();
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+  if (locale) {
+    headers.set("Accept-Language", locale);
+    headers.set("X-Locale", locale);
+  }
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers,
+    credentials: "include"
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ message: "Failed to download file" }));
+    throw new Error(errorData.message || "Failed to download file");
+  }
+
+  return response.blob();
 }
 

@@ -3,22 +3,26 @@
 import { CheckIcon } from "@heroicons/react/24/outline";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
 
+import { useAuth } from "@/core/auth/AuthProvider";
+import { getRoleFromToken } from "@/core/auth/session.client";
 import { useCurrentLocale } from "@/core/routing/useCurrentLocale";
 import { useCreateTaskMutation } from "@/features/tasks/api/queries";
 import { UserSearchInput } from "@/features/tasks/components/UserSearchInput";
 import type { TaskPriority, TaskType } from "@/features/tasks/value-objects";
-import { TaskPriorityEnum, TaskTypeEnum } from "@/features/tasks/value-objects";
+import { TaskPriorityEnum, TaskTypeEnum, AttachmentTypeEnum } from "@/features/tasks/value-objects";
 import { Button } from "@/ui/components/Button";
 import { DatePicker } from "@/ui/components/DatePicker";
+import { FileUpload, type FileUploadItem } from "@/ui/components/FileUpload";
 import { FormFieldError } from "@/ui/components/FormFieldError";
 import { Input } from "@/ui/components/Input";
 import { Label } from "@/ui/components/Label";
 import { Select } from "@/ui/components/Select";
+import { toast } from "sonner";
 
 const createTaskSchema = z.object({
   title: z.string().min(1, "validation:required"),
@@ -47,6 +51,38 @@ export function TaskCreateView() {
   const router = useRouter();
   const locale = useCurrentLocale();
   const { mutateAsync, isPending } = useCreateTaskMutation();
+  const { session } = useAuth();
+  const [files, setFiles] = useState<FileUploadItem[]>([]);
+
+  // Check if user can upload files (Managers and Admins)
+  const canUploadFiles = useMemo(() => {
+    // First try to get role from session user object
+    let role = session?.user?.role;
+    
+    // Fallback: extract role from JWT token if not in session
+    if (!role && session?.token) {
+      role = getRoleFromToken(session.token);
+      // If we found role in token, update the session user object for future use
+      if (role && session.user) {
+        session.user.role = role;
+      }
+    }
+    
+    if (!role) {
+      console.warn("[TaskCreateView] No role found in session or token:", {
+        hasSession: !!session,
+        hasToken: !!session?.token,
+        user: session?.user
+      });
+      return false;
+    }
+    
+    // Case-insensitive role check
+    const roleLower = role.toLowerCase();
+    const canUpload = roleLower === "manager" || roleLower === "admin";
+    
+    return canUpload;
+  }, [session?.user?.role, session?.token, session]);
 
   const form = useForm<CreateTaskFormValues>({
     resolver: zodResolver(createTaskSchema),
@@ -64,7 +100,7 @@ export function TaskCreateView() {
 
   async function handleSubmit(values: CreateTaskFormValues) {
     try {
-      await mutateAsync({
+      const task = await mutateAsync({
         title: values.title,
         description: values.description ? values.description : null,
         priority: TaskPriorityEnum[values.priority], // Convert string to numeric enum
@@ -74,6 +110,101 @@ export function TaskCreateView() {
         type: TaskTypeEnum[values.type], // Convert string to numeric enum
         dueDate: values.dueDate ? new Date(values.dueDate).toISOString() : null
       });
+
+      // Upload files after task creation (managers only)
+      const uploadResults: { success: string[]; failed: Array<{ fileName: string; error: string }> } = {
+        success: [],
+        failed: []
+      };
+
+      if (files.length > 0 && task?.id && canUploadFiles) {
+        // Upload files sequentially
+        for (const fileItem of files) {
+          if (!fileItem.error) {
+            try {
+              const formData = new FormData();
+              formData.append("file", fileItem.file);
+              formData.append("type", AttachmentTypeEnum.ManagerUploaded.toString());
+
+              const token = session?.token;
+              const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+              const url = `${baseUrl}/api/tasks/${task.id}/attachments`;
+
+              const headers = new Headers();
+              if (token) {
+                headers.set("Authorization", `Bearer ${token}`);
+              }
+              if (locale) {
+                headers.set("Accept-Language", locale);
+                headers.set("X-Locale", locale);
+              }
+
+              const response = await fetch(url, {
+                method: "POST",
+                headers,
+                body: formData,
+                credentials: "include"
+              });
+
+              if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ message: response.statusText }));
+                const errorMessage = errorData.message || errorData.error?.message || response.statusText;
+                uploadResults.failed.push({
+                  fileName: fileItem.file.name,
+                  error: errorMessage
+                });
+                console.error(`Failed to upload file ${fileItem.file.name}:`, errorMessage);
+              } else {
+                uploadResults.success.push(fileItem.file.name);
+              }
+            } catch (error) {
+              const errorMessage = error instanceof Error ? error.message : String(error);
+              uploadResults.failed.push({
+                fileName: fileItem.file.name,
+                error: errorMessage
+              });
+              console.error(`Failed to upload file ${fileItem.file.name}:`, error);
+            }
+          } else {
+            // File had validation error before upload
+            uploadResults.failed.push({
+              fileName: fileItem.file.name,
+              error: fileItem.error
+            });
+          }
+        }
+
+        // Show user feedback about upload results
+        if (uploadResults.success.length > 0) {
+          toast.success(
+            t("tasks:attachments.upload.batchSuccess", {
+              count: uploadResults.success.length,
+              fileName: uploadResults.success[0]
+            })
+          );
+        }
+
+        if (uploadResults.failed.length > 0) {
+          const failedFiles = uploadResults.failed.map((f) => f.fileName).join(", ");
+          toast.error(
+            t("tasks:attachments.upload.batchFailed", {
+              count: uploadResults.failed.length,
+              files: failedFiles
+            }),
+            {
+              duration: 10000 // Show for 10 seconds so user can read it
+            }
+          );
+          
+          // Redirect to task details page so user can retry uploading
+          router.push(`/${locale}/tasks/${task.id}`);
+          router.refresh();
+          return; // Don't show success message for task creation since we're redirecting
+        }
+      }
+
+      // Show success message and redirect
+      toast.success(t("tasks:forms.create.success"));
       router.push(`/${locale}/tasks`);
       router.refresh();
     } catch (error) {
@@ -209,6 +340,23 @@ export function TaskCreateView() {
             ) : null}
           </div>
         </div>
+
+        {/* File Upload Section - Only for Managers/Admins */}
+        {canUploadFiles && (
+          <div className="grid gap-2">
+            <Label>{t("tasks:attachments.sections.managerUploaded")}</Label>
+            <FileUpload
+              files={files}
+              onFilesChange={setFiles}
+              maxSize={50 * 1024 * 1024} // 50MB
+            />
+            {files.length > 0 && (
+              <p className="text-xs text-muted-foreground">
+                {files.length} {files.length === 1 ? "file" : "files"} selected
+              </p>
+            )}
+          </div>
+        )}
 
         <div className="flex justify-end gap-3">
           <Button type="submit" disabled={isPending} icon={<CheckIcon />}>

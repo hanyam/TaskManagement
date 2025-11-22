@@ -1,8 +1,10 @@
 using System.Security.Claims;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Moq;
 using TaskManagement.Application.Authentication.Commands.AuthenticateUser;
+using TaskManagement.Application.Common.Services;
 using TaskManagement.Infrastructure.Data.Repositories;
 using TaskManagement.Domain.Common;
 using TaskManagement.Domain.Entities;
@@ -43,11 +45,15 @@ public class AuthenticateUserCommandHandlerTests
         _mockUserQueryRepository = new Mock<UserDapperRepository>(configuration);
         _mockContext = DbContextTestHelper.CreateMockDbContext();
         _mockUserCommandRepository = new Mock<UserEfCommandRepository>(_mockContext.Object);
+        var mockLogger = new Mock<ILogger<AuthenticateUserCommandHandler>>();
+        var mockAuditLogService = new Mock<IAuditLogService>();
         _handler = new AuthenticateUserCommandHandler(
             _mockAuthenticationService.Object,
             _mockUserQueryRepository.Object,
             _mockUserCommandRepository.Object,
-            _mockContext.Object);
+            _mockContext.Object,
+            mockLogger.Object,
+            mockAuditLogService.Object);
     }
 
     [Fact]

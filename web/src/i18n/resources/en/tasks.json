@@ -40,7 +40,8 @@
       "assignments": "Assignments",
       "progressHistory": "Progress history",
       "extensions": "Deadline extensions",
-      "managerReview": "Manager Review"
+      "managerReview": "Manager Review",
+      "attachments": "Attachments"
     },
     "managerReview": {
       "rating": "Rating",
@@ -130,6 +131,31 @@
       "success": "Task review submitted successfully.",
       "error": "Failed to submit review. Please try again."
     }
+  },
+  "attachments": {
+    "title": "Attachments",
+    "empty": "No attachments available",
+    "managerUploaded": "Manager Uploaded Files",
+    "employeeUploaded": "Employee Uploaded Files",
+    "upload": {
+      "title": "Upload Files",
+      "dragDrop": "Drag and drop files here",
+      "orClick": "or click to browse",
+      "maxSize": "Maximum file size: {size}",
+      "selectFiles": "Select Files",
+      "uploading": "Uploading...",
+      "success": "File uploaded successfully",
+      "error": "Failed to upload file",
+      "batchSuccess": "{count, plural, =1 {File {fileName} uploaded successfully} other {{count} files uploaded successfully}}",
+      "batchFailed": "{count, plural, =1 {Failed to upload {files}} other {Failed to upload {count} files: {files}}}"
+    },
+    "actions": {
+      "download": "Download",
+      "delete": "Delete",
+      "deleteConfirm": "Are you sure you want to delete this file? This action cannot be undone."
+    },
+    "accessDenied": "You do not have permission to view attachments for this task",
+    "uploadDenied": "You do not have permission to upload files for this task"
   },
   "errors": {
     "loadFailed": "Failed to load task details. Please try again."

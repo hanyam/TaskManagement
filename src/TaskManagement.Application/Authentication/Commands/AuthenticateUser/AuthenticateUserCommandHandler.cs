@@ -1,5 +1,7 @@
 using System.Security.Claims;
+using Microsoft.Extensions.Logging;
 using TaskManagement.Application.Common.Interfaces;
+using TaskManagement.Application.Common.Services;
 using TaskManagement.Infrastructure.Data.Repositories;
 using TaskManagement.Domain.Common;
 using TaskManagement.Domain.Constants;
@@ -20,25 +22,39 @@ public class AuthenticateUserCommandHandler(
     IAuthenticationService authenticationService,
     UserDapperRepository userQueryRepository,
     UserEfCommandRepository userCommandRepository,
-    TaskManagementDbContext context) : ICommandHandler<AuthenticateUserCommand, AuthenticationResponse>
+    TaskManagementDbContext context,
+    ILogger<AuthenticateUserCommandHandler> logger,
+    IAuditLogService auditLogService) : ICommandHandler<AuthenticateUserCommand, AuthenticationResponse>
 {
     private readonly IAuthenticationService _authenticationService = authenticationService;
     private readonly TaskManagementDbContext _context = context;
     private readonly UserEfCommandRepository _userCommandRepository = userCommandRepository;
     private readonly UserDapperRepository _userQueryRepository = userQueryRepository;
+    private readonly ILogger<AuthenticateUserCommandHandler> _logger = logger;
+    private readonly IAuditLogService _auditLogService = auditLogService;
 
     public async Task<Result<AuthenticationResponse>> Handle(AuthenticateUserCommand request,
         CancellationToken cancellationToken)
     {
+        _logger.LogDebug("Starting authentication process");
+
         var errors = new List<Error>();
 
         // Validate Azure AD token
         var validationResult =
             await _authenticationService.ValidateAzureAdTokenAsync(request.AzureAdToken, cancellationToken);
-        if (validationResult.IsFailure) errors.Add(validationResult.Error ?? AuthenticationErrors.InvalidAzureAdToken);
+        if (validationResult.IsFailure)
+        {
+            _logger.LogWarning("Azure AD token validation failed: {Error}", validationResult.Error?.Message);
+            errors.Add(validationResult.Error ?? AuthenticationErrors.InvalidAzureAdToken);
+        }
 
         // If there are any validation errors, return them all
-        if (errors.Any()) return Result<AuthenticationResponse>.Failure(errors);
+        if (errors.Any())
+        {
+            _auditLogService.LogAuthenticationFailure("Unknown", "Token validation failed");
+            return Result<AuthenticationResponse>.Failure(errors);
+        }
 
         var claimsPrincipal = validationResult.Value!;
         var email = claimsPrincipal.FindFirst(ClaimTypes.Email)?.Value ??
@@ -46,6 +62,8 @@ public class AuthenticateUserCommandHandler(
 
         if (string.IsNullOrEmpty(email))
         {
+            _logger.LogWarning("Email claim missing from Azure AD token");
+            _auditLogService.LogAuthenticationFailure("Unknown", "Email claim missing");
             errors.Add(AuthenticationErrors.EmailClaimMissing);
             return Result<AuthenticationResponse>.Failure(errors);
         }
@@ -55,6 +73,7 @@ public class AuthenticateUserCommandHandler(
 
         if (user == null)
         {
+            _logger.LogInformation("Creating new user from Azure AD: {Email}", email);
             // Create new user from Azure AD claims using EF Core (for change tracking)
             var firstName = claimsPrincipal.FindFirst(ClaimTypes.GivenName)?.Value ??
                             claimsPrincipal.FindFirst(GivenName)?.Value ?? string.Empty;
@@ -68,6 +87,7 @@ public class AuthenticateUserCommandHandler(
 
             await _userCommandRepository.AddAsync(user, cancellationToken);
             await _context.SaveChangesAsync(cancellationToken);
+            _logger.LogInformation("Created new user {UserId} with email {Email}", user.Id, email);
 
             // Check if user is a manager and update role accordingly
             var isManager = await _userQueryRepository.IsManagerAsync(user.Id, cancellationToken);
@@ -110,9 +130,13 @@ public class AuthenticateUserCommandHandler(
         var jwtResult = await _authenticationService.GenerateJwtTokenAsync(email!, additionalClaims, cancellationToken);
         if (jwtResult.IsFailure)
         {
+            _logger.LogError("JWT token generation failed for user {Email}: {Error}", email, jwtResult.Error?.Message);
             errors.Add(jwtResult.Error ?? AuthenticationErrors.JwtTokenGenerationFailed);
             return Result<AuthenticationResponse>.Failure(errors);
         }
+
+        _logger.LogInformation("Successfully authenticated user {UserId} with email {Email} and role {Role}", user.Id, email, user.Role);
+        _auditLogService.LogAuthenticationSuccess(user.Id.ToString(), email);
 
         return new AuthenticationResponse
         {
@@ -127,7 +151,8 @@ public class AuthenticateUserCommandHandler(
                 DisplayName = user.DisplayName,
                 IsActive = user.IsActive,
                 CreatedAt = user.CreatedAt,
-                LastLoginAt = user.LastLoginAt
+                LastLoginAt = user.LastLoginAt,
+                Role = user.Role.ToString()
             }
         };
     }

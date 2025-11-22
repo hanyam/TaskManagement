@@ -8,12 +8,12 @@ using TaskManagement.Infrastructure.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure Serilog
+// Configure Serilog with enhanced configuration
+// Enrichment is configured in appsettings.json (WithMachineName, WithThreadId, WithCorrelationId)
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
-    .Enrich.FromLogContext()
-    .WriteTo.Console()
-    .WriteTo.File("logs/taskmanagement-.txt", rollingInterval: RollingInterval.Day)
+    .Enrich.WithProperty("Application", "TaskManagement.Api")
+    .Enrich.WithProperty("Environment", builder.Environment.EnvironmentName)
     .CreateLogger();
 
 builder.Host.UseSerilog();
@@ -43,6 +43,12 @@ if (app.Environment.IsDevelopment())
 
 // CORS must be before authentication/authorization
 app.UseCors("AllowFrontend");
+
+// Add correlation ID middleware (must be early in pipeline)
+app.UseMiddleware<CorrelationIdMiddleware>();
+
+// Add request logging middleware
+app.UseMiddleware<RequestLoggingMiddleware>();
 
 // Add global exception handling middleware
 app.UseMiddleware<ExceptionHandlingMiddleware>();

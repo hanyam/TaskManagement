@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
+using Serilog.Context;
+using TaskManagement.Application.Common.Extensions;
 using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Domain.Common;
 
@@ -27,28 +29,45 @@ public class LoggingBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, 
         var requestName = typeof(TRequest).Name;
         var stopwatch = Stopwatch.StartNew();
 
-        _logger.LogInformation("Starting to process request {RequestName}", requestName);
-
-        try
+        using (LogContext.PushProperty("RequestType", requestName))
         {
-            var result = await next();
-            stopwatch.Stop();
+            _logger.LogInformation("Starting to process request {RequestName}", requestName);
 
-            if (result.IsSuccess)
-                _logger.LogInformation("Successfully processed request {RequestName} in {ElapsedMilliseconds}ms",
-                    requestName, stopwatch.ElapsedMilliseconds);
-            else
-                _logger.LogWarning("Failed to process request {RequestName} in {ElapsedMilliseconds}ms. Error: {Error}",
-                    requestName, stopwatch.ElapsedMilliseconds, result.Error);
+            try
+            {
+                var result = await next();
+                stopwatch.Stop();
 
-            return result;
-        }
-        catch (Exception ex)
-        {
-            stopwatch.Stop();
-            _logger.LogError(ex, "Exception occurred while processing request {RequestName} in {ElapsedMilliseconds}ms",
-                requestName, stopwatch.ElapsedMilliseconds);
-            throw;
+                if (result.IsSuccess)
+                {
+                    _logger.LogPerformance(
+                        requestName,
+                        stopwatch.ElapsedMilliseconds,
+                        null,
+                        null,
+                        new Dictionary<string, object> { { "Success", true } });
+                }
+                else
+                {
+                    _logger.LogWarning(
+                        "Failed to process request {RequestName} in {ElapsedMilliseconds}ms. Error: {Error}",
+                        requestName,
+                        stopwatch.ElapsedMilliseconds,
+                        result.Error);
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                stopwatch.Stop();
+                _logger.LogError(
+                    ex,
+                    "Exception occurred while processing request {RequestName} in {ElapsedMilliseconds}ms",
+                    requestName,
+                    stopwatch.ElapsedMilliseconds);
+                throw;
+            }
         }
     }
 }
@@ -73,28 +92,45 @@ public class LoggingBehavior<TRequest> : IPipelineBehavior<TRequest>
         var requestName = typeof(TRequest).Name;
         var stopwatch = Stopwatch.StartNew();
 
-        _logger.LogInformation("Starting to process request {RequestName}", requestName);
-
-        try
+        using (LogContext.PushProperty("RequestType", requestName))
         {
-            var result = await next();
-            stopwatch.Stop();
+            _logger.LogInformation("Starting to process request {RequestName}", requestName);
 
-            if (result.IsSuccess)
-                _logger.LogInformation("Successfully processed request {RequestName} in {ElapsedMilliseconds}ms",
-                    requestName, stopwatch.ElapsedMilliseconds);
-            else
-                _logger.LogWarning("Failed to process request {RequestName} in {ElapsedMilliseconds}ms. Error: {Error}",
-                    requestName, stopwatch.ElapsedMilliseconds, result.Error);
+            try
+            {
+                var result = await next();
+                stopwatch.Stop();
 
-            return result;
-        }
-        catch (Exception ex)
-        {
-            stopwatch.Stop();
-            _logger.LogError(ex, "Exception occurred while processing request {RequestName} in {ElapsedMilliseconds}ms",
-                requestName, stopwatch.ElapsedMilliseconds);
-            throw;
+                if (result.IsSuccess)
+                {
+                    _logger.LogPerformance(
+                        requestName,
+                        stopwatch.ElapsedMilliseconds,
+                        null,
+                        null,
+                        new Dictionary<string, object> { { "Success", true } });
+                }
+                else
+                {
+                    _logger.LogWarning(
+                        "Failed to process request {RequestName} in {ElapsedMilliseconds}ms. Error: {Error}",
+                        requestName,
+                        stopwatch.ElapsedMilliseconds,
+                        result.Error);
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                stopwatch.Stop();
+                _logger.LogError(
+                    ex,
+                    "Exception occurred while processing request {RequestName} in {ElapsedMilliseconds}ms",
+                    requestName,
+                    stopwatch.ElapsedMilliseconds);
+                throw;
+            }
         }
     }
 }

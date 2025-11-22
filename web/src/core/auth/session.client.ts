@@ -8,11 +8,11 @@ const SESSION_STORAGE_KEY = "tm.session";
 const isBrowser = typeof window !== "undefined";
 
 /**
- * Decodes JWT token to extract expiration time
+ * Decodes JWT token payload
  * @param token JWT token string
- * @returns Expiration timestamp in milliseconds, or null if invalid
+ * @returns Decoded payload object, or null if invalid
  */
-function getTokenExpiration(token: string): number | null {
+function decodeJwtPayload(token: string): Record<string, unknown> | null {
   try {
     const parts = token.split(".");
     if (parts.length !== 3) {
@@ -20,15 +20,45 @@ function getTokenExpiration(token: string): number | null {
     }
 
     const payload = JSON.parse(atob(parts[1]));
-    if (payload.exp) {
-      // JWT exp is in seconds, convert to milliseconds
-      return payload.exp * 1000;
-    }
-
-    return null;
+    return payload as Record<string, unknown>;
   } catch {
     return null;
   }
+}
+
+/**
+ * Decodes JWT token to extract expiration time
+ * @param token JWT token string
+ * @returns Expiration timestamp in milliseconds, or null if invalid
+ */
+function getTokenExpiration(token: string): number | null {
+  const payload = decodeJwtPayload(token);
+  if (payload?.exp) {
+    // JWT exp is in seconds, convert to milliseconds
+    return (payload.exp as number) * 1000;
+  }
+  return null;
+}
+
+/**
+ * Extracts role from JWT token claims
+ * @param token JWT token string
+ * @returns Role string, or null if not found
+ */
+export function getRoleFromToken(token: string): string | null {
+  const payload = decodeJwtPayload(token);
+  if (!payload) {
+    return null;
+  }
+
+  // Try different claim names that might contain the role
+  return (
+    (payload.role as string) ||
+    (payload.Role as string) ||
+    (payload["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] as string) ||
+    (payload["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/role"] as string) ||
+    null
+  );
 }
 
 /**

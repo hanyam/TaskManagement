@@ -40,7 +40,8 @@
       "assignments": "التكليفات",
       "progressHistory": "سجل التقدم",
       "extensions": "طلبات التمديد",
-      "managerReview": "مراجعة المدير"
+      "managerReview": "مراجعة المدير",
+      "attachments": "المرفقات"
     },
     "managerReview": {
       "rating": "التقييم",
@@ -130,6 +131,31 @@
       "success": "تم إرسال مراجعة المهمة بنجاح.",
       "error": "فشل إرسال المراجعة. يرجى المحاولة مرة أخرى."
     }
+  },
+  "attachments": {
+    "title": "المرفقات",
+    "empty": "لا توجد مرفقات متاحة",
+    "managerUploaded": "الملفات المرفوعة من المدير",
+    "employeeUploaded": "الملفات المرفوعة من الموظف",
+    "upload": {
+      "title": "رفع الملفات",
+      "dragDrop": "اسحب وأفلت الملفات هنا",
+      "orClick": "أو انقر للتصفح",
+      "maxSize": "الحد الأقصى لحجم الملف: {size}",
+      "selectFiles": "اختر الملفات",
+      "uploading": "جاري الرفع...",
+      "success": "تم رفع الملف بنجاح",
+      "error": "فشل رفع الملف",
+      "batchSuccess": "{count, plural, =1 {تم رفع الملف {fileName} بنجاح} other {تم رفع {count} ملفات بنجاح}}",
+      "batchFailed": "{count, plural, =1 {فشل رفع {files}} other {فشل رفع {count} ملفات: {files}}}"
+    },
+    "actions": {
+      "download": "تحميل",
+      "delete": "حذف",
+      "deleteConfirm": "هل أنت متأكد من حذف هذا الملف؟ لا يمكن التراجع عن هذا الإجراء."
+    },
+    "accessDenied": "ليس لديك صلاحية لعرض المرفقات لهذه المهمة",
+    "uploadDenied": "ليس لديك صلاحية لرفع الملفات لهذه المهمة"
   },
   "errors": {
     "loadFailed": "فشل تحميل تفاصيل المهمة. يرجى المحاولة مرة أخرى."

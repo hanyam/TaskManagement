@@ -15,6 +15,7 @@ public class TaskManagementDbContext(DbContextOptions<TaskManagementDbContext> o
     public DbSet<TaskProgressHistory> TaskProgressHistory { get; set; } = null!;
     public DbSet<DeadlineExtensionRequest> DeadlineExtensionRequests { get; set; } = null!;
     public DbSet<ManagerEmployee> ManagerEmployees { get; set; } = null!;
+    public DbSet<TaskAttachment> TaskAttachments { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -135,3 +135,17 @@ export interface ReviewCompletedTaskRequest {
   sendBackForRework: boolean;
 }
 
+export interface TaskAttachmentDto {
+  id: string;
+  taskId: string;
+  fileName: string;
+  originalFileName: string;
+  contentType: string;
+  fileSize: number;
+  type: number; // Numeric enum: 0=ManagerUploaded, 1=EmployeeUploaded
+  uploadedById: string;
+  uploadedByEmail?: string | null;
+  uploadedByDisplayName?: string | null;
+  createdAt: string;
+}
+

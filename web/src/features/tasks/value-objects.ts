@@ -10,6 +10,8 @@ export type ExtensionRequestStatus = "Pending" | "Approved" | "Rejected";
 
 export type ProgressStatus = "Pending" | "Accepted" | "Rejected";
 
+export type AttachmentType = "ManagerUploaded" | "EmployeeUploaded";
+
 // Enum mappings for API requests (backend expects numeric values)
 export const TaskPriorityEnum = {
   Low: 0,
@@ -43,6 +45,11 @@ export const ReminderLevelEnum = {
   Medium: 2,
   High: 3,
   Critical: 4
+} as const;
+
+export const AttachmentTypeEnum = {
+  ManagerUploaded: 0,
+  EmployeeUploaded: 1
 } as const;
 
 // Helper functions to convert numeric enums to strings
@@ -90,6 +97,14 @@ export function getReminderLevelString(level: number): ReminderLevel {
     4: "Critical"
   };
   return map[level] ?? "None";
+}
+
+export function getAttachmentTypeString(type: number): AttachmentType {
+  const map: Record<number, AttachmentType> = {
+    0: "ManagerUploaded",
+    1: "EmployeeUploaded"
+  };
+  return map[type] ?? "ManagerUploaded";
 }
 
 // HATEOAS link helper functions

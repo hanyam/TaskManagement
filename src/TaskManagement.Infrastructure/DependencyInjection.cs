@@ -2,9 +2,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using TaskManagement.Domain.Interfaces;
+using TaskManagement.Domain.Options;
 using TaskManagement.Infrastructure.Authentication;
 using TaskManagement.Infrastructure.Data;
 using TaskManagement.Infrastructure.Data.Repositories;
+using TaskManagement.Infrastructure.FileStorage;
 
 namespace TaskManagement.Infrastructure;
 
@@ -40,10 +42,24 @@ public static class DependencyInjection
         // Register Dapper query repositories (CQRS pattern: queries use Dapper)
         services.AddScoped<TaskDapperRepository>();
         services.AddScoped<UserDapperRepository>();
+        services.AddScoped<TaskAttachmentDapperRepository>();
 
         // Register EF Core command repositories (CQRS pattern: commands use EF Core)
         services.AddScoped<TaskEfCommandRepository>();
         services.AddScoped<UserEfCommandRepository>();
+
+        // Register file storage service based on configuration
+        // Note: FileStorageOptions is already registered in Application layer
+        var fileStorageProvider = configuration["FileStorage:Provider"] ?? "Local";
+        
+        if (string.Equals(fileStorageProvider, "AzureBlob", StringComparison.OrdinalIgnoreCase))
+        {
+            services.AddScoped<IFileStorageService, AzureBlobStorageService>();
+        }
+        else
+        {
+            services.AddScoped<IFileStorageService, LocalFileStorageService>();
+        }
 
         // Register authentication service
         services.AddScoped<IAuthenticationService, AuthenticationService>();

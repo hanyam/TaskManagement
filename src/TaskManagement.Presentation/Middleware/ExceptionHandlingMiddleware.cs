@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Serilog.Context;
 using TaskManagement.Domain.Common;
 
 namespace TaskManagement.Presentation.Middleware;
@@ -28,7 +29,36 @@ public class ExceptionHandlingMiddleware
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "An unhandled exception occurred");
+            var correlationId = CorrelationIdMiddleware.GetCorrelationId(context);
+            var userId = context.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "Anonymous";
+            var requestPath = context.Request.Path.Value ?? string.Empty;
+            var requestMethod = context.Request.Method;
+
+            using (LogContext.PushProperty("CorrelationId", correlationId))
+            using (LogContext.PushProperty("UserId", userId))
+            using (LogContext.PushProperty("RequestPath", requestPath))
+            using (LogContext.PushProperty("RequestMethod", requestMethod))
+            {
+                _logger.LogError(
+                    ex,
+                    "Unhandled exception in {RequestMethod} {RequestPath} for user {UserId}. Exception: {ExceptionType} - {ExceptionMessage}",
+                    requestMethod,
+                    requestPath,
+                    userId,
+                    ex.GetType().Name,
+                    ex.Message);
+
+                // Log inner exception if present
+                if (ex.InnerException != null)
+                {
+                    _logger.LogError(
+                        ex.InnerException,
+                        "Inner exception: {InnerExceptionType} - {InnerExceptionMessage}",
+                        ex.InnerException.GetType().Name,
+                        ex.InnerException.Message);
+                }
+            }
+
             await HandleExceptionAsync(context, ex);
         }
     }
