@@ -137,7 +137,8 @@ public static class DependencyInjection
                 .AddSource("DevHabit.Tracing")
                 .AddHttpClientInstrumentation()
                 .AddAspNetCoreInstrumentation()
-               // .AddSqlClientInstrumentation()
+                .AddEntityFrameworkCoreInstrumentation()
+                // .AddSqlClientInstrumentation()
                 )
             .WithMetrics(metrics => metrics
                 .AddMeter(TaskManagementMetrics.MeterName)

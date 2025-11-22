@@ -16,6 +16,7 @@
       <PackageReference Include="Microsoft.Graph" />
       <PackageReference Include="Azure.Identity" />
       <PackageReference Include="Microsoft.OpenApi" />
+      <PackageReference Include="OpenTelemetry.Instrumentation.EntityFrameworkCore" />
       <PackageReference Include="Serilog.AspNetCore" />
       <PackageReference Include="Serilog.Sinks.Console" />
       <PackageReference Include="Serilog.Sinks.File" />
