@@ -1,6 +1,6 @@
 using TaskManagement.Domain.Entities;
 
-namespace TaskManagement.Application.Infrastructure.Data.Repositories;
+namespace TaskManagement.Domain.Interfaces;
 
 /// <summary>
 ///     Interface for User EF Core command repository.
@@ -8,3 +8,5 @@ namespace TaskManagement.Application.Infrastructure.Data.Repositories;
 public interface IUserEfCommandRepository : ICommandRepository<User>
 {
 }
+
+

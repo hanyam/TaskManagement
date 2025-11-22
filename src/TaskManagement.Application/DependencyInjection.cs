@@ -6,7 +6,7 @@ using TaskManagement.Application.Common;
 using TaskManagement.Application.Common.Behaviors;
 using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Application.Common.Services;
-using TaskManagement.Application.Infrastructure.Data.Repositories;
+using TaskManagement.Infrastructure.Data.Repositories;
 using TaskManagement.Application.Tasks.Services;
 using TaskManagement.Domain.Options;
 
@@ -34,13 +34,8 @@ public static class DependencyInjection
         services.AddScoped<ICommandMediator, CommandMediator>();
         services.AddScoped<IRequestMediator, RequestMediator>();
 
-        // Register Dapper query repositories
-        services.AddScoped<TaskDapperRepository>();
-        services.AddScoped<UserDapperRepository>();
-
-        // Register EF Core command repositories
-        services.AddScoped<TaskEfCommandRepository>();
-        services.AddScoped<UserEfCommandRepository>();
+        // Note: Dapper and EF Core command repositories are registered in Infrastructure layer
+        // (TaskManagement.Infrastructure.DependencyInjection.AddInfrastructure)
 
         // Register all command handlers (both ICommandHandler and IRequestHandler interfaces)
         // This is necessary because PipelineMediator uses IRequestHandler internally

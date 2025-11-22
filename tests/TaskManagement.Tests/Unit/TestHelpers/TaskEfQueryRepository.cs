@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using TaskManagement.Application.Infrastructure.Data.Repositories;
+using TaskManagement.Domain.Interfaces;
 using TaskManagement.Infrastructure.Data;
 using DomainTask = TaskManagement.Domain.Entities.Task;
 using DomainTaskStatus = TaskManagement.Domain.Entities.TaskStatus;

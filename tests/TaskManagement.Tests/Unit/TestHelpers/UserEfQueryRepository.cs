@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using TaskManagement.Application.Infrastructure.Data.Repositories;
+using TaskManagement.Domain.Interfaces;
 using TaskManagement.Domain.Entities;
 using TaskManagement.Infrastructure.Data;
 using ManagerEmployee = TaskManagement.Domain.Entities.ManagerEmployee;

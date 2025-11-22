@@ -244,18 +244,27 @@ public class CreateEntityCommandHandler : ICommandHandler<CreateEntityCommand, E
 
 **Query Handler Pattern:**
 ```csharp
+using TaskManagement.Infrastructure.Data.Repositories;
+
 public class GetEntityByIdQueryHandler : IRequestHandler<GetEntityByIdQuery, EntityDto>
 {
     private readonly EntityDapperRepository _repository;
     
+    public GetEntityByIdQueryHandler(EntityDapperRepository repository)
+    {
+        _repository = repository;
+    }
+    
     public async Task<Result<EntityDto>> Handle(GetEntityByIdQuery request, CancellationToken cancellationToken)
     {
-        // 1. Query data
+        // 1. Query data using Dapper repository (from Infrastructure layer)
         // 2. Map to DTO
         // 3. Return result
     }
 }
 ```
+
+**Note**: Repository implementations are in `TaskManagement.Infrastructure/Data/Repositories/`. Import using `TaskManagement.Infrastructure.Data.Repositories`.
 
 ### Validator Creation
 

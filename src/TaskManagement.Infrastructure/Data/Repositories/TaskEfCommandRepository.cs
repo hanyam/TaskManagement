@@ -1,7 +1,8 @@
+using TaskManagement.Domain.Interfaces;
 using TaskManagement.Infrastructure.Data;
 using DomainTask = TaskManagement.Domain.Entities.Task;
 
-namespace TaskManagement.Application.Infrastructure.Data.Repositories;
+namespace TaskManagement.Infrastructure.Data.Repositories;
 
 /// <summary>
 ///     Specialized EF Core command repository for Task entities.
@@ -9,3 +10,4 @@ namespace TaskManagement.Application.Infrastructure.Data.Repositories;
 public class TaskEfCommandRepository(TaskManagementDbContext context) : EfCommandRepository<DomainTask>(context), ITaskEfCommandRepository
 {
 }
+

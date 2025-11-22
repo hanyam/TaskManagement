@@ -79,7 +79,7 @@ Application/
 #### 1. Domain Layer (`TaskManagement.Domain`)
 - **Entities**: Immutable domain models with private setters
 - **DTOs**: Data transfer objects
-- **Interfaces**: Domain contracts (IRepository, IUnitOfWork, etc.)
+- **Interfaces**: Domain contracts (IRepository, IUnitOfWork, IQueryRepository, ICommandRepository, etc.)
 - **Common Patterns**: Result, Error, BaseEntity
 - **Errors**: Centralized static error definitions
 - **Constants**: RoleNames, CustomClaimTypes, AzureAdClaimTypes
@@ -116,9 +116,13 @@ public class Task : BaseEntity
 - **Depends ONLY** on Domain layer
 
 #### 3. Infrastructure Layer (`TaskManagement.Infrastructure`)
-- **Data Access**: EF Core DbContext, Repositories, UnitOfWork
+- **Data Access**: EF Core DbContext, Repository implementations (Dapper and EF Core), UnitOfWork
 - **External Services**: Authentication (Azure AD), Email, etc.
-- **Depends** on Application and Domain layers
+- **Repository Implementations**: 
+  - `TaskDapperRepository`, `UserDapperRepository` (Dapper-based query repositories)
+  - `TaskEfCommandRepository`, `UserEfCommandRepository` (EF Core-based command repositories)
+  - `DapperQueryRepository<T>`, `EfCommandRepository<T>` (base repository classes)
+- **Depends** on Domain layer (for interfaces) and Application layer (for DbContext usage)
 
 #### 4. API Layer (`TaskManagement.Api`)
 - **Controllers**: Thin controllers delegating to mediator
@@ -541,9 +545,15 @@ public async Task<IActionResult> CreateTask(...)
 
 ### Repository Pattern
 
+**Architecture:**
+- **Interfaces**: Defined in `TaskManagement.Domain/Interfaces/` (IQueryRepository, ICommandRepository, ITaskEfCommandRepository, IUserEfCommandRepository)
+- **Implementations**: Located in `TaskManagement.Infrastructure/Data/Repositories/`
+- **Registration**: Repositories registered in `Infrastructure/DependencyInjection.cs`
+
 **EF Core for Commands:**
 ```csharp
-public class TaskEfCommandRepository : EfCommandRepository<Task>
+// Location: TaskManagement.Infrastructure/Data/Repositories/TaskEfCommandRepository.cs
+public class TaskEfCommandRepository : EfCommandRepository<Task>, ITaskEfCommandRepository
 {
     public TaskEfCommandRepository(TaskManagementDbContext context) 
         : base(context) { }
@@ -554,6 +564,7 @@ public class TaskEfCommandRepository : EfCommandRepository<Task>
 
 **Dapper for Queries:**
 ```csharp
+// Location: TaskManagement.Infrastructure/Data/Repositories/TaskDapperRepository.cs
 public class TaskDapperRepository : DapperQueryRepository<Task>
 {
     public TaskDapperRepository(IConfiguration configuration) 
@@ -565,15 +576,26 @@ public class TaskDapperRepository : DapperQueryRepository<Task>
     {
         const string sql = @"
             SELECT T.*, U.Email as AssignedUserEmail
-            FROM Tasks.Task T
-            LEFT JOIN Tasks.[User] U ON T.AssignedUserId = U.Id
+            FROM [Tasks].[Tasks] T
+            LEFT JOIN [Tasks].[Users] U ON T.AssignedUserId = U.Id
             WHERE T.Id = @TaskId";
         
-        return await QueryFirstOrDefaultAsync<TaskDto>(
-            sql, 
-            new { TaskId = taskId }, 
-            cancellationToken);
+        using var connection = CreateConnection();
+        return await connection.QueryFirstOrDefaultAsync<TaskDto>(
+            new CommandDefinition(sql, new { TaskId = taskId }, cancellationToken: cancellationToken));
     }
+}
+```
+
+**Using Repositories in Handlers:**
+```csharp
+// Application layer handlers use repositories from Infrastructure
+using TaskManagement.Infrastructure.Data.Repositories;
+
+public class GetTaskByIdQueryHandler(TaskDapperRepository taskRepository) 
+    : IRequestHandler<GetTaskByIdQuery, TaskDto>
+{
+    // Uses Dapper repository for optimized queries
 }
 ```
 
@@ -1108,8 +1130,10 @@ const { t } = useTranslation(["tasks", "common"]);
 - **Result**: `src/TaskManagement.Domain/Common/Result.cs`
 - **Error**: `src/TaskManagement.Domain/Common/Error.cs`
 - **BaseEntity**: `src/TaskManagement.Domain/Common/BaseEntity.cs`
-- **BaseController**: `src/TaskManagement.Api/Controllers/BaseController.cs`
-- **EnsureUserIdAttribute**: `src/TaskManagement.Api/Attributes/EnsureUserIdAttribute.cs`
+- **BaseController**: `src/TaskManagement.Presentation/Controllers/BaseController.cs`
+- **EnsureUserIdAttribute**: `src/TaskManagement.Presentation/Attributes/EnsureUserIdAttribute.cs`
+- **Repository Interfaces**: `src/TaskManagement.Domain/Interfaces/` (IQueryRepository, ICommandRepository, ITaskEfCommandRepository, IUserEfCommandRepository)
+- **Repository Implementations**: `src/TaskManagement.Infrastructure/Data/Repositories/` (TaskDapperRepository, TaskEfCommandRepository, UserDapperRepository, UserEfCommandRepository)
 - **DI Files**: `DependencyInjection.cs` in each layer
 
 ### Frontend
@@ -1124,6 +1148,12 @@ const { t } = useTranslation(["tasks", "common"]);
 
 ---
 
-**Last Updated**: November 15, 2025  
+**Last Updated**: December 2025  
 **Maintainer**: Update whenever architectural or tooling changes occur.
+
+**Recent Changes (December 2025):**
+- Repository implementations moved from `Application.Infrastructure.Data.Repositories` to `Infrastructure.Data.Repositories` (Clean Architecture compliance)
+- Repository interfaces moved from `Application.Infrastructure.Data.Repositories` to `Domain.Interfaces` (proper dependency direction)
+- All query handlers now use Dapper repositories from Infrastructure layer
+- All command handlers now use EF Core repositories from Infrastructure layer
 

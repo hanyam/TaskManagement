@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Caching.Memory;
 using TaskManagement.Application.Common.Constants;
 using TaskManagement.Application.Common.Services;
-using TaskManagement.Application.Infrastructure.Data.Repositories;
+using TaskManagement.Infrastructure.Data.Repositories;
 using TaskManagement.Domain.Common;
 using TaskManagement.Domain.Errors.Authentication;
 using TaskManagement.Domain.Errors.Users;

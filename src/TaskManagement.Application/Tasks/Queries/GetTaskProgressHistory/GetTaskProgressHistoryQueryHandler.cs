@@ -1,19 +1,18 @@
-using Microsoft.EntityFrameworkCore;
 using TaskManagement.Application.Common.Interfaces;
+using TaskManagement.Infrastructure.Data.Repositories;
 using TaskManagement.Domain.Common;
 using TaskManagement.Domain.DTOs;
-using TaskManagement.Domain.Entities;
 using TaskManagement.Domain.Errors.Tasks;
-using TaskManagement.Infrastructure.Data;
 
 namespace TaskManagement.Application.Tasks.Queries.GetTaskProgressHistory;
 
 /// <summary>
 ///     Handler for getting task progress history.
+///     Follows CQRS pattern: Queries use Dapper only (no EF Core).
 /// </summary>
-public class GetTaskProgressHistoryQueryHandler(TaskManagementDbContext context) : IRequestHandler<GetTaskProgressHistoryQuery, List<TaskProgressDto>>
+public class GetTaskProgressHistoryQueryHandler(TaskDapperRepository taskRepository) : IRequestHandler<GetTaskProgressHistoryQuery, List<TaskProgressDto>>
 {
-    private readonly TaskManagementDbContext _context = context;
+    private readonly TaskDapperRepository _taskRepository = taskRepository;
 
     public async Task<Result<List<TaskProgressDto>>> Handle(GetTaskProgressHistoryQuery request,
         CancellationToken cancellationToken)
@@ -25,35 +24,19 @@ public class GetTaskProgressHistoryQueryHandler(TaskManagementDbContext context)
 
         if (request.PageSize < 1 || request.PageSize > 100) errors.Add(TaskErrors.InvalidPageSize);
 
-        // Validate task exists
-        var taskExists = await _context.Tasks.AnyAsync(t => t.Id == request.TaskId, cancellationToken);
+        // Validate task exists using Dapper
+        var taskExists = await _taskRepository.TaskExistsAsync(request.TaskId, cancellationToken);
         if (!taskExists) errors.Add(TaskErrors.NotFoundById(request.TaskId));
 
         if (errors.Any()) return Result<List<TaskProgressDto>>.Failure(errors);
 
-        var progressHistory = await _context.Set<TaskProgressHistory>()
-            .Include(ph => ph.UpdatedByUser)
-            .Include(ph => ph.AcceptedByUser)
-            .Where(ph => ph.TaskId == request.TaskId)
-            .OrderByDescending(ph => ph.UpdatedAt)
-            .Skip((request.Page - 1) * request.PageSize)
-            .Take(request.PageSize)
-            .Select(ph => new TaskProgressDto
-            {
-                Id = ph.Id,
-                TaskId = ph.TaskId,
-                UpdatedById = ph.UpdatedById,
-                UpdatedByEmail = ph.UpdatedByUser != null ? ph.UpdatedByUser.Email : null,
-                ProgressPercentage = ph.ProgressPercentage,
-                Notes = ph.Notes,
-                Status = ph.Status,
-                AcceptedById = ph.AcceptedById,
-                AcceptedByEmail = ph.AcceptedByUser != null ? ph.AcceptedByUser.Email : null,
-                AcceptedAt = ph.AcceptedAt,
-                UpdatedAt = ph.UpdatedAt ?? ph.CreatedAt
-            })
-            .ToListAsync(cancellationToken);
+        // Get progress history using Dapper (optimized query)
+        var progressHistory = await _taskRepository.GetTaskProgressHistoryAsync(
+            request.TaskId,
+            request.Page,
+            request.PageSize,
+            cancellationToken);
 
-        return progressHistory;
+        return Result<List<TaskProgressDto>>.Success(progressHistory.ToList());
     }
 }

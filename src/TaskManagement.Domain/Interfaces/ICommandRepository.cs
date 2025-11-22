@@ -1,6 +1,6 @@
 using TaskManagement.Domain.Common;
 
-namespace TaskManagement.Application.Infrastructure.Data.Repositories;
+namespace TaskManagement.Domain.Interfaces;
 
 /// <summary>
 ///     Generic interface for Entity Framework Core-based command repositories.
@@ -13,3 +13,5 @@ public interface ICommandRepository<T> where T : BaseEntity
     Task DeleteAsync(T entity, CancellationToken cancellationToken = default);
     Task DeleteByIdAsync(Guid id, CancellationToken cancellationToken = default);
 }
+
+

@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Graph;
 using TaskManagement.Application.Common.Interfaces;
-using TaskManagement.Application.Infrastructure.Data.Repositories;
+using TaskManagement.Infrastructure.Data.Repositories;
 using TaskManagement.Application.Users.Queries.SearchManagedUsers;
 using TaskManagement.Domain.Common;
 using TaskManagement.Domain.Constants;

@@ -19,7 +19,7 @@ This solution follows **Vertical Slice Architecture** combined with **Clean Arch
 - ✅ **CQRS Pattern** - Command/Query Responsibility Segregation
 - ✅ **Clean Architecture** - Layered architecture with clear separation
 - ✅ **Custom Mediator** - Lightweight mediator implementation
-- ✅ **Repository Pattern** - EF Core for commands, Dapper for queries
+- ✅ **Repository Pattern** - EF Core for commands, Dapper for queries (Clean Architecture compliant)
 
 ### Authentication & Security
 - ✅ **Azure AD Authentication** - Enterprise authentication
@@ -64,10 +64,11 @@ TaskManagement/
 │   │   ├── Common/                      # Shared domain concepts
 │   │   ├── Entities/                    # Domain entities
 │   │   ├── DTOs/                        # Data transfer objects
-│   │   └── Interfaces/                   # Domain interfaces
+│   │   └── Interfaces/                  # Domain interfaces (repository contracts)
 │   └── TaskManagement.Infrastructure/  # Infrastructure Layer
 │       ├── Authentication/              # Authentication services
 │       └── Data/                        # Data access layer
+│           └── Repositories/            # Repository implementations (Dapper & EF Core)
 ├── tests/
 │   └── TaskManagement.Tests/           # Test project
 ├── Directory.Build.props               # Build configuration

@@ -1,19 +1,18 @@
-using Microsoft.EntityFrameworkCore;
 using TaskManagement.Application.Common.Interfaces;
+using TaskManagement.Infrastructure.Data.Repositories;
 using TaskManagement.Application.Tasks.Queries.GetTasks;
 using TaskManagement.Domain.Common;
-using TaskManagement.Domain.DTOs;
 using TaskManagement.Domain.Errors.Tasks;
-using TaskManagement.Infrastructure.Data;
 
 namespace TaskManagement.Application.Tasks.Queries.GetAssignedTasks;
 
 /// <summary>
 ///     Handler for getting tasks assigned to a user.
+///     Follows CQRS pattern: Queries use Dapper only (no EF Core).
 /// </summary>
-public class GetAssignedTasksQueryHandler(TaskManagementDbContext context) : IRequestHandler<GetAssignedTasksQuery, GetTasksResponse>
+public class GetAssignedTasksQueryHandler(TaskDapperRepository taskRepository) : IRequestHandler<GetAssignedTasksQuery, GetTasksResponse>
 {
-    private readonly TaskManagementDbContext _context = context;
+    private readonly TaskDapperRepository _taskRepository = taskRepository;
 
     public async Task<Result<GetTasksResponse>> Handle(GetAssignedTasksQuery request,
         CancellationToken cancellationToken)
@@ -27,48 +26,20 @@ public class GetAssignedTasksQueryHandler(TaskManagementDbContext context) : IRe
 
         if (errors.Any()) return Result<GetTasksResponse>.Failure(errors);
 
-        var query = _context.Tasks
-            .Include(t => t.AssignedUser)
-            .Include(t => t.Assignments)
-            .Where(t => t.AssignedUserId == request.UserId ||
-                        t.Assignments.Any(a => a.UserId == request.UserId));
+        // Get tasks using Dapper (optimized query)
+        var (tasks, totalCount) = await _taskRepository.GetAssignedTasksAsync(
+            request.UserId,
+            request.Status,
+            request.Page,
+            request.PageSize,
+            cancellationToken);
 
-        if (request.Status.HasValue) query = query.Where(t => t.Status == request.Status.Value);
-
-        var totalCount = await query.CountAsync(cancellationToken);
-
-        var tasks = await query
-            .OrderByDescending(t => t.CreatedAt)
-            .Skip((request.Page - 1) * request.PageSize)
-            .Take(request.PageSize)
-            .Select(t => new TaskDto
-            {
-                Id = t.Id,
-                Title = t.Title,
-                Description = t.Description,
-                Status = t.Status,
-                Priority = t.Priority,
-                DueDate = t.DueDate,
-                OriginalDueDate = t.OriginalDueDate,
-                ExtendedDueDate = t.ExtendedDueDate,
-                AssignedUserId = t.AssignedUserId,
-                AssignedUserEmail = t.AssignedUser != null ? t.AssignedUser.Email : null,
-                Type = t.Type,
-                ReminderLevel = t.ReminderLevel,
-                ProgressPercentage = t.ProgressPercentage,
-                CreatedById = t.CreatedById,
-                CreatedBy = t.CreatedBy,
-                CreatedAt = t.CreatedAt,
-                UpdatedAt = t.UpdatedAt
-            })
-            .ToListAsync(cancellationToken);
-
-        return new GetTasksResponse
+        return Result<GetTasksResponse>.Success(new GetTasksResponse
         {
-            Tasks = tasks,
+            Tasks = tasks.ToList(),
             TotalCount = totalCount,
             Page = request.Page,
             PageSize = request.PageSize
-        };
+        });
     }
 }

@@ -1,7 +1,7 @@
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Moq;
-using TaskManagement.Application.Infrastructure.Data.Repositories;
+using TaskManagement.Infrastructure.Data.Repositories;
 using TaskManagement.Application.Tasks.Commands.CreateTask;
 using TaskManagement.Domain.Entities;
 using TaskManagement.Domain.Errors.Tasks;

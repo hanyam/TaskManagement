@@ -1,6 +1,6 @@
 using TaskManagement.Domain.Common;
 
-namespace TaskManagement.Application.Infrastructure.Data.Repositories;
+namespace TaskManagement.Domain.Interfaces;
 
 /// <summary>
 ///     Generic interface for Dapper-based query repositories.
@@ -14,3 +14,5 @@ public interface IQueryRepository<T> where T : BaseEntity
     Task<T?> FirstOrDefaultAsync(string sql, object? param = null, CancellationToken cancellationToken = default);
     Task<int> CountAsync(string sql, object? param = null, CancellationToken cancellationToken = default);
 }
+
+

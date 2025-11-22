@@ -1,9 +1,10 @@
 using Dapper;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
+using TaskManagement.Domain.Interfaces;
 using TaskManagement.Domain.Common;
 
-namespace TaskManagement.Application.Infrastructure.Data.Repositories;
+namespace TaskManagement.Infrastructure.Data.Repositories;
 
 /// <summary>
 ///     Generic Dapper-based query repository implementation.
@@ -57,3 +58,4 @@ public class DapperQueryRepository<T>(IConfiguration configuration) : IQueryRepo
         return new SqlConnection(_connectionString);
     }
 }
+

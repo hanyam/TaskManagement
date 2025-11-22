@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Graph;
+using Microsoft.Graph.Models;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using OpenTelemetry;
@@ -132,9 +133,13 @@ public static class DependencyInjection
 
     public static WebApplicationBuilder AddObservability(this WebApplicationBuilder builder)
     {
+        // .dotnet add package--prerelease OpenTelemetry.Exporter.Prometheus.HttpListener
         builder.Services.AddMetrics();
         builder.Services.AddSingleton<TaskManagementMetrics>();
-
+    //    using var meterProvider = Sdk.CreateMeterProviderBuilder()
+    //.AddProcessInstrumentation()
+    ////.AddPrometheusHttpListener()
+    //.Build();
         var openTelemetryBuilder = builder.Services.AddOpenTelemetry()
             .ConfigureResource(resource => resource.AddService(builder.Environment.ApplicationName))
             .WithTracing(tracing => tracing
@@ -148,7 +153,8 @@ public static class DependencyInjection
                 .AddMeter(TaskManagementMetrics.MeterName)
                 .AddHttpClientInstrumentation()
                 .AddAspNetCoreInstrumentation()
-                .AddRuntimeInstrumentation());
+                .AddRuntimeInstrumentation()
+                .AddProcessInstrumentation());
         
         // Note: Logging is handled by Serilog (configured in Program.cs)
         // OpenTelemetry logging can be added via Serilog.Sinks.OpenTelemetry if needed

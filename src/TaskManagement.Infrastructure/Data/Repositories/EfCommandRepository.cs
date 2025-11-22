@@ -1,8 +1,9 @@
 using Microsoft.EntityFrameworkCore;
+using TaskManagement.Domain.Interfaces;
 using TaskManagement.Domain.Common;
 using TaskManagement.Infrastructure.Data;
 
-namespace TaskManagement.Application.Infrastructure.Data.Repositories;
+namespace TaskManagement.Infrastructure.Data.Repositories;
 
 /// <summary>
 ///     Generic Entity Framework Core-based command repository implementation.
@@ -38,3 +39,4 @@ public class EfCommandRepository<T>(TaskManagementDbContext context) : ICommandR
         await Task.CompletedTask; // EF Core tracks changes, SaveChangesAsync will persist them
     }
 }
+

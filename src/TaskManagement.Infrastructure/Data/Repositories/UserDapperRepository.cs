@@ -1,8 +1,9 @@
 using Dapper;
 using Microsoft.Extensions.Configuration;
+using TaskManagement.Domain.Interfaces;
 using TaskManagement.Domain.Entities;
 
-namespace TaskManagement.Application.Infrastructure.Data.Repositories;
+namespace TaskManagement.Infrastructure.Data.Repositories;
 
 /// <summary>
 ///     Dapper-based repository for User read operations.
@@ -79,3 +80,4 @@ public class UserDapperRepository(IConfiguration configuration) : DapperQueryRep
             cancellationToken: cancellationToken));
     }
 }
+

@@ -1,5 +1,5 @@
 using TaskManagement.Application.Common.Interfaces;
-using TaskManagement.Application.Infrastructure.Data.Repositories;
+using TaskManagement.Infrastructure.Data.Repositories;
 using TaskManagement.Domain.Common;
 using TaskManagement.Domain.DTOs;
 using TaskManagement.Domain.Entities;

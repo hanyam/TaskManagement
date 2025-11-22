@@ -3,7 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Application.Common.Services;
-using TaskManagement.Application.Infrastructure.Data.Repositories;
+using TaskManagement.Infrastructure.Data.Repositories;
 using TaskManagement.Application.Tasks.Commands.AcceptTask;
 using TaskManagement.Application.Tasks.Commands.AcceptTaskProgress;
 using TaskManagement.Application.Tasks.Commands.ApproveExtensionRequest;
@@ -149,7 +149,7 @@ public class TestServiceLocator : IServiceLocator
 
         if (serviceType == typeof(IRequestHandler<GetTaskByIdQuery, TaskDto>))
         {
-            return new GetTaskByIdQueryHandler(taskRepository, _context);
+            return new GetTaskByIdQueryHandler(taskRepository);
         }
 
         if (serviceType == typeof(IRequestHandler<GetDashboardStatsQuery, DashboardStatsDto>))
@@ -159,22 +159,22 @@ public class TestServiceLocator : IServiceLocator
 
         if (serviceType == typeof(IRequestHandler<GetTaskProgressHistoryQuery, List<TaskProgressDto>>))
         {
-            return new GetTaskProgressHistoryQueryHandler(_context);
+            return new GetTaskProgressHistoryQueryHandler(taskRepository);
         }
 
         if (serviceType == typeof(IRequestHandler<GetExtensionRequestsQuery, List<ExtensionRequestDto>>))
         {
-            return new GetExtensionRequestsQueryHandler(_context);
+            return new GetExtensionRequestsQueryHandler(taskRepository);
         }
 
         if (serviceType == typeof(IRequestHandler<GetAssignedTasksQuery, GetTasksResponse>))
         {
-            return new GetAssignedTasksQueryHandler(_context);
+            return new GetAssignedTasksQueryHandler(taskRepository);
         }
 
         if (serviceType == typeof(IRequestHandler<GetTasksByReminderLevelQuery, GetTasksResponse>))
         {
-            return new GetTasksByReminderLevelQueryHandler(_context, reminderCalculationService);
+            return new GetTasksByReminderLevelQueryHandler(taskRepository, reminderCalculationService);
         }
 
         if (serviceType == typeof(IRequestHandler<SearchManagedUsersQuery, List<UserSearchResultDto>>))

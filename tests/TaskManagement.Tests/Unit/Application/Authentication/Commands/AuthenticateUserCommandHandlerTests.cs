@@ -3,7 +3,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Moq;
 using TaskManagement.Application.Authentication.Commands.AuthenticateUser;
-using TaskManagement.Application.Infrastructure.Data.Repositories;
+using TaskManagement.Infrastructure.Data.Repositories;
 using TaskManagement.Domain.Common;
 using TaskManagement.Domain.Entities;
 using TaskManagement.Domain.Errors.Authentication;

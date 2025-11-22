@@ -37,8 +37,13 @@ public static class DependencyInjection
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-        // Note: Dapper and EF Core command repositories are registered in Application layer
-        // as they are part of Application.Infrastructure namespace
+        // Register Dapper query repositories (CQRS pattern: queries use Dapper)
+        services.AddScoped<TaskDapperRepository>();
+        services.AddScoped<UserDapperRepository>();
+
+        // Register EF Core command repositories (CQRS pattern: commands use EF Core)
+        services.AddScoped<TaskEfCommandRepository>();
+        services.AddScoped<UserEfCommandRepository>();
 
         // Register authentication service
         services.AddScoped<IAuthenticationService, AuthenticationService>();

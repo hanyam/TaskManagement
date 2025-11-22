@@ -1,7 +1,12 @@
 # Task Management API - Architecture Documentation
 
-**Version:** 1.0  
-**Last Updated:** 2024-01-15
+**Version:** 1.1  
+**Last Updated:** December 2025
+
+**Recent Changes (December 2025):**
+- Repository implementations moved to Infrastructure layer (Clean Architecture compliance)
+- Repository interfaces moved to Domain layer (proper dependency direction)
+- Eliminated circular dependencies between Application and Infrastructure layers
 
 ## Table of Contents
 
@@ -160,7 +165,7 @@ The system implements Clean Architecture principles with clear layer separation:
 #### 1. Domain Layer (Core)
 - **Entities**: Core business objects with behavior (`Task`, `User`, `TaskAssignment`, etc.)
 - **DTOs**: Data transfer objects for API contracts
-- **Interfaces**: Abstractions for infrastructure concerns (`IRepository`, `IUnitOfWork`, `IAuthenticationService`)
+- **Interfaces**: Abstractions for infrastructure concerns (`IRepository`, `IUnitOfWork`, `IQueryRepository`, `ICommandRepository`, `IAuthenticationService`)
 - **Errors**: Centralized error definitions
 - **Options**: Configuration classes for business logic
 
@@ -177,11 +182,15 @@ The system implements Clean Architecture principles with clear layer separation:
 **Dependencies:** Domain layer only
 
 #### 3. Infrastructure Layer
-- **Data Access**: Entity Framework DbContext, Repositories, Unit of Work
+- **Data Access**: Entity Framework DbContext, Repository implementations, Unit of Work
+- **Repository Implementations**: 
+  - Dapper repositories (`TaskDapperRepository`, `UserDapperRepository`) for queries
+  - EF Core repositories (`TaskEfCommandRepository`, `UserEfCommandRepository`) for commands
+  - Base repository classes (`DapperQueryRepository<T>`, `EfCommandRepository<T>`)
 - **Authentication**: Azure AD integration, JWT token generation
 - **External Services**: Third-party integrations
 
-**Dependencies:** Domain and Application layers
+**Dependencies:** Domain layer (for interfaces) and Application layer (for DbContext usage)
 
 #### 4. API Layer
 - **Controllers**: HTTP endpoints and routing
@@ -249,17 +258,28 @@ Request → ValidationBehavior → LoggingBehavior → ExceptionHandlingBehavior
 
 ### Repository Pattern
 
-The application uses a **hybrid repository pattern**:
+The application uses a **hybrid repository pattern** with Clean Architecture compliance:
 
-- **Generic Repository** (`IRepository<T>`): Basic CRUD operations
-- **Specialized Repositories**:
-  - `TaskEfCommandRepository`: EF Core-based for commands (change tracking)
-  - `TaskDapperRepository`: Dapper-based for queries (performance)
-  - `UserEfCommandRepository`, `UserDapperRepository`: Similar pattern
+**Interface Location**: `TaskManagement.Domain/Interfaces/`
+- `IQueryRepository<T>`: Generic interface for Dapper-based query repositories
+- `ICommandRepository<T>`: Generic interface for EF Core-based command repositories
+- `ITaskEfCommandRepository`, `IUserEfCommandRepository`: Specialized command repository interfaces
+
+**Implementation Location**: `TaskManagement.Infrastructure/Data/Repositories/`
+- **Dapper Repositories** (for queries):
+  - `TaskDapperRepository`: Dapper-based for task queries (performance, raw SQL)
+  - `UserDapperRepository`: Dapper-based for user queries
+  - `DapperQueryRepository<T>`: Base class for Dapper repositories
+- **EF Core Repositories** (for commands):
+  - `TaskEfCommandRepository`: EF Core-based for task commands (change tracking)
+  - `UserEfCommandRepository`: EF Core-based for user commands
+  - `EfCommandRepository<T>`: Base class for EF Core repositories
 
 **Why Hybrid?**
 - **EF Core**: Best for writes (change tracking, transactions, relationships)
 - **Dapper**: Best for reads (raw SQL, performance, complex queries)
+
+**Registration**: Repositories registered in `Infrastructure/DependencyInjection.cs`
 
 **Unit of Work**: `IUnitOfWork` manages transactions across multiple repository operations
 
@@ -279,7 +299,7 @@ The application uses a **hybrid repository pattern**:
 **Key Components:**
 - `Entities/`: Task, User, TaskAssignment, TaskProgressHistory, DeadlineExtensionRequest
 - `DTOs/`: TaskDto, UserDto, TaskProgressDto, DashboardStatsDto, etc.
-- `Interfaces/`: IRepository, IUnitOfWork, IAuthenticationService
+- `Interfaces/`: IRepository, IUnitOfWork, IQueryRepository, ICommandRepository, ITaskEfCommandRepository, IUserEfCommandRepository, IAuthenticationService
 - `Errors/`: TaskErrors, UserErrors, AuthenticationErrors, SystemErrors
 - `Options/`: ReminderOptions, ExtensionPolicyOptions, JwtOptions, AzureAdOptions
 
@@ -308,7 +328,10 @@ The application uses a **hybrid repository pattern**:
 - Manage database context and transactions
 
 **Key Components:**
-- `Data/`: TaskManagementDbContext, Repositories, UnitOfWork
+- `Data/`: TaskManagementDbContext, Repository implementations, UnitOfWork
+- `Data/Repositories/`: 
+  - Dapper repositories: `TaskDapperRepository`, `UserDapperRepository`, `DapperQueryRepository<T>`
+  - EF Core repositories: `TaskEfCommandRepository`, `UserEfCommandRepository`, `EfCommandRepository<T>`
 - `Authentication/`: AuthenticationService (Azure AD + JWT)
 
 ### API Layer
@@ -518,7 +541,7 @@ return HandleResult(result); // Returns appropriate HTTP status code
    - LoggingBehavior: Log request
    - ExceptionHandlingBehavior: Catch exceptions
 5. GetTaskByIdQueryHandler:
-   - Query via Dapper repository
+   - Query via Dapper repository (from Infrastructure layer)
    - Map to TaskDto
    - Return TaskDto
 6. Controller maps Result<TaskDto> to ApiResponse

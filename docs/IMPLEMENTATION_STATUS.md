@@ -93,7 +93,7 @@ This document tracks the implementation status of the HATEOAS-driven task state 
 - ✅ Graceful degradation when Azure AD not configured
 
 #### 4. Updated Dapper Query
-- ✅ Added `ManagerRating` and `ManagerFeedback` columns to `TaskDapperRepository` SQL query
+- ✅ Added `ManagerRating` and `ManagerFeedback` columns to `TaskDapperRepository` SQL query (repository located in `Infrastructure/Data/Repositories/`)
 - ✅ Fixed SQL column mismatch errors
 
 ### Frontend Enhancements

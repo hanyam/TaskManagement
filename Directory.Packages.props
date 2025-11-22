@@ -36,12 +36,14 @@
     <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.14.0" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.EntityFrameworkCore" Version="1.14.0-beta.2" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.14.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Process" Version="1.14.0-beta.2" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.14.0" />
     <PackageVersion Include="Azure.Monitor.OpenTelemetry.AspNetCore" Version="1.4.0" />
-    <PackageVersion Include="Quartz.AspNetCore" Version="3.15.0" />
-    <PackageVersion Include="Refit.HttpClientFactory" Version="8.0.0" />
-    <PackageVersion Include="Refit.Newtonsoft.Json" Version="8.0.0" />
-    <PackageVersion Include="Scalar.AspNetCore" Version="2.9.0" />
+    <!-- Unused packages - not referenced in any .csproj file -->
+    <!--<PackageVersion Include="Quartz.AspNetCore" Version="3.15.0" />-->
+    <!--<PackageVersion Include="Refit.HttpClientFactory" Version="8.0.0" />-->
+    <!--<PackageVersion Include="Refit.Newtonsoft.Json" Version="8.0.0" />-->
+    <!--<PackageVersion Include="Scalar.AspNetCore" Version="2.9.0" />-->
     <!-- Logging & Monitoring -->
     <PackageVersion Include="Serilog.AspNetCore" Version="9.0.0" />
     <PackageVersion Include="Serilog.Sinks.Console" Version="6.1.1" />

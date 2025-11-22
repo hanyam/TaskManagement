@@ -488,7 +488,7 @@ Added columns for manager review functionality:
 
 ### Dapper Query Update
 
-**File:** `src/TaskManagement.Application/Infrastructure/Data/Repositories/TaskDapperRepository.cs`
+**File:** `src/TaskManagement.Infrastructure/Data/Repositories/TaskDapperRepository.cs` (moved from Application layer for Clean Architecture compliance)
 
 Updated SQL query to include new columns:
 ```sql
@@ -566,7 +566,7 @@ WHERE T.Id = @TaskId
 2. `src/TaskManagement.Api/DependencyInjection.cs` - Graph client configuration
 3. `src/TaskManagement.Api/Program.cs` - Apply migrations on startup
 4. `src/TaskManagement.Api/TaskManagement.Api.csproj` - Added Graph SDK packages
-5. `src/TaskManagement.Application/Infrastructure/Data/Repositories/TaskDapperRepository.cs` - Updated SQL query
+5. `src/TaskManagement.Infrastructure/Data/Repositories/TaskDapperRepository.cs` - Updated SQL query (repository moved to Infrastructure layer)
 6. `web/src/core/api/types.ts` - Added links to ApiSuccessResponse
 7. `web/src/core/api/client.shared.ts` - Preserve links in response
 8. `web/src/features/tasks/api/queries.ts` - Return full response with links
