@@ -4,11 +4,14 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { DefaultOptions } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { PropsWithChildren } from "react";
 import { toast } from "sonner";
 
 import type { ApiErrorResponse } from "@/core/api";
+import { useAuth } from "@/core/auth/AuthProvider";
+import { useCurrentLocale } from "@/core/routing/useCurrentLocale";
 
 const RETRY_COUNT = 2;
 
@@ -17,6 +20,29 @@ function isApiError(error: unknown): error is ApiErrorResponse {
 }
 
 export function QueryProvider({ children }: PropsWithChildren) {
+  const { clearSession } = useAuth();
+  const router = useRouter();
+  const locale = useCurrentLocale();
+
+  const handleUnauthorized = async () => {
+    // Clear session from localStorage and state
+    clearSession();
+    
+    // Clear server-side cookies
+    try {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include"
+      });
+    } catch {
+      // Ignore errors when clearing cookies
+    }
+    
+    // Redirect to sign-in
+    router.push(`/${locale}/sign-in`);
+    router.refresh();
+  };
+
   const [client] = useState(
     () =>
       new QueryClient({
@@ -52,6 +78,8 @@ export function QueryProvider({ children }: PropsWithChildren) {
 
         if (error.type === "unauthorized") {
           toast.error("Your session has expired. Please sign in again.");
+          // Automatically logout and redirect
+          handleUnauthorized();
           return;
         }
 
@@ -78,6 +106,13 @@ export function QueryProvider({ children }: PropsWithChildren) {
 
         if (!isApiError(error)) {
           toast.error(error instanceof Error ? error.message : "Unexpected error");
+          return;
+        }
+
+        if (error.type === "unauthorized") {
+          toast.error("Your session has expired. Please sign in again.");
+          // Automatically logout and redirect
+          handleUnauthorized();
           return;
         }
 

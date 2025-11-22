@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { PropsWithChildren } from "react";
 
-import { clearClientAuthSession, getClientAuthToken, getClientUser, setClientAuthSession } from "@/core/auth/session.client";
+import { clearClientAuthSession, getClientSession, setClientAuthSession } from "@/core/auth/session.client";
 import type { AuthSession } from "@/core/auth/types";
 
 interface AuthContextValue {
@@ -24,15 +24,27 @@ export function AuthProvider({ children, initialSession }: AuthProviderProps) {
   const [session, setSessionState] = useState<AuthSession | undefined>(() => {
     // First, try to use server-provided session
     if (initialSession) {
+      // Sync to localStorage immediately (synchronously) so API client can access it
+      if (typeof window !== "undefined") {
+        setClientAuthSession(
+          initialSession.token,
+          initialSession.user,
+          initialSession.expiresAt
+            ? {
+                expiresAt: initialSession.expiresAt
+              }
+            : {}
+        );
+      }
       return initialSession;
     }
     
     // If no server session, check localStorage on client side
+    // getClientSession validates expiration and returns null if expired
     if (typeof window !== "undefined") {
-      const token = getClientAuthToken();
-      const user = getClientUser();
-      if (token && user) {
-        return { token, user };
+      const clientSession = getClientSession();
+      if (clientSession) {
+        return clientSession;
       }
     }
     
@@ -42,21 +54,33 @@ export function AuthProvider({ children, initialSession }: AuthProviderProps) {
   // Sync with localStorage on mount and when initialSession changes
   useEffect(() => {
     if (initialSession) {
-      // Server session takes precedence - sync to localStorage
-      setClientAuthSession(initialSession.token, initialSession.user);
+      // Server session takes precedence - ensure it's synced to localStorage
+      // (Already synced in useState initializer, but ensure it's still in sync)
+      if (typeof window !== "undefined") {
+        const clientSession = getClientSession();
+        if (!clientSession || clientSession.token !== initialSession.token) {
+          setClientAuthSession(
+            initialSession.token,
+            initialSession.user,
+            initialSession.expiresAt
+              ? {
+                  expiresAt: initialSession.expiresAt
+                }
+              : {}
+          );
+        }
+      }
       setSessionState(initialSession);
     } else if (typeof window !== "undefined") {
-      // No server session - check localStorage
-      const token = getClientAuthToken();
-      const user = getClientUser();
-      if (token && user) {
-        // Found session in localStorage - use it
-        const localStorageSession = { token, user };
-        if (!session || session.token !== token) {
-          setSessionState(localStorageSession);
+      // No server session - check localStorage (validates expiration)
+      const clientSession = getClientSession();
+      if (clientSession) {
+        // Found valid session in localStorage - use it
+        if (!session || session.token !== clientSession.token) {
+          setSessionState(clientSession);
         }
-      } else if (!token && session) {
-        // No token in localStorage but session exists in state - clear it
+      } else if (session) {
+        // No valid session in localStorage but session exists in state - clear it
         setSessionState(undefined);
       }
     }
@@ -65,7 +89,15 @@ export function AuthProvider({ children, initialSession }: AuthProviderProps) {
 
   const setSession = useCallback((nextSession: AuthSession) => {
     setSessionState(nextSession);
-    setClientAuthSession(nextSession.token, nextSession.user);
+    setClientAuthSession(
+      nextSession.token,
+      nextSession.user,
+      nextSession.expiresAt
+        ? {
+            expiresAt: nextSession.expiresAt
+          }
+        : {}
+    );
   }, []);
 
   const clearSession = useCallback(() => {
