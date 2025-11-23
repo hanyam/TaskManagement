@@ -70,7 +70,13 @@ services:
       - AzureAd__TenantId=${AZURE_AD_TENANT_ID:-FAKE-DATA}
       - AzureAd__ClientId=${AZURE_AD_CLIENT_ID:-FAKE-DATA}
       - AzureAd__ClientSecret=${AZURE_AD_CLIENT_SECRET:-FAKE-DATA}
-      - AzureAd__Issuer=${AZURE_AD_ISSUER:-https://login.microsoftonline.com/FAKE-DATA/v2.0}
+      - AzureAd__Issuer=${AZURE_AD_ISSUER:-https://login.microsoftonline.com/${AZURE_AD_TENANT_ID:-FAKE-DATA}/v2.0}
+      # File Storage Configuration
+      - FileStorage__Provider=${FILE_STORAGE_PROVIDER:-Local}
+      - FileStorage__MaxFileSizeBytes=${FILE_STORAGE_MAX_FILE_SIZE_BYTES:-52428800}
+      - FileStorage__LocalPath=${FILE_STORAGE_LOCAL_PATH:-uploads}
+      - FileStorage__AzureBlob__ConnectionString=${FILE_STORAGE_AZURE_BLOB_CONNECTION_STRING:-FAKE-DATA}
+      - FileStorage__AzureBlob__ContainerName=${FILE_STORAGE_AZURE_BLOB_CONTAINER_NAME:-task-attachments}
     depends_on:
       sqlserver:
         condition: service_healthy
