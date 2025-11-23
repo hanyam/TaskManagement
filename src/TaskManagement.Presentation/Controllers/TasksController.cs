@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Swashbuckle.AspNetCore.Annotations;
 using TaskManagement.Presentation.Attributes;
 using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Application.Tasks.Commands.AcceptTask;
@@ -17,6 +18,7 @@ using TaskManagement.Application.Tasks.Commands.RejectTask;
 using TaskManagement.Application.Tasks.Commands.RequestDeadlineExtension;
 using TaskManagement.Application.Tasks.Commands.RequestMoreInfo;
 using TaskManagement.Application.Tasks.Commands.ReviewCompletedTask;
+using TaskManagement.Application.Tasks.Commands.UpdateTask;
 using TaskManagement.Application.Tasks.Commands.UpdateTaskProgress;
 using TaskManagement.Application.Tasks.Queries.GetTaskById;
 using TaskManagement.Application.Tasks.Queries.GetTasks;
@@ -55,6 +57,15 @@ public class TasksController(
     /// <param name="id">The task ID.</param>
     /// <returns>Task information.</returns>
     [HttpGet("{id}")]
+    [SwaggerOperation(
+        Summary = "Get Task by ID",
+        Description = "Retrieves detailed information about a specific task by its unique identifier. Returns task details including status, priority, assignments, progress history, and HATEOAS links for available actions based on user role and task state."
+    )]
+    [ProducesResponseType(typeof(ApiResponse<TaskDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [EnsureUserId]
     public async Task<IActionResult> GetTaskById(Guid id)
     {
@@ -82,6 +93,14 @@ public class TasksController(
     /// <param name="request">Filter parameters for the task list.</param>
     /// <returns>List of tasks with pagination information.</returns>
     [HttpGet]
+    [SwaggerOperation(
+        Summary = "Get Tasks List",
+        Description = "Retrieves a paginated list of tasks with optional filtering by status, priority, assigned user, due date range, and reminder level. Supports filtering by 'created' (tasks created by user) or 'assigned' (tasks assigned to user). Returns pagination metadata including total count, page number, page size, and total pages."
+    )]
+    [ProducesResponseType(typeof(ApiResponse<GetTasksResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
     [EnsureUserId]
     public async Task<IActionResult> GetTasks([FromQuery] GetTasksRequest request)
     {
@@ -125,6 +144,15 @@ public class TasksController(
     /// <param name="request">The task creation request.</param>
     /// <returns>Created task information.</returns>
     [HttpPost]
+    [SwaggerOperation(
+        Summary = "Create New Task",
+        Description = "Creates a new task with the specified details. Managers and Admins can create tasks. Tasks can be created as drafts (without assigned user) or assigned immediately. Returns the created task with HATEOAS links for available actions. Requires Manager or Admin role."
+    )]
+    [ProducesResponseType(typeof(ApiResponse<TaskDto>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    [Authorize(Roles = ManagerOrAdmin)]
     [EnsureUserId]
     public async Task<IActionResult> CreateTask([FromBody] CreateTaskRequest request)
     {
@@ -155,12 +183,66 @@ public class TasksController(
     }
 
     /// <summary>
+    ///     Updates an existing task.
+    /// </summary>
+    /// <param name="id">The task ID.</param>
+    /// <param name="request">The task update request.</param>
+    /// <returns>Updated task information.</returns>
+    [HttpPut("{id}")]
+    [SwaggerOperation(
+        Summary = "Update Task",
+        Description = "Updates an existing task's details including title, description, priority, due date, and assigned user. Only Managers and Admins can update tasks. Returns the updated task with refreshed HATEOAS links. Note: Task type cannot be changed after creation."
+    )]
+    [ProducesResponseType(typeof(ApiResponse<TaskDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [EnsureUserId]
+    [Authorize(Roles = ManagerOrAdmin)]
+    public async Task<IActionResult> UpdateTask(Guid id, [FromBody] UpdateTaskRequest request)
+    {
+        var userId = GetRequiredUserId();
+        var userEmail = GetCurrentUserEmail() ?? "system";
+
+        var command = new UpdateTaskCommand
+        {
+            TaskId = id,
+            Title = request.Title,
+            Description = request.Description,
+            Priority = request.Priority,
+            DueDate = request.DueDate,
+            AssignedUserId = request.AssignedUserId,
+            UpdatedById = userId,
+            UpdatedBy = userEmail
+        };
+
+        var result = await _commandMediator.Send(command);
+
+        if (!result.IsSuccess) return HandleResult(result);
+
+        // Generate HATEOAS links for the updated task
+        var links = await GenerateTaskLinks(result.Value!.Id, userId);
+
+        return HandleResultWithLinks(result, links);
+    }
+
+    /// <summary>
     ///     Assigns a task to one or multiple users (manager only).
     /// </summary>
     /// <param name="id">The task ID.</param>
     /// <param name="request">The assignment request.</param>
     /// <returns>Updated task information.</returns>
     [HttpPost("{id}/assign")]
+    [SwaggerOperation(
+        Summary = "Assign Task to Users",
+        Description = "Assigns a task to one or multiple users. Only Managers can assign tasks. The task status changes from 'Created' to 'Assigned'. Managers can only assign tasks to employees they manage. Returns the updated task with new HATEOAS links."
+    )]
+    [ProducesResponseType(typeof(ApiResponse<TaskDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [Authorize(Roles = Manager)]
     [EnsureUserId]
     public async Task<IActionResult> AssignTask(Guid id, [FromBody] AssignTaskRequest request)
@@ -191,6 +273,15 @@ public class TasksController(
     /// <param name="request">The progress update request.</param>
     /// <returns>Progress update information.</returns>
     [HttpPost("{id}/progress")]
+    [SwaggerOperation(
+        Summary = "Update Task Progress",
+        Description = "Updates the progress percentage of a task. Available for Employees and Managers. Progress must be between 0 and 100. Creates a progress history entry. For tasks with 'WithAcceptedProgress' type, progress updates require manager acceptance. Returns the progress update information."
+    )]
+    [ProducesResponseType(typeof(ApiResponse<TaskProgressDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [Authorize(Roles = EmployeeOrManager)]
     [EnsureUserId]
     public async Task<IActionResult> UpdateTaskProgress(Guid id, [FromBody] UpdateTaskProgressRequest request)
@@ -222,6 +313,15 @@ public class TasksController(
     /// <param name="request">The progress acceptance request.</param>
     /// <returns>Success response.</returns>
     [HttpPost("{id}/progress/accept")]
+    [SwaggerOperation(
+        Summary = "Accept Task Progress Update",
+        Description = "Accepts a pending task progress update. Only Managers can accept progress updates. Used for tasks with 'WithAcceptedProgress' type where progress updates require manager approval. Updates the progress history entry status to 'Accepted' and applies the progress to the task."
+    )]
+    [ProducesResponseType(typeof(ApiResponse<TaskProgressDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [Authorize(Roles = Manager)]
     [EnsureUserId]
     public async Task<IActionResult> AcceptTaskProgress(Guid id, [FromBody] AcceptTaskProgressRequest request)
@@ -245,6 +345,15 @@ public class TasksController(
     /// <param name="id">The task ID.</param>
     /// <returns>Updated task information.</returns>
     [HttpPost("{id}/accept")]
+    [SwaggerOperation(
+        Summary = "Accept Assigned Task",
+        Description = "Accepts an assigned task. Available for Employees and Managers. Changes task status from 'Assigned' to 'Accepted'. The assigned user confirms they will work on the task. Returns the updated task with new HATEOAS links reflecting the new status."
+    )]
+    [ProducesResponseType(typeof(ApiResponse<TaskDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [Authorize(Roles = EmployeeOrManager)]
     [EnsureUserId]
     public async Task<IActionResult> AcceptTask(Guid id)
@@ -274,6 +383,15 @@ public class TasksController(
     /// <param name="request">The rejection request.</param>
     /// <returns>Updated task information.</returns>
     [HttpPost("{id}/reject")]
+    [SwaggerOperation(
+        Summary = "Reject Assigned Task",
+        Description = "Rejects an assigned task. Available for Employees and Managers. Changes task status from 'Assigned' to 'Rejected'. An optional rejection reason can be provided. Returns the updated task with new HATEOAS links."
+    )]
+    [ProducesResponseType(typeof(ApiResponse<TaskDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [Authorize(Roles = EmployeeOrManager)]
     [EnsureUserId]
     public async Task<IActionResult> RejectTask(Guid id, [FromBody] RejectTaskRequest? request = null)
@@ -304,6 +422,15 @@ public class TasksController(
     /// <param name="request">The information request.</param>
     /// <returns>Updated task information.</returns>
     [HttpPost("{id}/request-info")]
+    [SwaggerOperation(
+        Summary = "Request More Information",
+        Description = "Requests additional information or clarification about a task. Available for Employees and Managers. Creates an information request that can be viewed by task creators and managers. Returns the updated task with new HATEOAS links."
+    )]
+    [ProducesResponseType(typeof(ApiResponse<TaskDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [Authorize(Roles = EmployeeOrManager)]
     [EnsureUserId]
     public async Task<IActionResult> RequestMoreInfo(Guid id, [FromBody] RequestMoreInfoRequest request)
@@ -334,6 +461,15 @@ public class TasksController(
     /// <param name="request">The reassignment request.</param>
     /// <returns>Updated task information.</returns>
     [HttpPut("{id}/reassign")]
+    [SwaggerOperation(
+        Summary = "Reassign Task",
+        Description = "Reassigns a task to different user(s). Only Managers can reassign tasks. Replaces the current assignment with new user(s). Managers can only reassign to employees they manage. Returns the updated task with new HATEOAS links."
+    )]
+    [ProducesResponseType(typeof(ApiResponse<TaskDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [Authorize(Roles = Manager)]
     [EnsureUserId]
     public async Task<IActionResult> ReassignTask(Guid id, [FromBody] ReassignTaskRequest request)
@@ -364,6 +500,15 @@ public class TasksController(
     /// <param name="request">The extension request.</param>
     /// <returns>Extension request information.</returns>
     [HttpPost("{id}/extension-request")]
+    [SwaggerOperation(
+        Summary = "Request Deadline Extension",
+        Description = "Requests an extension to the task's due date. Available for Employees and Managers. Creates a deadline extension request that requires manager approval. The requested due date must be in the future and later than the current due date. Returns the extension request information."
+    )]
+    [ProducesResponseType(typeof(ApiResponse<ExtensionRequestDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [Authorize(Roles = EmployeeOrManager)]
     [EnsureUserId]
     public async Task<IActionResult> RequestDeadlineExtension(Guid id,
@@ -397,6 +542,15 @@ public class TasksController(
     /// <param name="request">The approval request.</param>
     /// <returns>Success response.</returns>
     [HttpPost("{id}/extension-request/{requestId}/approve")]
+    [SwaggerOperation(
+        Summary = "Approve Deadline Extension Request",
+        Description = "Approves a pending deadline extension request. Only Managers can approve extension requests. Updates the task's extended due date and marks the extension request as approved. Optional review notes can be provided. Returns the updated extension request."
+    )]
+    [ProducesResponseType(typeof(ApiResponse<ExtensionRequestDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [Authorize(Roles = Manager)]
     [EnsureUserId]
     public async Task<IActionResult> ApproveExtensionRequest(Guid id, Guid requestId,
@@ -422,6 +576,15 @@ public class TasksController(
     /// <param name="id">The task ID.</param>
     /// <returns>Updated task information.</returns>
     [HttpPost("{id}/complete")]
+    [SwaggerOperation(
+        Summary = "Mark Task as Completed",
+        Description = "Marks a task as completed by a Manager. Changes task status to 'Completed'. This is a manager action to mark a task as finished. For employee-initiated completion, use the employee's mark-completed action which transitions to 'PendingManagerReview'. Returns the updated task with new HATEOAS links."
+    )]
+    [ProducesResponseType(typeof(ApiResponse<TaskDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [Authorize(Roles = Manager)]
     [EnsureUserId]
     public async Task<IActionResult> MarkTaskCompleted(Guid id)
@@ -451,6 +614,15 @@ public class TasksController(
     /// <param name="request">The review request.</param>
     /// <returns>Updated task information.</returns>
     [HttpPost("{id}/review-completed")]
+    [SwaggerOperation(
+        Summary = "Review Completed Task",
+        Description = "Reviews a completed task with a rating (1-5 stars) and optional feedback. Only Managers and Admins can review tasks. Can accept the completion (status becomes 'Completed'), reject it (status becomes 'RejectedByManager'), or send back for rework (status becomes 'Assigned'). Rating is required if accepting. Returns the updated task with manager rating and feedback."
+    )]
+    [ProducesResponseType(typeof(ApiResponse<TaskDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [Authorize(Roles = ManagerOrAdmin)]
     [EnsureUserId]
     public async Task<IActionResult> ReviewCompletedTask(Guid id, [FromBody] ReviewCompletedTaskRequest request)

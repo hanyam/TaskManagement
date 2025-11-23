@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Http;
+using Swashbuckle.AspNetCore.Annotations;
 using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Application.DatabaseSeeding.Commands.SeedDatabase;
 using TaskManagement.Domain.Common;
@@ -27,25 +28,11 @@ public class DatabaseController(ICommandMediator commandMediator, IRequestMediat
     /// </summary>
     /// <param name="request">Optional: List of specific script names to execute (if empty, executes all scripts).</param>
     /// <returns>Seeding operation results with execution details for each script.</returns>
-    /// <remarks>
-    /// Sample request:
-    /// 
-    ///     POST /database/seed
-    ///     {
-    ///       "scriptNames": ["00-SeedEmployees.sql"]
-    ///     }
-    ///     
-    /// To execute all scripts, send an empty request body or omit scriptNames:
-    /// 
-    ///     POST /database/seed
-    ///     {}
-    /// 
-    /// </remarks>
-    /// <response code="200">Database seeded successfully with execution details</response>
-    /// <response code="400">Invalid request or seeding failed</response>
-    /// <response code="401">Unauthorized - missing or invalid authentication token</response>
-    /// <response code="403">Forbidden - user does not have Admin role</response>
     [HttpPost("seed")]
+    [SwaggerOperation(
+        Summary = "Seed Database",
+        Description = "Seeds the database with initial data from SQL script files located in the scripts/Seeding folder. Scripts are executed in alphabetical order by filename. Can execute all scripts or specific scripts by providing script names in the request. Only Admins can execute this operation. Returns detailed execution results for each script including success status, execution time, and any errors."
+    )]
     [ProducesResponseType(typeof(ApiResponse<SeedDatabaseResultDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -65,13 +52,16 @@ public class DatabaseController(ICommandMediator commandMediator, IRequestMediat
     ///     Gets information about available seeding scripts.
     /// </summary>
     /// <returns>List of available SQL scripts in the seeding folder.</returns>
-    /// <response code="200">List of available scripts</response>
-    /// <response code="401">Unauthorized - missing or invalid authentication token</response>
-    /// <response code="403">Forbidden - user does not have Admin role</response>
     [HttpGet("seed/scripts")]
+    [SwaggerOperation(
+        Summary = "Get Available Seeding Scripts",
+        Description = "Retrieves a list of all available SQL seeding scripts in the scripts/Seeding folder. Scripts are returned in alphabetical order. Only Admins can access this endpoint. Useful for discovering which scripts are available before executing the seed operation."
+    )]
     [ProducesResponseType(typeof(ApiResponse<List<string>>), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public IActionResult GetAvailableScripts()
     {
         try

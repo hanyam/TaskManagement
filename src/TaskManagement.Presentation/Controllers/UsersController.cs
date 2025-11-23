@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Graph;
+using Swashbuckle.AspNetCore.Annotations;
 using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Infrastructure.Data.Repositories;
 using TaskManagement.Application.Users.Queries.SearchManagedUsers;
@@ -39,6 +40,14 @@ public class UsersController(
     /// <param name="query">Search query (DisplayName).</param>
     /// <returns>List of matching users.</returns>
     [HttpGet("search")]
+    [SwaggerOperation(
+        Summary = "Search Managed Users",
+        Description = "Searches for users managed by the current user based on manager-employee relationships. Only searches employees from the Tasks.Users table filtered by the ManagerEmployee relationship table. Requires a minimum of 2 characters in the search query. Returns a list of matching users with their display names, emails, and job titles."
+    )]
+    [ProducesResponseType(typeof(ApiResponse<List<UserSearchResult>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> SearchUsers([FromQuery] string query)
     {
         if (string.IsNullOrWhiteSpace(query) || query.Length < 2)
@@ -166,6 +175,14 @@ public class UsersController(
     /// <param name="id">User ID (GUID).</param>
     /// <returns>User details.</returns>
     [HttpGet("{id}")]
+    [SwaggerOperation(
+        Summary = "Get User by ID",
+        Description = "Retrieves detailed information about a specific user by their unique identifier. Uses Azure AD Graph API to fetch user details including display name, email, user principal name, and job title. Returns user information if found."
+    )]
+    [ProducesResponseType(typeof(ApiResponse<UserSearchResult>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetUser(string id)
     {
         try
@@ -214,8 +231,13 @@ public class UsersController(
     /// </summary>
     /// <returns>Current user information.</returns>
     [HttpGet("me")]
+    [SwaggerOperation(
+        Summary = "Get Current User",
+        Description = "Retrieves information about the currently authenticated user. Respects user override for testing purposes. Fetches user details from the database if available, otherwise returns basic information from JWT claims. Returns user ID, email, display name, and role."
+    )]
     [ProducesResponseType(typeof(ApiResponse<CurrentUserDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetCurrentUser()
     {
         try

@@ -8,6 +8,7 @@ import type {
   TaskDto,
   TaskListFilters,
   DashboardStatsDto,
+  UpdateTaskRequest,
   UpdateTaskProgressRequest,
   AssignTaskRequest,
   RequestMoreInfoRequest,
@@ -96,6 +97,25 @@ export function useCreateTaskMutation() {
         body: payload,
         locale
       });
+      await queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
+      return data;
+    }
+  });
+}
+
+export function useUpdateTaskMutation(taskId: string) {
+  const locale = useCurrentLocale();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: UpdateTaskRequest) => {
+      const { data } = await apiClient.request<TaskDto>({
+        path: `/tasks/${taskId}`,
+        method: "PUT",
+        body: payload,
+        locale
+      });
+      await queryClient.invalidateQueries({ queryKey: taskKeys.detail(taskId) });
       await queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
       return data;
     }
@@ -337,7 +357,7 @@ export function useUploadAttachmentMutation(taskId: string) {
       // Use fetch directly for file uploads since apiClient expects JSON
       const token = session?.token;
       const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "";
-      const url = `${baseUrl}/api/tasks/${taskId}/attachments`;
+      const url = `${baseUrl}/tasks/${taskId}/attachments`;
 
       const headers = new Headers();
       if (token) {
@@ -400,7 +420,7 @@ export async function downloadAttachment(taskId: string, attachmentId: string): 
 
   const token = session?.token;
   const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "";
-  const url = `${baseUrl}/api/tasks/${taskId}/attachments/${attachmentId}/download`;
+  const url = `${baseUrl}/tasks/${taskId}/attachments/${attachmentId}/download`;
 
   const headers = new Headers();
   if (token) {

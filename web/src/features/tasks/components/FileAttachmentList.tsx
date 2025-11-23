@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslation } from "react-i18next";
+
 import type { TaskAttachmentDto } from "@/features/tasks/types";
 import { getAttachmentTypeString } from "@/features/tasks/value-objects";
 
@@ -10,6 +12,7 @@ interface FileAttachmentListProps {
   onDownload: (attachmentId: string) => void;
   onDelete?: (attachmentId: string) => void;
   canDelete?: (attachment: TaskAttachmentDto) => boolean;
+  markedForDeletion?: Set<string>;
   className?: string;
 }
 
@@ -18,12 +21,15 @@ export function FileAttachmentList({
   onDownload,
   onDelete,
   canDelete,
+  markedForDeletion,
   className
 }: FileAttachmentListProps) {
+  const { t } = useTranslation();
+  
   if (attachments.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
-        <p className="text-sm">No attachments available</p>
+        <p className="text-sm">{t("tasks:attachments.empty")}</p>
       </div>
     );
   }
@@ -40,7 +46,7 @@ export function FileAttachmentList({
     <div className={className}>
       {managerUploaded.length > 0 && (
         <div className="mb-6">
-          <h4 className="text-sm font-semibold text-foreground mb-3">Manager Uploaded Files</h4>
+          <h4 className="text-sm font-semibold text-foreground mb-3">{t("tasks:attachments.managerUploaded")}</h4>
           <div className="space-y-2">
             {managerUploaded.map((attachment) => (
               <FileAttachmentCard
@@ -49,6 +55,7 @@ export function FileAttachmentList({
                 onDownload={() => onDownload(attachment.id)}
                 {...(onDelete && { onDelete: () => onDelete(attachment.id) })}
                 canDelete={canDelete ? canDelete(attachment) : false}
+                {...(markedForDeletion?.has(attachment.id) && { isMarkedForDeletion: true })}
               />
             ))}
           </div>
@@ -57,7 +64,7 @@ export function FileAttachmentList({
 
       {employeeUploaded.length > 0 && (
         <div>
-          <h4 className="text-sm font-semibold text-foreground mb-3">Employee Uploaded Files</h4>
+          <h4 className="text-sm font-semibold text-foreground mb-3">{t("tasks:attachments.employeeUploaded")}</h4>
           <div className="space-y-2">
             {employeeUploaded.map((attachment) => (
               <FileAttachmentCard
@@ -66,6 +73,7 @@ export function FileAttachmentList({
                 onDownload={() => onDownload(attachment.id)}
                 {...(onDelete && { onDelete: () => onDelete(attachment.id) })}
                 canDelete={canDelete ? canDelete(attachment) : false}
+                {...(markedForDeletion?.has(attachment.id) && { isMarkedForDeletion: true })}
               />
             ))}
           </div>

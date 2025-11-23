@@ -68,6 +68,7 @@
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
     <!-- API Documentation -->
     <PackageVersion Include="Swashbuckle.AspNetCore" Version="6.5.0" />
+    <PackageVersion Include="Swashbuckle.AspNetCore.Annotations" Version="6.5.0" />
     <!-- Health Checks -->
     <PackageVersion Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="10.0.0" />
     <!-- Docker & Container Tools -->

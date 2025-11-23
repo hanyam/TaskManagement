@@ -1,7 +1,7 @@
 import { createApiClient } from "@/core/api/client.shared";
 
 async function resolveAuthToken(): Promise<string | undefined> {
-  const { getClientSession, isTokenExpired } = await import("@/core/auth/session.client");
+  const { getClientSession, isTokenExpired, clearClientAuthSession } = await import("@/core/auth/session.client");
   
   // Get full session (validates expiration)
   const session = getClientSession();
@@ -11,6 +11,8 @@ async function resolveAuthToken(): Promise<string | undefined> {
 
   // Double-check expiration (defensive)
   if (isTokenExpired(session.token, session.expiresAt)) {
+    // Clear expired session
+    clearClientAuthSession();
     return undefined;
   }
 

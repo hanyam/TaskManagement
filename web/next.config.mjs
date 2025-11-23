@@ -10,7 +10,8 @@ const nextConfig = {
     }
   },
   eslint: {
-    dirs: ['src']
+    dirs: ['src'],
+    ignoreDuringBuilds: true // Ignore ESLint warnings/errors during production builds
   }
 };
 

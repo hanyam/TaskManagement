@@ -3,8 +3,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Swashbuckle.AspNetCore.Annotations;
 using TaskManagement.Application.Authentication.Commands.AuthenticateUser;
 using TaskManagement.Application.Common.Interfaces;
+using TaskManagement.Domain.Common;
+using TaskManagement.Domain.DTOs;
 
 namespace TaskManagement.Presentation.Controllers;
 
@@ -22,6 +25,13 @@ public class AuthenticationController(ICommandMediator commandMediator, IRequest
     /// <param name="request">The authentication request containing Azure AD token.</param>
     /// <returns>Authentication response with JWT token and user information.</returns>
     [HttpPost("authenticate")]
+    [SwaggerOperation(
+        Summary = "Authenticate User",
+        Description = "Authenticates a user using an Azure AD token and returns a JWT token for subsequent API requests. Validates the Azure AD token, creates or updates the user in the database, and generates a JWT token with user claims including role, email, and user ID. This endpoint is publicly accessible (no authentication required)."
+    )]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [AllowAnonymous]
     public async Task<IActionResult> Authenticate([FromBody] AuthenticateUserRequest request)
     {

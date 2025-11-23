@@ -1,12 +1,15 @@
+using System.Security.Claims;
 using Microsoft.Extensions.Logging;
 using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Application.Common.Services;
 using TaskManagement.Domain.Common;
+using TaskManagement.Domain.Constants;
 using TaskManagement.Domain.DTOs;
 using TaskManagement.Domain.Entities;
 using TaskManagement.Domain.Errors.Tasks;
 using TaskManagement.Domain.Interfaces;
 using TaskManagement.Infrastructure.Data;
+using static TaskManagement.Domain.Constants.RoleNames;
 
 namespace TaskManagement.Application.Tasks.Queries.DownloadTaskAttachment;
 
@@ -16,11 +19,13 @@ namespace TaskManagement.Application.Tasks.Queries.DownloadTaskAttachment;
 public class DownloadTaskAttachmentQueryHandler(
     IFileStorageService fileStorageService,
     TaskManagementDbContext context,
+    ICurrentUserService currentUserService,
     ILogger<DownloadTaskAttachmentQueryHandler> logger,
     IAuditLogService auditLogService) : IRequestHandler<DownloadTaskAttachmentQuery, DownloadAttachmentResponse>
 {
     private readonly TaskManagementDbContext _context = context;
     private readonly IFileStorageService _fileStorageService = fileStorageService;
+    private readonly ICurrentUserService _currentUserService = currentUserService;
     private readonly ILogger<DownloadTaskAttachmentQueryHandler> _logger = logger;
     private readonly IAuditLogService _auditLogService = auditLogService;
 
@@ -58,32 +63,41 @@ public class DownloadTaskAttachmentQueryHandler(
             return Result<DownloadAttachmentResponse>.Failure(TaskErrors.NotFound);
         }
 
-        // Access control: Same rules as GetTaskAttachments
-        bool canAccess = false;
+        // Get user role from claims
+        var userRole = _currentUserService.GetUserPrincipal()?.FindFirst(ClaimTypes.Role)?.Value ?? string.Empty;
 
-        // Manager-uploaded files: visible if task is Accepted, UnderReview, PendingManagerReview, or Completed
-        if (attachment.Type == AttachmentType.ManagerUploaded)
+        // Managers and Admins can always download attachments regardless of task status
+        bool canAccess = userRole == Manager || userRole == Admin;
+
+        // If not manager/admin, apply status-based access control
+        if (!canAccess)
         {
-            canAccess = task.Status == Domain.Entities.TaskStatus.Accepted ||
-                       task.Status == Domain.Entities.TaskStatus.UnderReview ||
-                       task.Status == Domain.Entities.TaskStatus.PendingManagerReview ||
-                       task.Status == Domain.Entities.TaskStatus.Completed;
-        }
-        // Employee-uploaded files: visible if task is UnderReview, PendingManagerReview, or Completed
-        else if (attachment.Type == AttachmentType.EmployeeUploaded)
-        {
-            canAccess = task.Status == Domain.Entities.TaskStatus.UnderReview ||
-                       task.Status == Domain.Entities.TaskStatus.PendingManagerReview ||
-                       task.Status == Domain.Entities.TaskStatus.Completed;
+            // Manager-uploaded files: visible if task is Accepted, UnderReview, PendingManagerReview, or Completed
+            if (attachment.Type == AttachmentType.ManagerUploaded)
+            {
+                canAccess = task.Status == Domain.Entities.TaskStatus.Accepted ||
+                           task.Status == Domain.Entities.TaskStatus.UnderReview ||
+                           task.Status == Domain.Entities.TaskStatus.PendingManagerReview ||
+                           task.Status == Domain.Entities.TaskStatus.Completed;
+            }
+            // Employee-uploaded files: visible if task is UnderReview, PendingManagerReview, or Completed
+            else if (attachment.Type == AttachmentType.EmployeeUploaded)
+            {
+                canAccess = task.Status == Domain.Entities.TaskStatus.UnderReview ||
+                           task.Status == Domain.Entities.TaskStatus.PendingManagerReview ||
+                           task.Status == Domain.Entities.TaskStatus.Completed;
+            }
         }
 
         if (!canAccess)
         {
             _logger.LogWarning(
-                "User {UserId} attempted to download attachment {AttachmentId} without permission (TaskStatus: {TaskStatus})",
+                "User {UserId} with role {Role} attempted to download attachment {AttachmentId} without permission (TaskStatus: {TaskStatus}, AttachmentType: {AttachmentType})",
                 request.RequestedById,
+                userRole,
                 request.AttachmentId,
-                task.Status);
+                task.Status,
+                attachment.Type);
             return Result<DownloadAttachmentResponse>.Failure(TaskErrors.UnauthorizedFileAccess);
         }
 

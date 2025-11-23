@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
@@ -38,7 +38,7 @@ export function SignInForm({ locale, redirectTo }: SignInFormProps) {
   const { t } = useTranslation(["auth", "common", "validation"]);
   const router = useRouter();
   const { setSession } = useAuth();
-  const { isConfigured: isAzureConfigured, isLoading: isAzureLoading, login: loginWithAzureAd } = useAzureAdLogin();
+  const { isConfigured: isAzureConfigured, isLoading: isAzureLoading, login: loginWithAzureAd, handleRedirect } = useAzureAdLogin();
 
   const form = useForm<SignInFormValues>({
     resolver: zodResolver(signInSchema),
@@ -47,6 +47,40 @@ export function SignInForm({ locale, redirectTo }: SignInFormProps) {
     },
     mode: "onSubmit"
   });
+
+  // Handle Azure AD redirect callback when returning from Azure AD
+  useEffect(() => {
+    let isMounted = true;
+
+    const processRedirect = async () => {
+      try {
+        const result = await handleRedirect();
+        if (result && isMounted) {
+          const token = result.idToken ?? result.accessToken;
+          if (token) {
+            form.setValue("azureAdToken", token, { shouldDirty: false });
+            await handleSubmit({ azureAdToken: token });
+          }
+        }
+      } catch (error) {
+        if (isMounted) {
+          console.error("Error processing Azure AD redirect:", error);
+          form.setError("azureAdToken", {
+            type: "server",
+            message: "auth:signIn.azureAdSignInFailed"
+          });
+        }
+      }
+    };
+
+    // Process redirect callback if present in URL
+    processRedirect();
+
+    return () => {
+      isMounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [handleRedirect]);
 
   const { mutateAsync, isPending } = useMutation({
     mutationFn: async (values: SignInFormValues) => {
@@ -93,20 +127,9 @@ export function SignInForm({ locale, redirectTo }: SignInFormProps) {
     form.clearErrors("azureAdToken");
 
     try {
-      const result = await loginWithAzureAd();
-
-      if (!result) {
-        throw new Error("auth:signIn.azureAdNotConfigured");
-      }
-
-      const token = result.idToken ?? result.accessToken;
-
-      if (!token) {
-        throw new Error("auth:signIn.azureAdTokenUnavailable");
-      }
-
-      form.setValue("azureAdToken", token, { shouldDirty: false });
-      await handleSubmit({ azureAdToken: token });
+      // This will redirect to Azure AD - the redirect callback will handle the response
+      await loginWithAzureAd();
+      // Don't do anything after this - the page will redirect to Azure AD
     } catch (error) {
       const messageKey =
         (error as Error)?.message && (error as Error)?.message?.startsWith("auth:")

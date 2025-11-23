@@ -71,7 +71,7 @@ export function ReviewCompletedTaskModal({
         sendBackForRework: data.decision === "sendBack"
       });
 
-      toast.success(t("forms.reviewCompleted.success"));
+      toast.success(t("tasks:forms.reviewCompleted.success"));
       reset();
       setRating(0);
       onClose();
@@ -108,7 +108,7 @@ export function ReviewCompletedTaskModal({
       }
       
       // Final fallback for unknown errors
-      toast.error(t("forms.reviewCompleted.error"));
+      toast.error(t("tasks:forms.reviewCompleted.error"));
     }
   };
 
@@ -131,7 +131,7 @@ export function ReviewCompletedTaskModal({
         <DialogPanel className="mx-auto max-w-lg w-full rounded-xl border border-border bg-background shadow-lg">
           <div className="flex items-center justify-between border-b border-border px-6 py-4">
             <DialogTitle className="text-lg font-semibold text-foreground">
-              {t("forms.reviewCompleted.title")}
+              {t("tasks:forms.reviewCompleted.title")}
             </DialogTitle>
             <button
               type="button"
@@ -144,7 +144,7 @@ export function ReviewCompletedTaskModal({
 
           <form onSubmit={handleSubmit(onSubmit)} className="px-6 py-4">
             <Description className="text-sm text-muted-foreground mb-4">
-              {t("forms.reviewCompleted.description")}
+              {t("tasks:forms.reviewCompleted.description")}
             </Description>
 
             <div className="mb-4 p-3 bg-muted rounded-md">
@@ -155,7 +155,7 @@ export function ReviewCompletedTaskModal({
 
             {/* Decision Radio Buttons */}
             <div className="mb-6">
-              <Label htmlFor="decision">{t("forms.reviewCompleted.decision")}</Label>
+              <Label htmlFor="decision">{t("tasks:forms.reviewCompleted.decision")}</Label>
               <div className="mt-2 space-y-2">
                 <label className="flex items-center gap-3 p-3 rounded-md border border-border cursor-pointer transition-colors hover:bg-muted">
                   <input
@@ -165,7 +165,7 @@ export function ReviewCompletedTaskModal({
                     className="h-4 w-4 text-primary focus:ring-primary"
                   />
                   <span className="text-sm text-foreground">
-                    {t("forms.reviewCompleted.decisionOptions.accept")}
+                    {t("tasks:forms.reviewCompleted.decisionOptions.accept")}
                   </span>
                 </label>
                 
@@ -177,7 +177,7 @@ export function ReviewCompletedTaskModal({
                     className="h-4 w-4 text-destructive focus:ring-destructive"
                   />
                   <span className="text-sm text-foreground">
-                    {t("forms.reviewCompleted.decisionOptions.reject")}
+                    {t("tasks:forms.reviewCompleted.decisionOptions.reject")}
                   </span>
                 </label>
                 
@@ -189,7 +189,7 @@ export function ReviewCompletedTaskModal({
                     className="h-4 w-4 text-warning focus:ring-warning"
                   />
                   <span className="text-sm text-foreground">
-                    {t("forms.reviewCompleted.decisionOptions.sendBack")}
+                    {t("tasks:forms.reviewCompleted.decisionOptions.sendBack")}
                   </span>
                 </label>
               </div>
@@ -200,7 +200,7 @@ export function ReviewCompletedTaskModal({
 
             {/* Rating */}
             <div className="mb-6">
-              <Label htmlFor="rating">{t("forms.reviewCompleted.fields.rating")}</Label>
+              <Label htmlFor="rating">{t("tasks:forms.reviewCompleted.fields.rating")}</Label>
               <div className="mt-2 flex items-center gap-1">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
@@ -219,7 +219,7 @@ export function ReviewCompletedTaskModal({
                   </button>
                 ))}
                 <span className="ml-2 text-sm text-muted-foreground">
-                  {rating > 0 ? `${rating}/5` : t("forms.reviewCompleted.fields.ratingRequired")}
+                  {rating > 0 ? `${rating}/5` : t("tasks:forms.reviewCompleted.fields.ratingRequired")}
                 </span>
               </div>
               {errors.rating?.message && (
@@ -229,13 +229,13 @@ export function ReviewCompletedTaskModal({
 
             {/* Feedback */}
             <div className="mb-6">
-              <Label htmlFor="feedback">{t("forms.reviewCompleted.fields.feedback")}</Label>
+              <Label htmlFor="feedback">{t("tasks:forms.reviewCompleted.fields.feedback")}</Label>
               <textarea
                 {...register("feedback")}
                 id="feedback"
                 rows={4}
                 className="mt-2 flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm transition placeholder:text-muted-foreground focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
-                placeholder={t("forms.reviewCompleted.fields.feedbackPlaceholder")}
+                placeholder={t("tasks:forms.reviewCompleted.fields.feedbackPlaceholder")}
               />
               {errors.feedback?.message && (
                 <FormFieldError message={errors.feedback.message} />
@@ -251,7 +251,7 @@ export function ReviewCompletedTaskModal({
                 disabled={isSubmitting}
                 icon={<XMarkIcon />}
               >
-                {t("forms.reviewCompleted.actions.cancel")}
+                {t("tasks:forms.reviewCompleted.actions.cancel")}
               </Button>
               <Button
                 type="submit"
@@ -270,10 +270,10 @@ export function ReviewCompletedTaskModal({
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                     </svg>
-                    {t("forms.reviewCompleted.actions.submit")}
+                    {t("tasks:forms.reviewCompleted.actions.submit")}
                   </span>
                 ) : (
-                  t("forms.reviewCompleted.actions.submit")
+                  t("tasks:forms.reviewCompleted.actions.submit")
                 )}
               </Button>
             </div>

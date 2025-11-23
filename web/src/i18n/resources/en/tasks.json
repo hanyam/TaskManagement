@@ -140,9 +140,11 @@
     "upload": {
       "title": "Upload Files",
       "dragDrop": "Drag and drop files here",
+      "dropHere": "Drop files here",
       "orClick": "or click to browse",
       "maxSize": "Maximum file size: {size}",
       "selectFiles": "Select Files",
+      "selectedFiles": "{count, plural, =1 {# file selected} other {# files selected}}",
       "uploading": "Uploading...",
       "success": "File uploaded successfully",
       "error": "Failed to upload file",
@@ -158,7 +160,12 @@
     "uploadDenied": "You do not have permission to upload files for this task"
   },
   "errors": {
-    "loadFailed": "Failed to load task details. Please try again."
+    "loadFailed": "Failed to load task details. Please try again.",
+    "updateFailed": "Failed to update task. Please try again."
+  },
+  "edit": {
+    "title": "Edit Task",
+    "cancelInfo": "Cancel task functionality will be implemented soon"
   }
 }
 

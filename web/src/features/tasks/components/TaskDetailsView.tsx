@@ -13,7 +13,8 @@ import {
   StopIcon,
   UserPlusIcon,
   XMarkIcon,
-  ChartBarIcon
+  ChartBarIcon,
+  TrashIcon
 } from "@heroicons/react/24/outline";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
@@ -36,6 +37,7 @@ import {
   useRequestMoreInfoMutation,
   useTaskDetailsQuery,
   useUpdateTaskProgressMutation,
+  useUpdateTaskMutation,
   useTaskAttachmentsQuery,
   useUploadAttachmentMutation,
   useDeleteAttachmentMutation,
@@ -44,15 +46,17 @@ import {
 import { FileAttachmentList } from "@/features/tasks/components/FileAttachmentList";
 import { ReviewCompletedTaskModal } from "@/features/tasks/components/ReviewCompletedTaskModal";
 import { TaskStatusBadge } from "@/features/tasks/components/TaskStatusBadge";
+import { UserSearchInput } from "@/features/tasks/components/UserSearchInput";
 import type { AssignTaskRequest } from "@/features/tasks/types";
 import { canViewAttachment, canUploadAttachment, canDeleteAttachment } from "@/features/tasks/utils/attachmentAccess";
-import { getTaskTypeString, getTaskPriorityString, AttachmentTypeEnum } from "@/features/tasks/value-objects";
+import { getTaskTypeString, getTaskPriorityString, AttachmentTypeEnum, TaskPriorityEnum } from "@/features/tasks/value-objects";
 import { Button } from "@/ui/components/Button";
 import { DatePicker } from "@/ui/components/DatePicker";
 import { FileUpload, type FileUploadItem } from "@/ui/components/FileUpload";
 import { FormFieldError } from "@/ui/components/FormFieldError";
 import { Input } from "@/ui/components/Input";
 import { Label } from "@/ui/components/Label";
+import { Select } from "@/ui/components/Select";
 import { Spinner } from "@/ui/components/Spinner";
 
 interface TaskDetailsViewProps {
@@ -120,17 +124,75 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
 
   const uploadMutation = useUploadAttachmentMutation(taskId);
   const deleteAttachmentMutation = useDeleteAttachmentMutation(taskId);
+  const updateTaskMutation = useUpdateTaskMutation(taskId);
   const [uploadFiles, setUploadFiles] = useState<FileUploadItem[]>([]);
+  const [isDeleteAttachmentOpen, setDeleteAttachmentOpen] = useState(false);
+  const [attachmentToDelete, setAttachmentToDelete] = useState<string | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [attachmentsToDelete, setAttachmentsToDelete] = useState<Set<string>>(new Set());
 
-  const handleDeleteAttachment = async (attachmentId: string) => {
-    if (confirm(t("tasks:attachments.actions.deleteConfirm"))) {
-      try {
-        await deleteAttachmentMutation.mutateAsync(attachmentId);
-        await refetchAttachments();
-        toast.success(t("common:actions.deleted"));
-      } catch (error) {
-        displayApiError(error, t("tasks:attachments.actions.delete"));
-      }
+  // Edit form schema
+  const editTaskSchema = z.object({
+    title: z.string().min(1, "validation:required"),
+    description: z.string().max(2000).optional().or(z.literal("")),
+    priority: z.enum(["Low", "Medium", "High", "Critical"]),
+    dueDate: z
+      .string()
+      .optional()
+      .refine((value) => !value || !Number.isNaN(Date.parse(value)), {
+        message: "validation:futureDate"
+      }),
+    assignedUserId: z.string().optional().or(z.literal(""))
+  });
+
+  type EditTaskFormValues = z.infer<typeof editTaskSchema>;
+
+  const editForm = useForm<EditTaskFormValues>({
+    resolver: zodResolver(editTaskSchema),
+    defaultValues: {
+      title: task?.title || "",
+      description: task?.description || "",
+      priority: task ? getTaskPriorityString(task.priority) : "Medium",
+      dueDate: task?.dueDate ? new Date(task.dueDate).toISOString().split("T")[0] : "",
+      assignedUserId: task?.assignedUserId || ""
+    }
+  });
+
+  // Reset form when task data changes or entering edit mode
+  useEffect(() => {
+    if (task && isEditMode) {
+      editForm.reset({
+        title: task.title,
+        description: task.description || "",
+        priority: getTaskPriorityString(task.priority),
+        dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split("T")[0] : "",
+        assignedUserId: task.assignedUserId || ""
+      });
+    }
+  }, [task, isEditMode, editForm]);
+
+  const handleDeleteAttachment = (attachmentId: string) => {
+    if (isEditMode) {
+      // In edit mode, mark for deletion (don't delete immediately)
+      setAttachmentsToDelete((prev) => new Set(prev).add(attachmentId));
+    } else {
+      // In view mode, show confirmation and delete immediately
+      setAttachmentToDelete(attachmentId);
+      setDeleteAttachmentOpen(true);
+    }
+  };
+
+  const confirmDeleteAttachment = async () => {
+    if (!attachmentToDelete) return;
+
+    try {
+      await deleteAttachmentMutation.mutateAsync(attachmentToDelete);
+      await refetchAttachments();
+      toast.success(t("common:actions.deleted"));
+      setDeleteAttachmentOpen(false);
+      setAttachmentToDelete(null);
+    } catch (error) {
+      displayApiError(error, t("tasks:attachments.actions.delete"));
     }
   };
 
@@ -246,52 +308,151 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
   }
 
   function handleEditTask() {
-    // TODO: Create edit task page at /tasks/[taskId]/edit
-    toast.info("Edit task functionality will be implemented soon");
+    setIsEditMode(true);
+    setAttachmentsToDelete(new Set());
+    setUploadFiles([]);
+  }
+
+  function handleCancelEdit() {
+    setIsEditMode(false);
+    setAttachmentsToDelete(new Set());
+    setUploadFiles([]);
+  }
+
+  async function handleSaveChanges() {
+    if (!task) return;
+
+    try {
+      // Validate form
+      const formValues = await editForm.trigger();
+      if (!formValues) return;
+
+      const values = editForm.getValues();
+
+      // 1. Update task details
+      await updateTaskMutation.mutateAsync({
+        title: values.title,
+        description: values.description || null,
+        priority: TaskPriorityEnum[values.priority],
+        dueDate: values.dueDate ? new Date(values.dueDate).toISOString() : null,
+        assignedUserId: values.assignedUserId && values.assignedUserId.trim() !== "" ? values.assignedUserId : null
+      });
+
+      // 2. Delete marked attachments
+      for (const attachmentId of Array.from(attachmentsToDelete)) {
+        try {
+          await deleteAttachmentMutation.mutateAsync(attachmentId);
+        } catch (error) {
+          console.error(`Failed to delete attachment ${attachmentId}:`, error);
+          // Continue with other deletions
+        }
+      }
+
+      // 3. Upload new files
+      if (uploadFiles.length > 0) {
+        const roleLower = userRole?.toLowerCase() || "";
+        const attachmentType =
+          roleLower === "manager" || roleLower === "admin"
+            ? AttachmentTypeEnum.ManagerUploaded
+            : AttachmentTypeEnum.EmployeeUploaded;
+
+        for (const fileItem of uploadFiles) {
+          if (!fileItem.error) {
+            try {
+              await uploadMutation.mutateAsync({
+                file: fileItem.file,
+                type: attachmentType
+              });
+            } catch (error) {
+              console.error(`Failed to upload file ${fileItem.file.name}:`, error);
+              // Continue with other uploads
+            }
+          }
+        }
+      }
+
+      // 4. Refresh data and exit edit mode
+      await refetch();
+      await refetchAttachments();
+      setIsEditMode(false);
+      setAttachmentsToDelete(new Set());
+      setUploadFiles([]);
+      toast.success(t("common:actions.saved"));
+    } catch (error) {
+      displayApiError(error, t("tasks:errors.updateFailed"));
+    }
   }
 
   async function handleCancelTask() {
     // TODO: Implement cancel task API call when endpoint is available
     setCancelDialogOpen(false);
-    toast.info("Cancel task functionality will be implemented soon");
+    toast.info(t("tasks:edit.cancelInfo"));
   }
 
   return (
     <div className="space-y-6">
       <header className="flex flex-col gap-4 rounded-xl border border-border bg-background p-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 flex-1">
             <div className="flex items-center gap-3">
-              <h1 className="font-heading text-2xl text-foreground">{task.title}</h1>
+              {isEditMode ? (
+                <Input
+                  className="font-heading text-2xl font-semibold"
+                  {...editForm.register("title")}
+                  placeholder={t("tasks:forms.create.fields.titlePlaceholder")}
+                />
+              ) : (
+                <h1 className="font-heading text-2xl text-foreground">{task.title}</h1>
+              )}
               <TaskStatusBadge status={task.status} managerRating={task.managerRating ?? null} />
             </div>
-            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-              <span>
-                {t("common:filters.priority")}: {t(`common:priority.${getTaskPriorityString(task.priority).toLowerCase()}`)}
-              </span>
-              <span>
-                {t("common:filters.assignedTo")}: {task.assignedUserEmail ?? "—"}
-              </span>
-              <span>
-                {t("common:filters.dueDate")}: {task.dueDate ? formatDate(task.dueDate) : t("common:date.noDueDate")}
-              </span>
-            </div>
+            {!isEditMode && (
+              <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                <span>
+                  {t("common:filters.priority")}: {t(`common:priority.${getTaskPriorityString(task.priority).toLowerCase()}`)}
+                </span>
+                <span>
+                  {t("common:filters.assignedTo")}: {task.assignedUserEmail ?? "—"}
+                </span>
+                <span>
+                  {t("common:filters.dueDate")}: {task.dueDate ? formatDate(task.dueDate) : t("common:date.noDueDate")}
+                </span>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {/* Hide edit and action buttons if task is in final reviewed state */}
+            {/* Edit/Save/Cancel buttons */}
             {hasLink("update") && !(task.status === 3 && task.managerRating != null) && task.status !== 8 && (
-              <Button variant="secondary" onClick={handleEditTask} icon={<PencilIcon />}>
-                {t("common:actions.edit")}
-              </Button>
+              <>
+                {!isEditMode ? (
+                  <Button variant="secondary" onClick={handleEditTask} icon={<PencilIcon />}>
+                    {t("common:actions.edit")}
+                  </Button>
+                ) : (
+                  <>
+                    <Button variant="outline" onClick={handleCancelEdit} icon={<XMarkIcon />}>
+                      {t("common:actions.cancel")}
+                    </Button>
+                    <Button
+                      variant="primary"
+                      onClick={editForm.handleSubmit(handleSaveChanges)}
+                      disabled={updateTaskMutation.isPending}
+                      icon={<CheckIcon />}
+                    >
+                      {t("common:actions.save")}
+                    </Button>
+                  </>
+                )}
+              </>
             )}
-            {/* Hide action buttons if task is in final reviewed state */}
-            {hasLink("cancel") && !(task.status === 3 && task.managerRating != null) && task.status !== 8 && (
+            {/* Hide action buttons if task is in final reviewed state or in edit mode */}
+            {!isEditMode && hasLink("cancel") && !(task.status === 3 && task.managerRating != null) && task.status !== 8 && (
               <Button variant="destructive" onClick={() => setCancelDialogOpen(true)} icon={<StopIcon />}>
                 {t("common:actions.cancel")}
               </Button>
             )}
-            {hasLink("accept") && !(task.status === 3 && task.managerRating != null) && task.status !== 8 && (
+            {!isEditMode && hasLink("accept") && !(task.status === 3 && task.managerRating != null) && task.status !== 8 && (
               <Button
                 variant="primary"
                 onClick={handleAcceptTask}
@@ -301,7 +462,7 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
                 {t("tasks:details.actions.accept")}
               </Button>
             )}
-            {hasLink("reject") && !(task.status === 3 && task.managerRating != null) && task.status !== 8 && (
+            {!isEditMode && hasLink("reject") && !(task.status === 3 && task.managerRating != null) && task.status !== 8 && (
               <Button
                 variant="outline"
                 onClick={handleRejectTask}
@@ -311,22 +472,22 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
                 {t("tasks:details.actions.reject")}
               </Button>
             )}
-            {hasLink("assign") && !(task.status === 3 && task.managerRating != null) && task.status !== 8 && (
+            {!isEditMode && hasLink("assign") && !(task.status === 3 && task.managerRating != null) && task.status !== 8 && (
               <Button variant="outline" onClick={() => setAssignOpen(true)} icon={<UserPlusIcon />}>
                 {t("tasks:forms.assign.title")}
               </Button>
             )}
-            {hasLink("reassign") && !(task.status === 3 && task.managerRating != null) && task.status !== 8 && (
+            {!isEditMode && hasLink("reassign") && !(task.status === 3 && task.managerRating != null) && task.status !== 8 && (
               <Button variant="outline" onClick={() => setReassignOpen(true)} icon={<UserPlusIcon />}>
                 {t("tasks:forms.assign.title")}
               </Button>
             )}
-            {hasLink("update-progress") && !(task.status === 3 && task.managerRating != null) && task.status !== 8 && (
+            {!isEditMode && hasLink("update-progress") && !(task.status === 3 && task.managerRating != null) && task.status !== 8 && (
               <Button variant="secondary" onClick={() => setProgressOpen(true)} icon={<ChartBarIcon />}>
                 {t("tasks:details.actions.updateProgress")}
               </Button>
             )}
-            {hasLink("mark-completed") && !(task.status === 3 && task.managerRating != null) && task.status !== 8 && (
+            {!isEditMode && hasLink("mark-completed") && !(task.status === 3 && task.managerRating != null) && task.status !== 8 && (
               <Button
                 variant="destructive"
                 onClick={handleMarkCompleted}
@@ -336,12 +497,12 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
                 {t("tasks:details.actions.markCompleted")}
               </Button>
             )}
-            {hasLink("request-extension") && !(task.status === 3 && task.managerRating != null) && task.status !== 8 && (
+            {!isEditMode && hasLink("request-extension") && !(task.status === 3 && task.managerRating != null) && task.status !== 8 && (
               <Button variant="outline" onClick={() => setExtensionOpen(true)} icon={<ClockIcon />}>
                 {t("tasks:details.actions.requestExtension")}
               </Button>
             )}
-            {hasLink("approve-extension") && !(task.status === 3 && task.managerRating != null) && task.status !== 8 && (
+            {!isEditMode && hasLink("approve-extension") && !(task.status === 3 && task.managerRating != null) && task.status !== 8 && (
               <Button
                 variant="outline"
                 onClick={() => setApproveExtensionOpen(true)}
@@ -350,7 +511,7 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
                 {t("tasks:details.actions.approveExtension")}
               </Button>
             )}
-            {hasLink("request-more-info") && !(task.status === 3 && task.managerRating != null) && task.status !== 8 && (
+            {!isEditMode && hasLink("request-more-info") && !(task.status === 3 && task.managerRating != null) && task.status !== 8 && (
               <Button variant="outline" onClick={() => setMoreInfoOpen(true)} icon={<InformationCircleIcon />}>
                 {t("tasks:details.actions.requestInfo")}
               </Button>
@@ -366,8 +527,107 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <section className="space-y-4 rounded-xl border border-border bg-background p-6 shadow-sm lg:col-span-2">
-          <h2 className="text-lg font-semibold text-foreground">{t("tasks:details.sections.description")}</h2>
-          <p className="text-sm text-muted-foreground">{task.description ?? t("common:states.empty")}</p>
+          {isEditMode ? (
+            <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); editForm.handleSubmit(handleSaveChanges)(); }}>
+              {/* Title Field */}
+              <div className="space-y-2">
+                <Label htmlFor="edit-title">{t("tasks:forms.create.fields.title")}</Label>
+                <Input
+                  id="edit-title"
+                  {...editForm.register("title")}
+                  placeholder={t("tasks:forms.create.fields.titlePlaceholder")}
+                />
+                {editForm.formState.errors.title && (
+                  <FormFieldError message={t(editForm.formState.errors.title.message || "validation:required")} />
+                )}
+              </div>
+
+              {/* Description Field */}
+              <div className="space-y-2">
+                <Label htmlFor="edit-description">{t("tasks:forms.create.fields.description")}</Label>
+                <textarea
+                  id="edit-description"
+                  rows={4}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+                  {...editForm.register("description")}
+                  placeholder={t("tasks:forms.create.fields.descriptionPlaceholder")}
+                />
+                {editForm.formState.errors.description && (
+                  <FormFieldError message={t(editForm.formState.errors.description.message || "validation:required")} />
+                )}
+              </div>
+
+              {/* Priority Field */}
+              <div className="space-y-2">
+                <Label htmlFor="edit-priority">{t("tasks:forms.create.fields.priority")}</Label>
+                <Controller
+                  name="priority"
+                  control={editForm.control}
+                  render={({ field }) => (
+                    <Select
+                      id="edit-priority"
+                      value={field.value}
+                      onChange={field.onChange}
+                      options={[
+                        { value: "Low", label: t("common:priority.low") },
+                        { value: "Medium", label: t("common:priority.medium") },
+                        { value: "High", label: t("common:priority.high") },
+                        { value: "Critical", label: t("common:priority.critical") }
+                      ]}
+                    />
+                  )}
+                />
+                {editForm.formState.errors.priority && (
+                  <FormFieldError message={t(editForm.formState.errors.priority.message || "validation:required")} />
+                )}
+              </div>
+
+              {/* Due Date Field */}
+              <div className="space-y-2">
+                <Label htmlFor="edit-dueDate">{t("tasks:forms.create.fields.dueDate")}</Label>
+                <Controller
+                  name="dueDate"
+                  control={editForm.control}
+                  render={({ field }) => (
+                    <DatePicker
+                      id="edit-dueDate"
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder={t("tasks:forms.create.fields.dueDatePlaceholder")}
+                    />
+                  )}
+                />
+                {editForm.formState.errors.dueDate && (
+                  <FormFieldError message={t(editForm.formState.errors.dueDate.message || "validation:required")} />
+                )}
+              </div>
+
+              {/* Assigned User Field */}
+              <div className="space-y-2">
+                <Label htmlFor="edit-assignedUserId">{t("tasks:forms.create.fields.assignedUserId")}</Label>
+                <Controller
+                  name="assignedUserId"
+                  control={editForm.control}
+                  render={({ field }) => (
+                    <UserSearchInput
+                      value={field.value || ""}
+                      onChange={field.onChange}
+                      placeholder={t("tasks:forms.create.fields.assignedUserIdPlaceholder")}
+                      error={!!editForm.formState.errors.assignedUserId}
+                    />
+                  )}
+                />
+                {editForm.formState.errors.assignedUserId && (
+                  <FormFieldError message={t(editForm.formState.errors.assignedUserId.message || "validation:required")} />
+                )}
+              </div>
+            </form>
+          ) : (
+            <>
+              <h2 className="text-lg font-semibold text-foreground">{t("tasks:details.sections.description")}</h2>
+              <p className="text-sm text-muted-foreground">{task.description ?? t("common:states.empty")}</p>
+            </>
+          )}
 
           {/* Manager Review Section */}
           {(task.managerRating != null || task.managerFeedback) && (
@@ -435,10 +695,10 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
           <div className="space-y-4">
             <h3 className="text-base font-semibold text-foreground">{t("tasks:details.sections.attachments")}</h3>
             
-            {/* Show attachments list if user can view */}
+            {/* Show attachments list if user can view - show all in edit mode, filtered in view mode */}
             {accessibleAttachments.length > 0 && (
               <FileAttachmentList
-                attachments={accessibleAttachments}
+                attachments={isEditMode ? accessibleAttachments : accessibleAttachments.filter((a) => !attachmentsToDelete.has(a.id))}
                 onDownload={async (attachmentId) => {
                   try {
                     const blob = await downloadAttachment(taskId, attachmentId);
@@ -455,15 +715,16 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
                     toast.error(t("tasks:attachments.actions.download"));
                   }
                 }}
-                onDelete={handleDeleteAttachment}
+                {...(isEditMode && { onDelete: handleDeleteAttachment })}
                 canDelete={(attachment) =>
-                  task ? canDeleteAttachment(attachment, task, currentUserId, userRole) : false
+                  isEditMode && task ? canDeleteAttachment(attachment, task, currentUserId, userRole) : false
                 }
+                {...(isEditMode && attachmentsToDelete.size > 0 && { markedForDeletion: attachmentsToDelete })}
               />
             )}
 
-            {/* Show upload section if user can upload */}
-            {task && canUploadAttachment(task, userRole, currentUserId) && (
+            {/* Show upload section only in edit mode and if user can upload */}
+            {isEditMode && task && canUploadAttachment(task, userRole, currentUserId) && (
               <div className="space-y-2">
                 <FileUpload
                   files={uploadFiles}
@@ -477,8 +738,9 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
                       for (const fileItem of uploadFiles) {
                         if (!fileItem.error) {
                           try {
+                            const roleLower = userRole?.toLowerCase() || "";
                             const attachmentType =
-                              userRole === "Manager" || userRole === "Admin"
+                              roleLower === "manager" || roleLower === "admin"
                                 ? AttachmentTypeEnum.ManagerUploaded
                                 : AttachmentTypeEnum.EmployeeUploaded;
                             await uploadMutation.mutateAsync({
@@ -582,6 +844,64 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
                 </Button>
                 <Button type="button" variant="destructive" onClick={handleCancelTask} icon={<StopIcon />}>
                   {t("tasks:details.actions.cancelTask")}
+                </Button>
+              </div>
+            </Dialog.Panel>
+          </Transition>
+        </div>
+      </Dialog>
+
+      {/* Delete Attachment Confirmation Dialog */}
+      <Dialog open={isDeleteAttachmentOpen} onClose={() => setDeleteAttachmentOpen(false)} as="div" className="relative z-50">
+        <Transition appear show={isDeleteAttachmentOpen} as={Fragment}>
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" aria-hidden="true" />
+        </Transition>
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <Transition
+            appear
+            show={isDeleteAttachmentOpen}
+            as={Fragment}
+            enter="transition ease-out duration-200"
+            enterFrom="opacity-0 scale-95 translate-y-2"
+            enterTo="opacity-100 scale-100 translate-y-0"
+            leave="transition ease-in duration-150"
+            leaveFrom="opacity-100 scale-100 translate-y-0"
+            leaveTo="opacity-0 scale-95 translate-y-2"
+          >
+            <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-xl border border-border bg-background p-6 shadow-2xl transition-all">
+              <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-destructive/10">
+                  <TrashIcon className="h-6 w-6 text-destructive" />
+                </div>
+                <div className="flex-1 space-y-2">
+                  <Dialog.Title as="h3" className="text-lg font-semibold text-foreground">
+                    {t("tasks:attachments.actions.delete")}
+                  </Dialog.Title>
+                  <p className="text-sm text-muted-foreground">
+                    {t("tasks:attachments.actions.deleteConfirm")}
+                  </p>
+                </div>
+              </div>
+              <div className="mt-6 flex justify-end gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setDeleteAttachmentOpen(false);
+                    setAttachmentToDelete(null);
+                  }}
+                  icon={<XMarkIcon />}
+                >
+                  {t("common:actions.cancel")}
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={confirmDeleteAttachment}
+                  disabled={deleteAttachmentMutation.isPending}
+                  icon={<TrashIcon />}
+                >
+                  {t("common:actions.delete")}
                 </Button>
               </div>
             </Dialog.Panel>

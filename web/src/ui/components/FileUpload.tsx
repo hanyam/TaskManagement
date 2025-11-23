@@ -2,6 +2,7 @@
 
 import { PaperClipIcon, XMarkIcon, CloudArrowUpIcon } from "@heroicons/react/24/outline";
 import { useCallback, useState, useRef } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/ui/components/Button";
 import { cn } from "@/ui/utils/cn";
@@ -23,10 +24,15 @@ interface FileUploadProps {
   className?: string;
 }
 
-const formatFileSize = (bytes: number): string => {
-  if (bytes === 0) return "0 Bytes";
+const formatFileSize = (bytes: number, t: (key: string) => string): string => {
+  if (bytes === 0) return `0 ${t("common:fileSize.bytes")}`;
   const k = 1024;
-  const sizes = ["Bytes", "KB", "MB", "GB"];
+  const sizes = [
+    t("common:fileSize.bytes"),
+    t("common:fileSize.kb"),
+    t("common:fileSize.mb"),
+    t("common:fileSize.gb")
+  ];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return `${Math.round((bytes / Math.pow(k, i)) * 100) / 100} ${sizes[i]}`;
 };
@@ -44,6 +50,7 @@ export function FileUpload({
   disabled = false,
   className
 }: FileUploadProps) {
+  const { t } = useTranslation();
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -53,7 +60,7 @@ export function FileUpload({
 
       const validateFile = (file: File): string | null => {
         if (file.size > maxSize) {
-          return `File size exceeds ${formatFileSize(maxSize)}`;
+          return t("common:fileSize.exceeds", { size: formatFileSize(maxSize, t) });
         }
         return null;
       };
@@ -156,10 +163,10 @@ export function FileUpload({
             )}
           />
           <p className="text-sm font-medium text-foreground mb-1">
-            {isDragging ? "Drop files here" : "Drag and drop files here"}
+            {isDragging ? t("tasks:attachments.upload.dropHere") : t("tasks:attachments.upload.dragDrop")}
           </p>
           <p className="text-xs text-muted-foreground mb-4">
-            or click to browse (max {formatFileSize(maxSize)})
+            {t("tasks:attachments.upload.orClick")} ({t("tasks:attachments.upload.maxSize", { size: formatFileSize(maxSize, t) })})
           </p>
           <Button
             type="button"
@@ -168,14 +175,14 @@ export function FileUpload({
             onClick={() => fileInputRef.current?.click()}
             disabled={disabled}
           >
-            Select Files
+            {t("tasks:attachments.upload.selectFiles")}
           </Button>
         </div>
       </div>
 
       {files.length > 0 && (
         <div className="space-y-2">
-          <h4 className="text-sm font-medium text-foreground">Selected Files ({files.length})</h4>
+          <h4 className="text-sm font-medium text-foreground">{t("common:attachments.selectedFiles", { count: files.length })}</h4>
           <div className="space-y-2">
             {files.map((fileItem) => (
               <div
@@ -189,7 +196,7 @@ export function FileUpload({
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground truncate">{fileItem.file.name}</p>
                   <div className="flex items-center gap-2 mt-1">
-                    <p className="text-xs text-muted-foreground">{formatFileSize(fileItem.file.size)}</p>
+                    <p className="text-xs text-muted-foreground">{formatFileSize(fileItem.file.size, t)}</p>
                     {fileItem.progress !== undefined && fileItem.progress < 100 && (
                       <div className="flex-1 max-w-xs">
                         <div className="h-1.5 bg-muted rounded-full overflow-hidden">

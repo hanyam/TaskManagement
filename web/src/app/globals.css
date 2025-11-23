@@ -14,25 +14,38 @@
   --radius-md: 0.625rem;
   --radius-sm: 0.375rem;
 
-  --shadow-card: 0 12px 32px -12px hsl(221deg 39% 11% / 0.18);
+  --shadow-card: 0 12px 32px -12px hsl(197deg 100% 20% / 0.15);
 
-  --color-background: 210 20% 98%;
-  --color-foreground: 222 47% 11%;
-  --color-muted: 210 20% 92%;
-  --color-muted-foreground: 222 27% 27%;
-  --color-primary: 221 83% 53%;
-  --color-primary-foreground: 210 40% 98%;
-  --color-secondary: 210 40% 96%;
-  --color-secondary-foreground: 222 47% 11%;
-  --color-accent: 173 58% 45%;
-  --color-accent-foreground: 210 40% 98%;
+  /* WTCO Brand Colors - Light Theme */
+  /* Background: Light blue-white (rgb(250, 252, 255) -> hsl(210, 100%, 99%)) */
+  --color-background: 210 100% 99%;
+  /* Foreground: Dark text (rgb(30, 30, 30) -> hsl(0, 0%, 12%)) */
+  --color-foreground: 0 0% 12%;
+  /* Muted: Light gray-blue */
+  --color-muted: 210 30% 95%;
+  --color-muted-foreground: 0 0% 35%;
+  /* Primary: WTCO Teal/Cyan (rgb(0, 173, 239) -> hsl(197, 100%, 47%)) */
+  --color-primary: 197 100% 47%;
+  --color-primary-foreground: 0 0% 100%;
+  /* Secondary: Light gray-blue */
+  --color-secondary: 210 25% 96%;
+  --color-secondary-foreground: 0 0% 12%;
+  /* Accent: Slightly darker teal for hover states */
+  --color-accent: 197 85% 42%;
+  --color-accent-foreground: 0 0% 100%;
+  /* Destructive: Keep red for errors */
   --color-destructive: 0 72% 51%;
-  --color-destructive-foreground: 210 40% 98%;
-  --color-border: 214 32% 91%;
-  --color-input: 214 32% 91%;
-  --color-ring: 221 83% 53%;
-  --color-info: 210 90% 60%;
+  --color-destructive-foreground: 0 0% 100%;
+  /* Border: Light gray-blue */
+  --color-border: 210 20% 90%;
+  --color-input: 210 20% 90%;
+  /* Ring: Match primary teal */
+  --color-ring: 197 100% 47%;
+  /* Info: Use teal variant */
+  --color-info: 197 90% 55%;
+  /* Success: Keep green */
   --color-success: 152 61% 41%;
+  /* Warning: Keep yellow/orange */
   --color-warning: 43 96% 56%;
 }
 

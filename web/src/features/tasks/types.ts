@@ -110,6 +110,14 @@ export interface AssignTaskRequest {
   userIds: string[];
 }
 
+export interface UpdateTaskRequest {
+  title: string;
+  description?: string | null;
+  priority: number; // TaskPriority enum
+  dueDate?: string | null; // ISO date string
+  assignedUserId?: string | null;
+}
+
 export interface UpdateTaskProgressRequest {
   progressPercentage: number;
   notes?: string | null;

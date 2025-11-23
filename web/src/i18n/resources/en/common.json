@@ -32,7 +32,9 @@
     "optional": "Optional",
     "required": "Required",
     "select": "Select…",
-    "perPage": "{count} per page"
+    "perPage": "{count} per page",
+    "selectMonth": "Select month",
+    "selectYear": "Select year"
   },
   "filters": {
     "status": "Status",
@@ -96,6 +98,24 @@
     "employee": "Employee",
     "manager": "Manager",
     "admin": "Administrator"
+  },
+  "fileSize": {
+    "bytes": "Bytes",
+    "kb": "KB",
+    "mb": "MB",
+    "gb": "GB",
+    "exceeds": "File size exceeds {size}"
+  },
+  "attachments": {
+    "selectedFiles": "Selected Files ({count})",
+    "toBeDeleted": "To be deleted",
+    "manager": "Manager",
+    "employee": "Employee"
+  },
+  "actions": {
+    "saved": "Changes saved successfully",
+    "update": "Update",
+    "clear": "Clear"
   }
 }
 

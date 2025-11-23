@@ -1,6 +1,5 @@
 import type { TaskAttachmentDto, TaskDto } from "@/features/tasks/types";
-import { getTaskStatusString } from "@/features/tasks/value-objects";
-import { getAttachmentTypeString } from "@/features/tasks/value-objects";
+import { getAttachmentTypeString, getTaskStatusString } from "@/features/tasks/value-objects";
 
 /**
  * Checks if a user can view a specific attachment based on task status and attachment type.
@@ -10,8 +9,9 @@ export function canViewAttachment(
   task: TaskDto,
   userRole: string
 ): boolean {
-  // Managers and Admins can always view attachments
-  if (userRole === "Manager" || userRole === "Admin") {
+  // Managers and Admins can always view attachments (case-insensitive check)
+  const roleLower = userRole?.toLowerCase() || "";
+  if (roleLower === "manager" || roleLower === "admin") {
     return true;
   }
 
@@ -45,14 +45,15 @@ export function canViewAttachment(
  */
 export function canUploadAttachment(task: TaskDto, userRole: string, currentUserId: string): boolean {
   const taskStatus = getTaskStatusString(task.status);
+  const roleLower = userRole?.toLowerCase() || "";
 
   // Managers can upload when creating/editing task (Created, Assigned statuses)
-  if (userRole === "Manager" || userRole === "Admin") {
+  if (roleLower === "manager" || roleLower === "admin") {
     return taskStatus === "Created" || taskStatus === "Assigned";
   }
 
   // Employees can upload when task is Accepted or UnderReview
-  if (userRole === "Employee") {
+  if (roleLower === "employee") {
     return (
       taskStatus === "Accepted" ||
       taskStatus === "UnderReview" ||
@@ -72,11 +73,12 @@ export function canDeleteAttachment(
   currentUserId: string,
   userRole: string
 ): boolean {
-  // Only uploader or task creator can delete
+  // Only uploader or task creator can delete (case-insensitive role check)
+  const roleLower = userRole?.toLowerCase() || "";
   return (
     attachment.uploadedById === currentUserId ||
     task.createdById === currentUserId ||
-    userRole === "Admin"
+    roleLower === "admin"
   );
 }
 

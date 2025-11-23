@@ -75,6 +75,9 @@ public static class DependencyInjection
                 Description = "A .NET Core API implementing Vertical Slice Architecture with Azure AD authentication"
             });
 
+            // Enable Swashbuckle annotations (SwaggerOperation, ProducesResponseType, etc.)
+            c.EnableAnnotations();
+
             // Add JWT authentication to Swagger
             c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
             {

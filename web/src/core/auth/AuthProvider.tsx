@@ -87,6 +87,29 @@ export function AuthProvider({ children, initialSession }: AuthProviderProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialSession]);
 
+  // Periodic token validation (every 5 minutes)
+  useEffect(() => {
+    if (typeof window === "undefined" || !session) {
+      return;
+    }
+
+    const interval = setInterval(async () => {
+      const { getClientSession, isTokenExpired } = await import("@/core/auth/session.client");
+      const currentSession = getClientSession();
+      
+      if (!currentSession || isTokenExpired(currentSession.token, currentSession.expiresAt)) {
+        // Token expired - clear session
+        setSessionState(undefined);
+        clearClientAuthSession();
+      } else if (currentSession.token !== session.token) {
+        // Session changed - update state
+        setSessionState(currentSession);
+      }
+    }, 5 * 60 * 1000); // Check every 5 minutes
+
+    return () => clearInterval(interval);
+  }, [session]);
+
   const setSession = useCallback((nextSession: AuthSession) => {
     setSessionState(nextSession);
     setClientAuthSession(

@@ -353,7 +353,7 @@ export function TaskCreateView() {
               />
               {files.length > 0 && (
                 <p className="text-xs text-muted-foreground">
-                  {files.length} {files.length === 1 ? "file" : "files"} selected
+                  {t("tasks:attachments.upload.selectedFiles", { count: files.length })}
                 </p>
               )}
             </div>

@@ -10,6 +10,7 @@ namespace TaskManagement.Application.Common.Services;
 public interface IAuditLogService
 {
     void LogTaskCreated(Guid taskId, string userId, string userEmail, string? correlationId = null);
+    void LogTaskUpdated(Guid taskId, string userId, string userEmail, string? correlationId = null);
     void LogTaskAssigned(Guid taskId, Guid assignedUserId, string userId, string userEmail, string? correlationId = null);
     void LogTaskCompleted(Guid taskId, string userId, string userEmail, string? correlationId = null);
     void LogTaskStatusChanged(Guid taskId, string oldStatus, string newStatus, string userId, string userEmail, string? correlationId = null);
@@ -39,6 +40,11 @@ public class AuditLogService : IAuditLogService
     public void LogTaskCreated(Guid taskId, string userId, string userEmail, string? correlationId = null)
     {
         _logger.LogAudit("TaskCreated", "Task", taskId.ToString(), userId, userEmail, correlationId);
+    }
+
+    public void LogTaskUpdated(Guid taskId, string userId, string userEmail, string? correlationId = null)
+    {
+        _logger.LogAudit("TaskUpdated", "Task", taskId.ToString(), userId, userEmail, correlationId);
     }
 
     public void LogTaskAssigned(Guid taskId, Guid assignedUserId, string userId, string userEmail, string? correlationId = null)

@@ -5,6 +5,7 @@ import { format, getMonth, getYear, setMonth, setYear } from "date-fns";
 import { ar, enUS } from "date-fns/locale";
 import { forwardRef, useEffect, useState } from "react";
 import type { ComponentProps } from "react";
+import { useTranslation } from "react-i18next";
 import { DayPicker } from "react-day-picker";
 
 import { getDirection } from "@/core/routing/locales";
@@ -23,6 +24,7 @@ interface DatePickerProps extends Omit<ComponentProps<"input">, "value" | "onCha
 export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(
   ({ value, onChange, placeholder, className, disabled, ...props }, ref) => {
     const locale = useCurrentLocale();
+    const { t } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
     const [selectedDate, setSelectedDate] = useState<Date | undefined>(
       value ? new Date(value) : undefined
@@ -138,7 +140,7 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(
                   value={getMonth(currentMonth)}
                   onChange={(monthIndex) => handleMonthChange(monthIndex)}
                   className="h-8 min-w-[120px]"
-                  aria-label="Select month"
+                  aria-label={t("common:forms.selectMonth")}
                 />
                 <Select<number>
                   options={yearOptions.map((year) => ({
@@ -148,7 +150,7 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(
                   value={getYear(currentMonth)}
                   onChange={(year) => handleYearChange(year)}
                   className="h-8 min-w-[100px]"
-                  aria-label="Select year"
+                  aria-label={t("common:forms.selectYear")}
                 />
               </div>
               <DayPicker

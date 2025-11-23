@@ -1,11 +1,14 @@
+using System.Security.Claims;
 using Microsoft.Extensions.Logging;
 using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Domain.Common;
+using TaskManagement.Domain.Constants;
 using TaskManagement.Domain.DTOs;
 using TaskManagement.Domain.Entities;
 using TaskManagement.Domain.Errors.Tasks;
 using TaskManagement.Infrastructure.Data;
 using TaskManagement.Infrastructure.Data.Repositories;
+using static TaskManagement.Domain.Constants.RoleNames;
 
 namespace TaskManagement.Application.Tasks.Queries.GetTaskAttachments;
 
@@ -15,10 +18,12 @@ namespace TaskManagement.Application.Tasks.Queries.GetTaskAttachments;
 public class GetTaskAttachmentsQueryHandler(
     TaskAttachmentDapperRepository attachmentRepository,
     TaskManagementDbContext context,
+    ICurrentUserService currentUserService,
     ILogger<GetTaskAttachmentsQueryHandler> logger) : IRequestHandler<GetTaskAttachmentsQuery, List<TaskAttachmentDto>>
 {
     private readonly TaskAttachmentDapperRepository _attachmentRepository = attachmentRepository;
     private readonly TaskManagementDbContext _context = context;
+    private readonly ICurrentUserService _currentUserService = currentUserService;
     private readonly ILogger<GetTaskAttachmentsQueryHandler> _logger = logger;
 
     public async Task<Result<List<TaskAttachmentDto>>> Handle(GetTaskAttachmentsQuery request, CancellationToken cancellationToken)
@@ -36,7 +41,23 @@ public class GetTaskAttachmentsQueryHandler(
         // Get all attachments
         var attachments = (await _attachmentRepository.GetTaskAttachmentsAsync(request.TaskId, cancellationToken)).ToList();
 
-        // Filter attachments based on access rules
+        // Get user role from claims
+        var userRole = _currentUserService.GetUserPrincipal()?.FindFirst(ClaimTypes.Role)?.Value ?? string.Empty;
+
+        // Managers and Admins can always view all attachments regardless of task status
+        if (userRole == Manager || userRole == Admin)
+        {
+            _logger.LogInformation(
+                "User {UserId} with role {Role} can view all {Count} attachments for task {TaskId}",
+                request.RequestedById,
+                userRole,
+                attachments.Count,
+                request.TaskId);
+
+            return Result<List<TaskAttachmentDto>>.Success(attachments);
+        }
+
+        // Filter attachments based on access rules for non-manager/admin users
         var accessibleAttachments = new List<TaskAttachmentDto>();
 
         foreach (var attachment in attachments)
@@ -65,10 +86,11 @@ public class GetTaskAttachmentsQueryHandler(
         }
 
         _logger.LogInformation(
-            "Retrieved {Count} accessible attachments out of {TotalCount} total attachments for task {TaskId}",
+            "Retrieved {Count} accessible attachments out of {TotalCount} total attachments for task {TaskId} (user role: {Role})",
             accessibleAttachments.Count,
             attachments.Count,
-            request.TaskId);
+            request.TaskId,
+            userRole);
 
         return Result<List<TaskAttachmentDto>>.Success(accessibleAttachments);
     }

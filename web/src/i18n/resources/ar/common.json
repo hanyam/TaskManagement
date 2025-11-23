@@ -32,7 +32,9 @@
     "optional": "اختياري",
     "required": "إلزامي",
     "select": "اختر…",
-    "perPage": "{count} لكل صفحة"
+    "perPage": "{count} لكل صفحة",
+    "selectMonth": "اختر الشهر",
+    "selectYear": "اختر السنة"
   },
   "filters": {
     "status": "الحالة",
@@ -96,6 +98,24 @@
     "employee": "موظف",
     "manager": "مدير",
     "admin": "مسؤول"
+  },
+  "fileSize": {
+    "bytes": "بايت",
+    "kb": "كيلوبايت",
+    "mb": "ميجابايت",
+    "gb": "جيجابايت",
+    "exceeds": "حجم الملف يتجاوز {size}"
+  },
+  "attachments": {
+    "selectedFiles": "الملفات المحددة ({count})",
+    "toBeDeleted": "سيتم الحذف",
+    "manager": "مدير",
+    "employee": "موظف"
+  },
+  "actions": {
+    "saved": "تم حفظ التغييرات بنجاح",
+    "update": "تحديث",
+    "clear": "مسح"
   }
 }
 

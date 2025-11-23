@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
 using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Application.Tasks.Commands.DeleteTaskAttachment;
 using TaskManagement.Application.Tasks.Commands.UploadTaskAttachment;
@@ -19,7 +20,7 @@ namespace TaskManagement.Presentation.Controllers;
 ///     Controller for handling task attachment operations.
 /// </summary>
 [ApiController]
-[Route("api/tasks/{taskId}/attachments")]
+[Route("tasks/{taskId}/attachments")]
 [Authorize]
 public class TaskAttachmentsController(
     ICommandMediator commandMediator,
@@ -35,6 +36,15 @@ public class TaskAttachmentsController(
     /// <param name="type">The attachment type (ManagerUploaded or EmployeeUploaded).</param>
     /// <returns>The uploaded attachment information.</returns>
     [HttpPost]
+    [SwaggerOperation(
+        Summary = "Upload Task Attachment",
+        Description = "Uploads a file attachment to a task. Managers and Admins can upload ManagerUploaded attachments, while Employees can upload EmployeeUploaded attachments. The attachment type is automatically determined based on user role if not specified. File size and type validations apply. Returns the uploaded attachment information with file metadata."
+    )]
+    [ProducesResponseType(typeof(ApiResponse<TaskAttachmentDto>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [EnsureUserId]
     public async Task<IActionResult> UploadAttachment(
         Guid taskId,
@@ -92,6 +102,15 @@ public class TaskAttachmentsController(
     /// <param name="taskId">The task ID.</param>
     /// <returns>List of accessible attachments.</returns>
     [HttpGet]
+    [SwaggerOperation(
+        Summary = "Get Task Attachments",
+        Description = "Retrieves all attachments for a task with role-based access control. Managers and Admins can view all attachments regardless of task status. Employees can only view attachments when the task is in 'Accepted' or later status. Returns a filtered list of attachments the user has permission to access."
+    )]
+    [ProducesResponseType(typeof(ApiResponse<List<TaskAttachmentDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [EnsureUserId]
     [Authorize(Roles = EmployeeOrManager)]
     public async Task<IActionResult> GetAttachments(Guid taskId)
@@ -115,6 +134,15 @@ public class TaskAttachmentsController(
     /// <param name="attachmentId">The attachment ID.</param>
     /// <returns>The file stream.</returns>
     [HttpGet("{attachmentId}/download")]
+    [SwaggerOperation(
+        Summary = "Download Task Attachment",
+        Description = "Downloads a task attachment file. Managers and Admins can download any attachment regardless of task status. Employees can only download attachments when the task is in 'Accepted' or later status. Returns the file stream with appropriate content type and filename headers."
+    )]
+    [ProducesResponseType(typeof(FileResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [EnsureUserId]
     [Authorize(Roles = EmployeeOrManager)]
     public async Task<IActionResult> DownloadAttachment(Guid taskId, Guid attachmentId)
@@ -146,6 +174,15 @@ public class TaskAttachmentsController(
     /// <param name="attachmentId">The attachment ID.</param>
     /// <returns>Success response.</returns>
     [HttpDelete("{attachmentId}")]
+    [SwaggerOperation(
+        Summary = "Delete Task Attachment",
+        Description = "Deletes a task attachment. Users can only delete attachments they uploaded themselves, unless they are Managers or Admins who can delete any attachment. The file is permanently removed from storage. Returns a success response upon successful deletion."
+    )]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [EnsureUserId]
     [Authorize(Roles = EmployeeOrManager)]
     public async Task<IActionResult> DeleteAttachment(Guid taskId, Guid attachmentId)
