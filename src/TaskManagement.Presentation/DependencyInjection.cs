@@ -1,3 +1,4 @@
+using System.Text;
 using Azure.Identity;
 using Azure.Monitor.OpenTelemetry.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -13,7 +14,6 @@ using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
-using System.Text;
 using TaskManagement.Domain.Common;
 using TaskManagement.Domain.Options;
 
@@ -34,8 +34,12 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        // Add controllers
-        services.AddControllers();
+        // Add controllers with JSON options (camelCase naming policy)
+        services.AddControllers()
+            .AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+            });
 
         // Configure options
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
@@ -136,10 +140,10 @@ public static class DependencyInjection
         // .dotnet add package--prerelease OpenTelemetry.Exporter.Prometheus.HttpListener
         builder.Services.AddMetrics();
         builder.Services.AddSingleton<TaskManagementMetrics>();
-    //    using var meterProvider = Sdk.CreateMeterProviderBuilder()
-    //.AddProcessInstrumentation()
-    ////.AddPrometheusHttpListener()
-    //.Build();
+        //    using var meterProvider = Sdk.CreateMeterProviderBuilder()
+        //.AddProcessInstrumentation()
+        ////.AddPrometheusHttpListener()
+        //.Build();
         var openTelemetryBuilder = builder.Services.AddOpenTelemetry()
             .ConfigureResource(resource => resource.AddService(builder.Environment.ApplicationName))
             .WithTracing(tracing => tracing
@@ -155,10 +159,10 @@ public static class DependencyInjection
                 .AddAspNetCoreInstrumentation()
                 .AddRuntimeInstrumentation()
                 .AddProcessInstrumentation());
-        
+
         // Note: Logging is handled by Serilog (configured in Program.cs)
         // OpenTelemetry logging can be added via Serilog.Sinks.OpenTelemetry if needed
-        
+
         if (builder.Environment.IsDevelopment())
         {
             openTelemetryBuilder.UseOtlpExporter();

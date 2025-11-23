@@ -10,7 +10,7 @@ RUN npm ci
 
 FROM base AS build
 # Accept build arguments for NEXT_PUBLIC_* variables
-ARG NEXT_PUBLIC_API_BASE_URL=http://localhost:5000
+ARG NEXT_PUBLIC_API_BASE_URL=http://localhost:5050
 ARG NEXT_PUBLIC_APP_NAME="Task Management Console"
 ARG NEXT_PUBLIC_AZURE_AD_CLIENT_ID
 ARG NEXT_PUBLIC_AZURE_AD_TENANT_ID

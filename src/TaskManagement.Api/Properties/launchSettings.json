@@ -6,7 +6,7 @@
             "environmentVariables": {
                 "ASPNETCORE_ENVIRONMENT": "Development"
             },
-            "applicationUrl": "http://localhost:5000"
+            "applicationUrl": "http://localhost:5050"
         },
         "Container (Dockerfile)": {
             "commandName": "Docker",
@@ -14,11 +14,11 @@
             "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}",
             "environmentVariables": {
                 //"ASPNETCORE_HTTPS_PORTS": "5001"//,
-                "ASPNETCORE_HTTP_PORTS": "5000"
+                "ASPNETCORE_HTTP_PORTS": "5050"
             },
             "publishAllPorts": false,
             //"useSSL": true,
-            "httpPort": 5000 //,
+            "httpPort": 5050 //,
             //"sslPort": 5001
         }
     }

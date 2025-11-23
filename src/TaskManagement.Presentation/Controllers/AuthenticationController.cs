@@ -1,7 +1,8 @@
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Microsoft.AspNetCore.Http;
 using TaskManagement.Application.Authentication.Commands.AuthenticateUser;
 using TaskManagement.Application.Common.Interfaces;
 
@@ -39,5 +40,6 @@ public class AuthenticationController(ICommandMediator commandMediator, IRequest
 /// </summary>
 public class AuthenticateUserRequest
 {
+    [JsonPropertyName("azureAdToken")]
     public string AzureAdToken { get; set; } = string.Empty;
 }
