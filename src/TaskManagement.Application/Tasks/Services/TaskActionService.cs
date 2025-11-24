@@ -18,6 +18,10 @@ public class TaskActionService : ITaskActionService
         var isManager = currentUserRole == Manager || currentUserRole == Admin;
         var isAssignedUser = task.AssignedUserId.HasValue && task.AssignedUserId.Value == currentUserId;
         var isCreator = task.CreatedById == currentUserId;
+        var canCancel =
+            (isCreator || isManager) &&
+            task.ManagerRating == null &&
+            task.Status is not TaskStatus.Completed and not TaskStatus.RejectedByManager and not TaskStatus.Cancelled;
 
         // Self link - always present
         links.Add(new ApiActionLink
@@ -67,7 +71,7 @@ public class TaskActionService : ITaskActionService
                     });
 
                 // Creator, Manager, or Admin can cancel
-                if (isCreator || isManager)
+                if (canCancel)
                     links.Add(new ApiActionLink
                     {
                         Rel = "cancel",
@@ -106,7 +110,7 @@ public class TaskActionService : ITaskActionService
                     });
 
                 // Managers/Admins can cancel
-                if (isManager)
+                if (canCancel)
                     links.Add(new ApiActionLink
                     {
                         Rel = "cancel",
@@ -135,7 +139,7 @@ public class TaskActionService : ITaskActionService
                     });
 
                 // Managers/Admins can cancel
-                if (isManager)
+                if (canCancel)
                     links.Add(new ApiActionLink
                     {
                         Rel = "cancel",
@@ -174,7 +178,7 @@ public class TaskActionService : ITaskActionService
                     });
 
                 // Managers/Admins can cancel
-                if (isManager)
+                if (canCancel)
                     links.Add(new ApiActionLink
                     {
                         Rel = "cancel",
@@ -203,7 +207,7 @@ public class TaskActionService : ITaskActionService
                     });
 
                 // Managers/Admins can cancel
-                if (isManager)
+                if (canCancel)
                     links.Add(new ApiActionLink
                     {
                         Rel = "cancel",

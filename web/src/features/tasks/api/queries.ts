@@ -199,6 +199,26 @@ export function useAcceptTaskProgressMutation(taskId: string) {
   });
 }
 
+export function useCancelTaskMutation(taskId: string) {
+  const locale = useCurrentLocale();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      await apiClient.request<void>({
+        path: `/tasks/${taskId}/cancel`,
+        method: "POST",
+        locale
+      });
+    },
+    onSuccess: async () => {
+      queryClient.removeQueries({ queryKey: taskKeys.detail(taskId) });
+      queryClient.removeQueries({ queryKey: taskKeys.attachments(taskId) });
+      await queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
+    }
+  });
+}
+
 export function useAcceptTaskMutation(taskId: string) {
   const locale = useCurrentLocale();
   const queryClient = useQueryClient();

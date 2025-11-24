@@ -25,7 +25,10 @@
     "markComplete": "Mark complete",
     "viewDetails": "View details",
     "previous": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "saved": "Changes saved successfully",
+    "update": "Update",
+    "clear": "Clear"
   },
   "forms": {
     "search": "Search",
@@ -111,11 +114,5 @@
     "toBeDeleted": "To be deleted",
     "manager": "Manager",
     "employee": "Employee"
-  },
-  "actions": {
-    "saved": "Changes saved successfully",
-    "update": "Update",
-    "clear": "Clear"
   }
 }
-

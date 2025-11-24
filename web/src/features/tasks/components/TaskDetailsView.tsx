@@ -41,6 +41,7 @@ import {
   useTaskAttachmentsQuery,
   useUploadAttachmentMutation,
   useDeleteAttachmentMutation,
+  useCancelTaskMutation,
   downloadAttachment
 } from "@/features/tasks/api/queries";
 import { FileAttachmentList } from "@/features/tasks/components/FileAttachmentList";
@@ -58,6 +59,7 @@ import { Input } from "@/ui/components/Input";
 import { Label } from "@/ui/components/Label";
 import { Select } from "@/ui/components/Select";
 import { Spinner } from "@/ui/components/Spinner";
+import { useCurrentLocale } from "@/core/routing/useCurrentLocale";
 
 interface TaskDetailsViewProps {
   taskId: string;
@@ -104,6 +106,7 @@ function displayApiError(error: unknown, fallbackMessage: string) {
 export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
   const { t } = useTranslation(["tasks", "common", "navigation"]);
   const router = useRouter();
+  const locale = useCurrentLocale();
   const { session } = useAuth();
   const { data: response, isLoading, error, refetch } = useTaskDetailsQuery(taskId, Boolean(taskId));
   const { data: attachments = [], refetch: refetchAttachments } = useTaskAttachmentsQuery(taskId);
@@ -124,6 +127,7 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
 
   const uploadMutation = useUploadAttachmentMutation(taskId);
   const deleteAttachmentMutation = useDeleteAttachmentMutation(taskId);
+  const cancelTaskMutation = useCancelTaskMutation(taskId);
   const updateTaskMutation = useUpdateTaskMutation(taskId);
   const [uploadFiles, setUploadFiles] = useState<FileUploadItem[]>([]);
   const [isDeleteAttachmentOpen, setDeleteAttachmentOpen] = useState(false);
@@ -384,9 +388,14 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
   }
 
   async function handleCancelTask() {
-    // TODO: Implement cancel task API call when endpoint is available
-    setCancelDialogOpen(false);
-    toast.info(t("tasks:edit.cancelInfo"));
+    try {
+      await cancelTaskMutation.mutateAsync();
+      setCancelDialogOpen(false);
+      toast.success(t("tasks:details.notifications.cancelled"));
+      router.push(`/${locale}/tasks`);
+    } catch (error) {
+      displayApiError(error, t("tasks:errors.cancelFailed"));
+    }
   }
 
   return (
@@ -448,7 +457,12 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
             )}
             {/* Hide action buttons if task is in final reviewed state or in edit mode */}
             {!isEditMode && hasLink("cancel") && !(task.status === 3 && task.managerRating != null) && task.status !== 8 && (
-              <Button variant="destructive" onClick={() => setCancelDialogOpen(true)} icon={<StopIcon />}>
+              <Button
+                variant="destructive"
+                onClick={() => setCancelDialogOpen(true)}
+                icon={<StopIcon />}
+                disabled={cancelTaskMutation.isPending}
+              >
                 {t("common:actions.cancel")}
               </Button>
             )}
@@ -842,7 +856,13 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
                 >
                   {t("common:actions.close")}
                 </Button>
-                <Button type="button" variant="destructive" onClick={handleCancelTask} icon={<StopIcon />}>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={handleCancelTask}
+                  icon={<StopIcon />}
+                  disabled={cancelTaskMutation.isPending}
+                >
                   {t("tasks:details.actions.cancelTask")}
                 </Button>
               </div>

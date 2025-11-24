@@ -13,6 +13,7 @@ using TaskManagement.Application.Tasks.Commands.ApproveExtensionRequest;
 using TaskManagement.Application.Tasks.Commands.AssignTask;
 using TaskManagement.Application.Tasks.Commands.CreateTask;
 using TaskManagement.Application.Tasks.Commands.MarkTaskCompleted;
+using TaskManagement.Application.Tasks.Commands.CancelTask;
 using TaskManagement.Application.Tasks.Commands.ReassignTask;
 using TaskManagement.Application.Tasks.Commands.RejectTask;
 using TaskManagement.Application.Tasks.Commands.RequestDeadlineExtension;
@@ -264,6 +265,30 @@ public class TasksController(
         var links = await GenerateTaskLinks(id, userId);
 
         return HandleResultWithLinks(result, links);
+    }
+
+    /// <summary>
+    ///     Cancels a task. Depending on task state, it will either be deleted entirely or marked as Cancelled.
+    /// </summary>
+    /// <param name="id">The task ID.</param>
+    /// <returns>Success response.</returns>
+    [HttpPost("{id}/cancel")]
+    [Authorize(Roles = $"{RoleNames.EmployeeOrManager},{RoleNames.Admin}")]
+    [EnsureUserId]
+    public async Task<IActionResult> CancelTask(Guid id)
+    {
+        var userId = GetRequiredUserId();
+        var userRole = User.FindFirst(ClaimTypes.Role)?.Value ?? RoleNames.Default;
+
+        var command = new CancelTaskCommand
+        {
+            TaskId = id,
+            RequestedById = userId,
+            RequestedByRole = userRole
+        };
+
+        var result = await _commandMediator.Send(command);
+        return HandleResult(result);
     }
 
     /// <summary>

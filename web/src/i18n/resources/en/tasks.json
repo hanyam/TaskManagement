@@ -60,6 +60,9 @@
       "sendBackForRework": "Send Back for Rework",
       "cancelTask": "Cancel Task",
       "cancelTaskConfirm": "Are you sure you want to cancel this task? This action cannot be undone."
+    },
+    "notifications": {
+      "cancelled": "Task cancelled successfully."
     }
   },
   "forms": {
@@ -72,6 +75,7 @@
         "priority": "Priority",
         "dueDate": "Due date",
         "assignedUserId": "Assigned user",
+        "assignedUserIdPlaceholder": "Search for a person…",
         "searchUserPlaceholder": "Type name or email to search...",
         "type": "Task type"
       },
@@ -161,7 +165,8 @@
   },
   "errors": {
     "loadFailed": "Failed to load task details. Please try again.",
-    "updateFailed": "Failed to update task. Please try again."
+    "updateFailed": "Failed to update task. Please try again.",
+    "cancelFailed": "Failed to cancel task. Please try again."
   },
   "edit": {
     "title": "Edit Task",

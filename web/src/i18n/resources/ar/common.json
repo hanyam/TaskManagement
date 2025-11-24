@@ -25,7 +25,10 @@
     "markComplete": "تعيين كمكتمل",
     "viewDetails": "عرض التفاصيل",
     "previous": "السابق",
-    "next": "التالي"
+    "next": "التالي",
+    "saved": "تم حفظ التغييرات بنجاح",
+    "update": "تحديث",
+    "clear": "مسح"
   },
   "forms": {
     "search": "بحث",
@@ -111,11 +114,5 @@
     "toBeDeleted": "سيتم الحذف",
     "manager": "مدير",
     "employee": "موظف"
-  },
-  "actions": {
-    "saved": "تم حفظ التغييرات بنجاح",
-    "update": "تحديث",
-    "clear": "مسح"
   }
 }
-

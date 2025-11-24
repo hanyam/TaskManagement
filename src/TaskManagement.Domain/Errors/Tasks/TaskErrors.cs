@@ -51,6 +51,11 @@ public static class TaskErrors
     public static Error CannotUpdateOtherUserTask => Error.Forbidden("Cannot update task created by another user");
     public static Error CannotDeleteOtherUserTask => Error.Forbidden("Cannot delete task created by another user");
     public static Error TaskUpdateConflict => Error.Conflict("Task was modified by another user", "Id");
+    public static Error CannotCancelReviewedTask =>
+        Error.Conflict("Task has already been reviewed or completed and cannot be cancelled", "Status");
+
+    public static Error TaskAlreadyCancelled =>
+        Error.Validation("Task is already cancelled", "Status");
 
     // Task query errors
     public static Error InvalidTaskId => Error.Validation("Task ID is required", "Id");

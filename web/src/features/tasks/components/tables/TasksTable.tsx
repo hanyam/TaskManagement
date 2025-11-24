@@ -63,7 +63,9 @@ export function TasksTable({
       }),
       columnHelper.accessor("status", {
         header: () => t("tasks:list.table.columns.status"),
-        cell: (info) => <TaskStatusBadge status={info.getValue()} />
+        cell: (info) => (
+          <TaskStatusBadge status={info.getValue()} managerRating={info.row.original.managerRating ?? null} />
+        )
       }),
       columnHelper.accessor("priority", {
         header: () => t("tasks:list.table.columns.priority"),

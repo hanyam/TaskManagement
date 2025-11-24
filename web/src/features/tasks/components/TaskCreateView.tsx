@@ -129,7 +129,7 @@ export function TaskCreateView() {
 
               const token = session?.token;
               const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "";
-              const url = `${baseUrl}/api/tasks/${task.id}/attachments`;
+              const url = `${baseUrl}/tasks/${task.id}/attachments`;
 
               const headers = new Headers();
               if (token) {

@@ -95,8 +95,18 @@ public class TaskDapperRepository(IConfiguration configuration) : DapperQueryRep
         var countSql = $"SELECT COUNT(T.Id) FROM [Tasks].[Tasks] AS T {whereClause}";
         var dataSql = $@"
             SELECT 
-                T.Id, T.Title, T.Description, T.Status, T.Priority, T.DueDate, 
-                T.AssignedUserId, T.CreatedAt, T.UpdatedAt, T.CreatedBy,
+                T.Id,
+                T.Title,
+                T.Description,
+                T.Status,
+                T.Priority,
+                T.DueDate,
+                T.AssignedUserId,
+                T.CreatedAt,
+                T.UpdatedAt,
+                T.CreatedBy,
+                T.ManagerRating,
+                T.ManagerFeedback,
                 U.Email AS AssignedUserEmail
             FROM [Tasks].[Tasks] AS T
             LEFT JOIN [Tasks].[Users] AS U ON T.AssignedUserId = U.Id
