@@ -55,11 +55,16 @@ export function AppShell({ children, headerSlot }: AppShellProps) {
   return (
     <div className="flex min-h-screen bg-background text-foreground">
       <aside className="hidden w-64 shrink-0 flex-col border-r border-border bg-background/80 px-4 py-6 lg:flex">
-        <div className="mb-10 flex flex-col gap-1 px-2">
-          <span className="text-xs font-semibold uppercase tracking-widest text-primary">
-            {t("common:app.name")}
-          </span>
-          <span className="text-sm text-muted-foreground">{t("common:app.description")}</span>
+        <div className="mb-10 flex items-center gap-3 px-2">
+          <div className="flex size-10 items-center justify-center rounded-lg bg-white">
+            <img src="/wttco-logo.jpg" alt="Water Transmission Company" className="h-8 w-auto" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-xs font-semibold uppercase tracking-widest text-primary">
+              {t("common:app.name")}
+            </span>
+            <span className="text-sm text-muted-foreground">{t("common:app.description")}</span>
+          </div>
         </div>
 
         <nav className="flex flex-1 flex-col gap-1">
