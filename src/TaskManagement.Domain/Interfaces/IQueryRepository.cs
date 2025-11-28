@@ -19,3 +19,4 @@ public interface IQueryRepository<T> where T : BaseEntity
 
 
 
+
