@@ -46,6 +46,10 @@ public class TaskConfiguration : IEntityTypeConfiguration<Task>
             .HasMaxLength(1000)
             .IsRequired(false);
 
+        // Explicitly configure AssignedUserId as nullable
+        builder.Property(e => e.AssignedUserId)
+            .IsRequired(false);
+
         // Relationships
         builder.HasOne(e => e.AssignedUser)
             .WithMany()
