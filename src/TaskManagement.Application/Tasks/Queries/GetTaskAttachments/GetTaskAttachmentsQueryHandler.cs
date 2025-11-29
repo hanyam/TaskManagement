@@ -43,29 +43,21 @@ public class GetTaskAttachmentsQueryHandler(
 
         // Get user role from claims
         var userRole = _currentUserService.GetUserPrincipal()?.FindFirst(ClaimTypes.Role)?.Value ?? string.Empty;
+        var isManager = userRole == Manager;
+        var isAdmin = userRole == Admin;
 
-        // Managers and Admins can always view all attachments regardless of task status
-        if (userRole == Manager || userRole == Admin)
-        {
-            _logger.LogInformation(
-                "User {UserId} with role {Role} can view all {Count} attachments for task {TaskId}",
-                request.RequestedById,
-                userRole,
-                attachments.Count,
-                request.TaskId);
-
-            return Result<List<TaskAttachmentDto>>.Success(attachments);
-        }
-
-        // Filter attachments based on access rules for non-manager/admin users
+        // Filter attachments based on access rules
         var accessibleAttachments = new List<TaskAttachmentDto>();
 
         foreach (var attachment in attachments)
         {
-            // Manager-uploaded files: visible if task is Accepted, UnderReview, PendingManagerReview, or Completed
             if (attachment.Type == AttachmentType.ManagerUploaded)
             {
-                if (task.Status == Domain.Entities.TaskStatus.Accepted ||
+                // Manager-uploaded files:
+                // - Admins and Managers can always view
+                // - Employees can view when task is Accepted or later (Accepted, UnderReview, PendingManagerReview, Completed)
+                if (isAdmin || isManager ||
+                    task.Status == Domain.Entities.TaskStatus.Accepted ||
                     task.Status == Domain.Entities.TaskStatus.UnderReview ||
                     task.Status == Domain.Entities.TaskStatus.PendingManagerReview ||
                     task.Status == Domain.Entities.TaskStatus.Completed)
@@ -73,12 +65,20 @@ public class GetTaskAttachmentsQueryHandler(
                     accessibleAttachments.Add(attachment);
                 }
             }
-            // Employee-uploaded files: visible if task is UnderReview, PendingManagerReview, or Completed
             else if (attachment.Type == AttachmentType.EmployeeUploaded)
             {
-                if (task.Status == Domain.Entities.TaskStatus.UnderReview ||
-                    task.Status == Domain.Entities.TaskStatus.PendingManagerReview ||
-                    task.Status == Domain.Entities.TaskStatus.Completed)
+                // Employee-uploaded files:
+                // - Admins can always view
+                // - Managers can view only when employee has marked task as completed
+                //   (represented by PendingManagerReview or Completed statuses)
+                // - Employees can view when task is UnderReview, PendingManagerReview, or Completed
+                if (isAdmin ||
+                    (isManager && (task.Status == Domain.Entities.TaskStatus.PendingManagerReview ||
+                                   task.Status == Domain.Entities.TaskStatus.Completed)) ||
+                    (!isManager && !isAdmin &&
+                     (task.Status == Domain.Entities.TaskStatus.UnderReview ||
+                      task.Status == Domain.Entities.TaskStatus.PendingManagerReview ||
+                      task.Status == Domain.Entities.TaskStatus.Completed)))
                 {
                     accessibleAttachments.Add(attachment);
                 }

@@ -54,7 +54,29 @@ public class DeleteTaskAttachmentCommandHandler(
             return Result.Failure(TaskErrors.NotFound);
         }
 
-        // Access control: Only uploader or task creator can delete
+        // Determine user role for additional access control
+        var user = await _context.Set<User>().FindAsync(new object[] { request.RequestedById }, cancellationToken);
+        if (user == null)
+        {
+            _logger.LogWarning("User {UserId} not found for attachment deletion", request.RequestedById);
+            return Result.Failure(TaskErrors.UnauthorizedFileAccess);
+        }
+
+        // Additional rule: employees cannot modify attachments once the task is pending manager review or completed.
+        if (user.Role == UserRole.Employee &&
+            (task.Status == Domain.Entities.TaskStatus.PendingManagerReview ||
+             task.Status == Domain.Entities.TaskStatus.Completed))
+        {
+            _logger.LogWarning(
+                "Employee {UserId} attempted to delete attachment {AttachmentId} for task {TaskId} in status {Status}",
+                request.RequestedById,
+                request.AttachmentId,
+                request.TaskId,
+                task.Status);
+            return Result.Failure(TaskErrors.UnauthorizedFileAccess);
+        }
+
+        // Access control: Only uploader or task creator can delete (admins handled at controller level)
         if (attachment.UploadedById != request.RequestedById && task.CreatedById != request.RequestedById)
         {
             _logger.LogWarning(

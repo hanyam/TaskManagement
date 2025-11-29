@@ -3,7 +3,7 @@
 import { ArrowPathIcon, StarIcon } from "@heroicons/react/24/outline";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -78,11 +78,6 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
   const currentUserId = session?.user?.id || "";
   const userRole = session?.user?.role || "";
 
-  // Filter attachments based on access control
-  const accessibleAttachments = task
-    ? attachments.filter((attachment) => canViewAttachment(attachment, task, userRole))
-    : [];
-
   const uploadMutation = useUploadAttachmentMutation(taskId);
   const deleteAttachmentMutation = useDeleteAttachmentMutation(taskId);
   const cancelTaskMutation = useCancelTaskMutation(taskId);
@@ -92,6 +87,29 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
   const [attachmentToDelete, setAttachmentToDelete] = useState<string | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [attachmentsToDelete, setAttachmentsToDelete] = useState<Set<string>>(new Set());
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Prevent hydration mismatch by only rendering upload UI after mount
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Filter attachments based on access control
+  // Only compute after mount to prevent hydration mismatches
+  const accessibleAttachments = useMemo(() => {
+    if (!isMounted || !task) {
+      return [];
+    }
+    return attachments.filter((attachment) => canViewAttachment(attachment, task, userRole));
+  }, [isMounted, task, attachments, userRole]);
+
+  // Check if upload should be visible
+  const canUpload = useMemo(() => {
+    if (!isMounted || isLoading || !task || task.status === undefined) {
+      return false;
+    }
+    return canUploadAttachment(task, userRole);
+  }, [isMounted, isLoading, task, task?.status, userRole]);
 
   const editForm = useForm<EditTaskFormValues>({
     resolver: zodResolver(editTaskSchema),
@@ -165,7 +183,9 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
     try {
       await acceptMutation.mutateAsync();
       toast.success(t("tasks:details.actions.accept"));
-      refetch();
+      await refetch();
+      await refetchAttachments();
+      router.refresh();
     } catch (error) {
       displayApiError(error, t("validation:server.INTERNAL_ERROR"));
     }
@@ -457,7 +477,7 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
               />
             )}
 
-            {isEditMode && task && canUploadAttachment(task, userRole, currentUserId) && (
+            {canUpload && (
               <div className="space-y-2">
                 <FileUpload
                   files={uploadFiles}
@@ -497,7 +517,7 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
               </div>
             )}
 
-            {accessibleAttachments.length === 0 && task && !canUploadAttachment(task, userRole, currentUserId) && (
+            {accessibleAttachments.length === 0 && task && !canUploadAttachment(task, userRole) && (
               <p className="text-sm text-muted-foreground">{t("tasks:attachments.empty")}</p>
             )}
           </div>

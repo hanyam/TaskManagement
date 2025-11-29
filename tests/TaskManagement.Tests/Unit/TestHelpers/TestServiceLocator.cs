@@ -104,13 +104,15 @@ public class TestServiceLocator : IServiceLocator
         if (serviceType == typeof(ICommandHandler<AcceptTaskCommand, TaskDto>) ||
             serviceType == typeof(IRequestHandler<AcceptTaskCommand, TaskDto>))
         {
-            return new AcceptTaskCommandHandler(taskCommandRepository, userQueryRepository, _context);
+            var currentDateService = GetService<ICurrentDateService>();
+            return new AcceptTaskCommandHandler(currentDateService, taskCommandRepository, userQueryRepository, _context);
         }
 
         if (serviceType == typeof(ICommandHandler<RejectTaskCommand, TaskDto>) ||
             serviceType == typeof(IRequestHandler<RejectTaskCommand, TaskDto>))
         {
-            return new RejectTaskCommandHandler(taskCommandRepository, userQueryRepository, _context);
+            var currentDateService = GetService<ICurrentDateService>();
+            return new RejectTaskCommandHandler(currentDateService, taskCommandRepository, userQueryRepository, _context);
         }
 
         if (serviceType == typeof(ICommandHandler<RequestMoreInfoCommand, TaskDto>) ||

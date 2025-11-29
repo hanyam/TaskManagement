@@ -65,28 +65,36 @@ public class DownloadTaskAttachmentQueryHandler(
 
         // Get user role from claims
         var userRole = _currentUserService.GetUserPrincipal()?.FindFirst(ClaimTypes.Role)?.Value ?? string.Empty;
+        var isManager = userRole == Manager;
+        var isAdmin = userRole == Admin;
 
-        // Managers and Admins can always download attachments regardless of task status
-        bool canAccess = userRole == Manager || userRole == Admin;
+        bool canAccess = false;
 
-        // If not manager/admin, apply status-based access control
-        if (!canAccess)
+        if (attachment.Type == AttachmentType.ManagerUploaded)
         {
-            // Manager-uploaded files: visible if task is Accepted, UnderReview, PendingManagerReview, or Completed
-            if (attachment.Type == AttachmentType.ManagerUploaded)
-            {
-                canAccess = task.Status == Domain.Entities.TaskStatus.Accepted ||
-                           task.Status == Domain.Entities.TaskStatus.UnderReview ||
-                           task.Status == Domain.Entities.TaskStatus.PendingManagerReview ||
-                           task.Status == Domain.Entities.TaskStatus.Completed;
-            }
-            // Employee-uploaded files: visible if task is UnderReview, PendingManagerReview, or Completed
-            else if (attachment.Type == AttachmentType.EmployeeUploaded)
-            {
-                canAccess = task.Status == Domain.Entities.TaskStatus.UnderReview ||
-                           task.Status == Domain.Entities.TaskStatus.PendingManagerReview ||
-                           task.Status == Domain.Entities.TaskStatus.Completed;
-            }
+            // Manager-uploaded files:
+            // - Admins and Managers can always download
+            // - Employees can download when task is Accepted or later (Accepted, UnderReview, PendingManagerReview, Completed)
+            canAccess = isAdmin || isManager ||
+                        task.Status == Domain.Entities.TaskStatus.Accepted ||
+                        task.Status == Domain.Entities.TaskStatus.UnderReview ||
+                        task.Status == Domain.Entities.TaskStatus.PendingManagerReview ||
+                        task.Status == Domain.Entities.TaskStatus.Completed;
+        }
+        else if (attachment.Type == AttachmentType.EmployeeUploaded)
+        {
+            // Employee-uploaded files:
+            // - Admins can always download
+            // - Managers can download only when employee has marked task as completed
+            //   (PendingManagerReview or Completed)
+            // - Employees can download when task is UnderReview, PendingManagerReview, or Completed
+            canAccess = isAdmin ||
+                        (isManager && (task.Status == Domain.Entities.TaskStatus.PendingManagerReview ||
+                                       task.Status == Domain.Entities.TaskStatus.Completed)) ||
+                        (!isManager && !isAdmin &&
+                         (task.Status == Domain.Entities.TaskStatus.UnderReview ||
+                          task.Status == Domain.Entities.TaskStatus.PendingManagerReview ||
+                          task.Status == Domain.Entities.TaskStatus.Completed));
         }
 
         if (!canAccess)

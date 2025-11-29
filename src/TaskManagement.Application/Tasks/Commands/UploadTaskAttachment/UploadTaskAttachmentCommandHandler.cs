@@ -59,6 +59,25 @@ public class UploadTaskAttachmentCommandHandler(
             _logger.LogWarning("User {UserId} not found for file upload", request.UploadedById);
             errors.Add(TaskErrors.AssignedUserNotFound);
         }
+        else if (task != null)
+        {
+            // Additional access control for employees:
+            // Employees can only upload attachments after they accept the task
+            // and before manager review is completed (Accepted or UnderReview statuses).
+            if (user.Role == UserRole.Employee)
+            {
+                if (task.Status != Domain.Entities.TaskStatus.Accepted &&
+                    task.Status != Domain.Entities.TaskStatus.UnderReview)
+                {
+                    _logger.LogWarning(
+                        "Employee {UserId} attempted to upload attachment for task {TaskId} in invalid status {Status}",
+                        request.UploadedById,
+                        request.TaskId,
+                        task.Status);
+                    errors.Add(TaskErrors.UnauthorizedFileAccess);
+                }
+            }
+        }
 
         // Validate file size
         if (request.FileSize > _fileStorageOptions.MaxFileSizeBytes)
