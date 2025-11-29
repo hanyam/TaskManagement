@@ -26,25 +26,34 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(
     const locale = useCurrentLocale();
     const { t } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
+    
+    // Helper function to parse date value
+    const parseDateValue = (val: string | undefined): Date | undefined => {
+      if (!val || val.trim() === "") return undefined;
+      // Parse date string - handle both ISO format and yyyy-MM-dd format
+      let date: Date;
+      if (val.includes("T") || val.includes("Z")) {
+        // ISO format with time
+        date = new Date(val);
+      } else {
+        // yyyy-MM-dd format - parse as UTC to avoid timezone issues, then convert to local
+        const [year, month, day] = val.split("-").map(Number);
+        date = new Date(year, month - 1, day);
+      }
+      return !isNaN(date.getTime()) ? date : undefined;
+    };
+    
     const [selectedDate, setSelectedDate] = useState<Date | undefined>(
-      value ? new Date(value) : undefined
+      parseDateValue(value)
     );
     const [currentMonth, setCurrentMonth] = useState<Date>(
-      selectedDate || new Date()
+      parseDateValue(value) || new Date()
     );
 
     // Sync selectedDate with value prop changes
     useEffect(() => {
-      if (value && value.trim() !== "") {
-        const date = new Date(value);
-        if (!isNaN(date.getTime())) {
-          setSelectedDate(date);
-        } else {
-          setSelectedDate(undefined);
-        }
-      } else {
-        setSelectedDate(undefined);
-      }
+      const parsed = parseDateValue(value);
+      setSelectedDate(parsed);
     }, [value]);
 
     const dateFnsLocale = locale === "ar" ? ar : enUS;
@@ -54,8 +63,14 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(
     useEffect(() => {
       if (selectedDate) {
         setCurrentMonth(selectedDate);
+      } else {
+        // If no selected date, try to parse value to set currentMonth
+        const parsed = parseDateValue(value);
+        if (parsed) {
+          setCurrentMonth(parsed);
+        }
       }
-    }, [selectedDate]);
+    }, [selectedDate, value]);
 
     function handleSelect(date: Date | undefined) {
       setSelectedDate(date);

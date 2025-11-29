@@ -56,7 +56,7 @@ export function TasksTable({
           <div className="flex flex-col">
             <span className="font-medium text-foreground">{info.getValue()}</span>
             <span className="text-xs text-muted-foreground">
-              {info.row.original.assignedUserEmail ?? t("tasks:list.table.columns.assignedTo")}
+              {info.row.original.assignedUserDisplayName ?? t("tasks:list.table.columns.assignedTo")}
             </span>
           </div>
         )

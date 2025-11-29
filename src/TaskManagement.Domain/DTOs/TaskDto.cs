@@ -18,6 +18,7 @@ public class TaskDto
     public DateTime? ExtendedDueDate { get; set; }
     public Guid? AssignedUserId { get; set; }
     public string? AssignedUserEmail { get; set; }
+    public string? AssignedUserDisplayName { get; set; }
     public TaskType Type { get; set; }
     public ReminderLevel ReminderLevel { get; set; }
     public int? ProgressPercentage { get; set; }

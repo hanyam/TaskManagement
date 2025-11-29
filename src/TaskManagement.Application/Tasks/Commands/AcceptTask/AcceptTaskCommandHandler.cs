@@ -14,6 +14,7 @@ namespace TaskManagement.Application.Tasks.Commands.AcceptTask;
 ///     Handler for accepting an assigned task (employee).
 /// </summary>
 public class AcceptTaskCommandHandler(
+    ICurrentDateService currentDateService,
     TaskEfCommandRepository taskCommandRepository,
     UserDapperRepository userQueryRepository,
     TaskManagementDbContext context) : ICommandHandler<AcceptTaskCommand, TaskDto>
@@ -21,6 +22,7 @@ public class AcceptTaskCommandHandler(
     private readonly TaskManagementDbContext _context = context;
     private readonly TaskEfCommandRepository _taskCommandRepository = taskCommandRepository;
     private readonly UserDapperRepository _userQueryRepository = userQueryRepository;
+    private readonly ICurrentDateService _currentDateService = currentDateService;
 
     public async Task<Result<TaskDto>> Handle(AcceptTaskCommand request, CancellationToken cancellationToken)
     {
@@ -43,10 +45,13 @@ public class AcceptTaskCommandHandler(
                          assignments.Any(a => a.UserId == request.AcceptedById);
 
         if (!isAssigned)
-        {
             errors.Add(Error.Forbidden("User is not assigned to this task"));
+       
+        if(task.DueDate < _currentDateService.Now)
+            errors.Add(TaskErrors.CannotAcceptPassedDueDateTask);
+
+        if (errors.Any())
             return Result<TaskDto>.Failure(errors);
-        }
 
         // Accept task
         try

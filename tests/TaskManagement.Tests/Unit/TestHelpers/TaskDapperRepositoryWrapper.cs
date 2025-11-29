@@ -85,6 +85,7 @@ public class TaskDapperRepositoryWrapper : TaskDapperRepository
             DueDate = t.DueDate,
             AssignedUserId = t.AssignedUserId,
             AssignedUserEmail = t.AssignedUser?.Email,
+            AssignedUserDisplayName = t.AssignedUser?.DisplayName,
             CreatedBy = t.CreatedBy,
             CreatedAt = t.CreatedAt,
             CreatedById = t.CreatedById,

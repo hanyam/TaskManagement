@@ -107,7 +107,8 @@ public class TaskDapperRepository(IConfiguration configuration) : DapperQueryRep
                 T.CreatedBy,
                 T.ManagerRating,
                 T.ManagerFeedback,
-                U.Email AS AssignedUserEmail
+                U.Email AS AssignedUserEmail,
+                U.DisplayName AS AssignedUserDisplayName
             FROM [Tasks].[Tasks] AS T
             LEFT JOIN [Tasks].[Users] AS U ON T.AssignedUserId = U.Id
             {whereClause}

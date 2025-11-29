@@ -12,6 +12,7 @@ export interface TaskDto {
   extendedDueDate?: string | null;
   assignedUserId: string;
   assignedUserEmail?: string | null;
+  assignedUserDisplayName?: string | null;
   type: number; // Numeric enum from backend
   reminderLevel: number; // Numeric enum from backend
   progressPercentage?: number | null;

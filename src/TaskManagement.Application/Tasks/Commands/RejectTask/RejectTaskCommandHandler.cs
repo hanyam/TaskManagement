@@ -15,6 +15,7 @@ namespace TaskManagement.Application.Tasks.Commands.RejectTask;
 ///     Handler for rejecting an assigned task (employee).
 /// </summary>
 public class RejectTaskCommandHandler(
+     ICurrentDateService currentDateService,
     TaskEfCommandRepository taskCommandRepository,
     UserDapperRepository userQueryRepository,
     TaskManagementDbContext context) : ICommandHandler<RejectTaskCommand, TaskDto>
@@ -22,6 +23,7 @@ public class RejectTaskCommandHandler(
     private readonly TaskManagementDbContext _context = context;
     private readonly TaskEfCommandRepository _taskCommandRepository = taskCommandRepository;
     private readonly UserDapperRepository _userQueryRepository = userQueryRepository;
+    private readonly ICurrentDateService _currentDateService = currentDateService;
 
     public async Task<Result<TaskDto>> Handle(RejectTaskCommand request, CancellationToken cancellationToken)
     {
@@ -52,10 +54,13 @@ public class RejectTaskCommandHandler(
         }
 
         if (!isAssigned)
-        {
             errors.Add(Error.Forbidden("User is not assigned to this task"));
+
+        if (task.DueDate < _currentDateService.Now)
+            errors.Add(TaskErrors.CannotRejectPassedDueDateTask);
+
+        if (errors.Any())
             return Result<TaskDto>.Failure(errors);
-        }
 
         // Reject task
         try

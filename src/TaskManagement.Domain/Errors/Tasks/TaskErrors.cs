@@ -24,6 +24,8 @@ public static class TaskErrors
     // Task business logic errors
     public static Error CannotUpdateCompletedTask => Error.Validation("Cannot update a completed task", "Status");
     public static Error CannotDeleteCompletedTask => Error.Validation("Cannot delete a completed task", "Status");
+    public static Error CannotAcceptPassedDueDateTask => Error.Validation("Cannot accept a passed due date task", "Status");
+    public static Error CannotRejectPassedDueDateTask => Error.Validation("Cannot reject a passed due date task", "Status");
     public static Error TaskAlreadyCompleted => Error.Conflict("Task is already completed", "Status");
     public static Error TaskNotAssigned => Error.Validation("Task must be assigned to a user", "AssignedUserId");
 
