@@ -1,11 +1,12 @@
 import { toast } from "sonner";
 import type { ApiErrorResponse } from "@/core/api/types";
+import { debugError } from "@/core/debug/logger";
 
 /**
  * Helper function to display API errors properly in toast notifications
  */
 export function displayApiError(error: unknown, fallbackMessage: string) {
-  console.error("API Error:", error);
+  debugError("API Error", error);
   
   if (error && typeof error === "object") {
     const apiError = error as ApiErrorResponse;

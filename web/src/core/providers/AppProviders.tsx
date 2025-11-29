@@ -4,6 +4,8 @@ import type { PropsWithChildren } from "react";
 import { Toaster } from "sonner";
 
 import { AuthProvider } from "@/core/auth/AuthProvider";
+// Import test helpers to expose them to window (development only)
+import "@/core/auth/test-helpers";
 import type { AuthSession } from "@/core/auth/types";
 import { QueryProvider } from "@/core/providers/QueryProvider";
 import type { SupportedLocale } from "@/core/routing/locales";

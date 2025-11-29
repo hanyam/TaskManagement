@@ -1,4 +1,5 @@
 import { apiClient } from "@/core/api/client.browser";
+import { debugError } from "@/core/debug/logger";
 
 export interface GraphUser {
   id: string;
@@ -28,7 +29,7 @@ export async function searchGraphUsers(searchQuery: string): Promise<GraphUser[]
 
     return data || [];
   } catch (error) {
-    console.error("Error searching users:", error);
+    debugError("Error searching users", error);
     return []; // Return empty array on error for better UX
   }
 }
@@ -47,7 +48,7 @@ export async function getGraphUser(userId: string): Promise<GraphUser | null> {
 
     return data;
   } catch (error) {
-    console.error("Error fetching user:", error);
+    debugError("Error fetching user", error);
     return null;
   }
 }

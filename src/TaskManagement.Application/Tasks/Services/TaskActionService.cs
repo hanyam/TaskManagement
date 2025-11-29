@@ -168,15 +168,6 @@ public class TaskActionService : ITaskActionService
                         Method = "POST"
                     });
 
-                // Managers/Admins can update
-                if (isManager)
-                    links.Add(new ApiActionLink
-                    {
-                        Rel = "update",
-                        Href = $"/tasks/{task.Id}",
-                        Method = "PUT"
-                    });
-
                 // Managers/Admins can cancel
                 if (canCancel)
                     links.Add(new ApiActionLink

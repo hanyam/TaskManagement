@@ -2,6 +2,7 @@ import { PublicClientApplication, type AuthenticationResult, type RedirectReques
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { getEnvConfig } from "@/core/config/env";
+import { debugLog, debugError } from "@/core/debug/logger";
 
 interface UseAzureAdLoginResult {
   isConfigured: boolean;
@@ -48,7 +49,9 @@ export function useAzureAdLogin(): UseAzureAdLoginResult {
     });
 
     // Initialize the MSAL instance
-    msalInstance.initialize().catch(console.error);
+    msalInstance.initialize().catch((error) => {
+      debugError("MSAL initialization failed", error);
+    });
 
     return msalInstance;
   }, [azureAdConfig]);
@@ -64,7 +67,7 @@ export function useAzureAdLogin(): UseAzureAdLoginResult {
       const response = await client.handleRedirectPromise();
       return response;
     } catch (error) {
-      console.error("Error handling redirect:", error);
+      debugError("Error handling redirect", error);
       return null;
     }
   }, [client]);
@@ -75,16 +78,18 @@ export function useAzureAdLogin(): UseAzureAdLoginResult {
       return;
     }
 
-    handleRedirect().catch(console.error);
+    handleRedirect().catch((error) => {
+      debugError("Redirect handler failed", error);
+    });
   }, [client, handleRedirect]);
 
   const login = useCallback(async () => {
     if (!client) {
-      console.error("Azure AD client not initialized");
+      debugError("Azure AD client not initialized");
       return;
     }
 
-    console.log("Azure AD config:", { 
+    debugLog("Azure AD config", { 
       clientId: azureAdConfig?.clientId,
       tenantId: azureAdConfig?.tenantId,
       redirectUri: azureAdConfig?.redirectUri ?? window.location.origin,
@@ -98,7 +103,7 @@ export function useAzureAdLogin(): UseAzureAdLoginResult {
       await client.initialize();
       
       const accounts = client.getAllAccounts();
-      console.log("Existing accounts:", accounts.length);
+      debugLog("Existing accounts", { count: accounts.length });
 
       // Try silent token acquisition first
       if (accounts.length > 0) {
@@ -108,12 +113,12 @@ export function useAzureAdLogin(): UseAzureAdLoginResult {
             scopes
           });
 
-          console.log("Silent token acquisition successful");
+          debugLog("Silent token acquisition successful");
           // Return the token via a custom event or callback
           window.dispatchEvent(new CustomEvent("azureAdTokenAcquired", { detail: silentResult }));
           return;
         } catch (error) {
-          console.log("Silent token acquisition failed:", error);
+          debugLog("Silent token acquisition failed", error);
           const msalError = error as { errorCode?: string };
           if (msalError.errorCode !== "interaction_required" && msalError.errorCode !== "consent_required") {
             throw error;
@@ -128,11 +133,11 @@ export function useAzureAdLogin(): UseAzureAdLoginResult {
         prompt: "select_account"
       };
 
-      console.log("Starting redirect authentication with request:", request);
+      debugLog("Starting redirect authentication", { request });
       await client.acquireTokenRedirect(request);
       // The redirect will navigate away, so we don't return here
     } catch (error) {
-      console.error("Azure AD login error:", error);
+      debugError("Azure AD login error", error);
       setIsLoading(false);
       throw error;
     }

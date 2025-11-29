@@ -62,17 +62,22 @@ public class DeleteTaskAttachmentCommandHandler(
             return Result.Failure(TaskErrors.UnauthorizedFileAccess);
         }
 
-        // Additional rule: employees cannot modify attachments once the task is pending manager review or completed.
+        // Additional rule: employees cannot modify attachments once the task is pending manager review, completed, or accepted by manager.
+        // Check if task is in "Accepted by Manager" state (Accepted status with ManagerRating set)
+        var isAcceptedByManager = task.Status == Domain.Entities.TaskStatus.Accepted && task.ManagerRating.HasValue;
+        
         if (user.Role == UserRole.Employee &&
             (task.Status == Domain.Entities.TaskStatus.PendingManagerReview ||
-             task.Status == Domain.Entities.TaskStatus.Completed))
+             task.Status == Domain.Entities.TaskStatus.Completed ||
+             isAcceptedByManager))
         {
             _logger.LogWarning(
-                "Employee {UserId} attempted to delete attachment {AttachmentId} for task {TaskId} in status {Status}",
+                "Employee {UserId} attempted to delete attachment {AttachmentId} for task {TaskId} in status {Status} (AcceptedByManager: {AcceptedByManager})",
                 request.RequestedById,
                 request.AttachmentId,
                 request.TaskId,
-                task.Status);
+                task.Status,
+                isAcceptedByManager);
             return Result.Failure(TaskErrors.UnauthorizedFileAccess);
         }
 

@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import type { ApiErrorResponse } from "@/core/api/types";
+import { debugError } from "@/core/debug/logger";
 import { useReviewCompletedTaskMutation } from "@/features/tasks/api/queries";
 import { Button } from "@/ui/components/Button";
 import { FormFieldError } from "@/ui/components/FormFieldError";
@@ -76,7 +77,7 @@ export function ReviewCompletedTaskModal({
       setRating(0);
       onClose();
     } catch (error) {
-      console.error("Review error:", error);
+      debugError("Review error", error);
       
       // Extract and display all API errors
       if (error && typeof error === "object") {

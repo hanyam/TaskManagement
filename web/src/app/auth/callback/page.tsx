@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { setClientAuthSession } from "@/core/auth/session.client";
+import { debugError } from "@/core/debug/logger";
 import { useAzureAdLogin } from "@/features/auth/hooks/useAzureAdLogin";
 import type { AuthSession } from "@/core/auth/types";
 import { Spinner } from "@/ui/components/Spinner";
@@ -82,7 +83,7 @@ export default function AuthCallbackPage() {
         // No result from redirect - redirect to sign-in
         throw new Error("No authentication result");
       } catch (error) {
-        console.error("Error processing Azure AD callback:", error);
+        debugError("Error processing Azure AD callback", error);
         setIsProcessing(false);
         
         // Get locale from cookie or default to 'en'

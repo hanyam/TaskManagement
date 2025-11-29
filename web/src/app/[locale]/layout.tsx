@@ -44,6 +44,8 @@ export default function LocaleLayout({ children, params }: LocaleLayoutProps) {
   } catch (error) {
     // If token validation fails, just proceed without session
     // This prevents the entire page from crashing
+    // Server-side error - log to server console (debug logger may not work in server components)
+    // eslint-disable-next-line no-console
     console.error("Error validating server session:", error);
     initialSession = null;
   }

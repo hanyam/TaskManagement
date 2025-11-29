@@ -68,31 +68,35 @@ public class DownloadTaskAttachmentQueryHandler(
         var isManager = userRole == Manager;
         var isAdmin = userRole == Admin;
 
+        // Check if task is in "Accepted by Manager" state (Accepted status with ManagerRating set)
+        var isAcceptedByManager = task.Status == Domain.Entities.TaskStatus.Accepted && task.ManagerRating.HasValue;
+
         bool canAccess = false;
 
         if (attachment.Type == AttachmentType.ManagerUploaded)
         {
             // Manager-uploaded files:
             // - Admins and Managers can always download
-            // - Employees can download when task is Accepted or later (Accepted, UnderReview, PendingManagerReview, Completed)
+            // - Employees can download when task is Accepted (employee accepted) or later, but NOT in Created status
             canAccess = isAdmin || isManager ||
-                        task.Status == Domain.Entities.TaskStatus.Accepted ||
-                        task.Status == Domain.Entities.TaskStatus.UnderReview ||
-                        task.Status == Domain.Entities.TaskStatus.PendingManagerReview ||
-                        task.Status == Domain.Entities.TaskStatus.Completed;
+                        (task.Status != Domain.Entities.TaskStatus.Created &&
+                         (task.Status == Domain.Entities.TaskStatus.Accepted ||
+                          task.Status == Domain.Entities.TaskStatus.UnderReview ||
+                          task.Status == Domain.Entities.TaskStatus.PendingManagerReview ||
+                          task.Status == Domain.Entities.TaskStatus.Completed));
         }
         else if (attachment.Type == AttachmentType.EmployeeUploaded)
         {
             // Employee-uploaded files:
             // - Admins can always download
-            // - Managers can download only when employee has marked task as completed
-            //   (PendingManagerReview or Completed)
-            // - Employees can download when task is UnderReview, PendingManagerReview, or Completed
+            // - Managers can download during review phase (PendingManagerReview) and after manager accepts (Accepted with ManagerRating)
+            // - Employees can download when task is Accepted (employee accepted, no ManagerRating) or later
             canAccess = isAdmin ||
                         (isManager && (task.Status == Domain.Entities.TaskStatus.PendingManagerReview ||
-                                       task.Status == Domain.Entities.TaskStatus.Completed)) ||
+                                       isAcceptedByManager)) ||
                         (!isManager && !isAdmin &&
-                         (task.Status == Domain.Entities.TaskStatus.UnderReview ||
+                         (task.Status == Domain.Entities.TaskStatus.Accepted ||
+                          task.Status == Domain.Entities.TaskStatus.UnderReview ||
                           task.Status == Domain.Entities.TaskStatus.PendingManagerReview ||
                           task.Status == Domain.Entities.TaskStatus.Completed));
         }

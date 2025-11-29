@@ -110,6 +110,18 @@ export function createApiClient(resolveAuthToken: ResolveAuthTokenFn): ApiClient
         const response = await fetch(url, requestInit);
         const envelope = await parseJson<TResponse>(response);
 
+        // Debug logging (only if enabled)
+        if (typeof window !== "undefined") {
+          const { debugApi } = await import("@/core/debug/logger");
+          debugApi(method, config.path, {
+            status: response.status,
+            ok: response.ok,
+            hasData: envelope.data !== undefined,
+            hasLinks: envelope.links !== undefined,
+            linksCount: envelope.links?.length || 0
+          });
+        }
+
         if (!response.ok || !envelope.success) {
           throw createApiError({
             status: response.status,

@@ -49,18 +49,22 @@ public class GetTaskAttachmentsQueryHandler(
         // Filter attachments based on access rules
         var accessibleAttachments = new List<TaskAttachmentDto>();
 
+        // Check if task is in "Accepted by Manager" state (Accepted status with ManagerRating set)
+        var isAcceptedByManager = task.Status == Domain.Entities.TaskStatus.Accepted && task.ManagerRating.HasValue;
+
         foreach (var attachment in attachments)
         {
             if (attachment.Type == AttachmentType.ManagerUploaded)
             {
                 // Manager-uploaded files:
                 // - Admins and Managers can always view
-                // - Employees can view when task is Accepted or later (Accepted, UnderReview, PendingManagerReview, Completed)
+                // - Employees can view when task is Accepted (employee accepted) or later, but NOT in Created status
                 if (isAdmin || isManager ||
-                    task.Status == Domain.Entities.TaskStatus.Accepted ||
-                    task.Status == Domain.Entities.TaskStatus.UnderReview ||
-                    task.Status == Domain.Entities.TaskStatus.PendingManagerReview ||
-                    task.Status == Domain.Entities.TaskStatus.Completed)
+                    (task.Status != Domain.Entities.TaskStatus.Created &&
+                     (task.Status == Domain.Entities.TaskStatus.Accepted ||
+                      task.Status == Domain.Entities.TaskStatus.UnderReview ||
+                      task.Status == Domain.Entities.TaskStatus.PendingManagerReview ||
+                      task.Status == Domain.Entities.TaskStatus.Completed)))
                 {
                     accessibleAttachments.Add(attachment);
                 }
@@ -69,14 +73,14 @@ public class GetTaskAttachmentsQueryHandler(
             {
                 // Employee-uploaded files:
                 // - Admins can always view
-                // - Managers can view only when employee has marked task as completed
-                //   (represented by PendingManagerReview or Completed statuses)
-                // - Employees can view when task is UnderReview, PendingManagerReview, or Completed
+                // - Managers can view during review phase (PendingManagerReview) and after manager accepts (Accepted with ManagerRating)
+                // - Employees can view when task is Accepted (employee accepted, no ManagerRating) or later
                 if (isAdmin ||
                     (isManager && (task.Status == Domain.Entities.TaskStatus.PendingManagerReview ||
-                                   task.Status == Domain.Entities.TaskStatus.Completed)) ||
+                                   isAcceptedByManager)) ||
                     (!isManager && !isAdmin &&
-                     (task.Status == Domain.Entities.TaskStatus.UnderReview ||
+                     (task.Status == Domain.Entities.TaskStatus.Accepted ||
+                      task.Status == Domain.Entities.TaskStatus.UnderReview ||
                       task.Status == Domain.Entities.TaskStatus.PendingManagerReview ||
                       task.Status == Domain.Entities.TaskStatus.Completed)))
                 {

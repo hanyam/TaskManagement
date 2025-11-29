@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { debugError } from "@/core/debug/logger";
 import type { GraphUser } from "@/core/services/graph-api";
 import { searchGraphUsers } from "@/core/services/graph-api";
 import { Input } from "@/ui/components/Input";
@@ -61,7 +62,7 @@ export function UserSearchInput({ value, onChange, placeholder, error }: UserSea
         setUsers(results);
         setIsOpen(results.length > 0);
       } catch (error) {
-        console.error("Error searching users:", error);
+        debugError("Error searching users", error);
         setUsers([]);
       } finally {
         setIsLoading(false);

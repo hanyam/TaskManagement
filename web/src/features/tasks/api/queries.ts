@@ -231,6 +231,7 @@ export function useAcceptTaskMutation(taskId: string) {
         locale
       });
       await queryClient.invalidateQueries({ queryKey: taskKeys.detail(taskId) });
+      await queryClient.invalidateQueries({ queryKey: taskKeys.attachments(taskId) });
       await queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
       return data;
     }

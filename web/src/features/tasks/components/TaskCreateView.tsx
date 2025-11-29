@@ -12,6 +12,7 @@ import { z } from "zod";
 import { useAuth } from "@/core/auth/AuthProvider";
 import { getRoleFromToken } from "@/core/auth/session.client";
 import { useCurrentLocale } from "@/core/routing/useCurrentLocale";
+import { debugWarn, debugError } from "@/core/debug/logger";
 import { useCreateTaskMutation } from "@/features/tasks/api/queries";
 import { UserSearchInput } from "@/features/tasks/components/UserSearchInput";
 import type { TaskPriority, TaskType } from "@/features/tasks/value-objects";
@@ -70,7 +71,7 @@ export function TaskCreateView() {
     }
 
     if (!role) {
-      console.warn("[TaskCreateView] No role found in session or token:", {
+      debugWarn("[TaskCreateView] No role found in session or token", {
         hasSession: !!session,
         hasToken: !!session?.token,
         user: session?.user
@@ -154,7 +155,7 @@ export function TaskCreateView() {
                   fileName: fileItem.file.name,
                   error: errorMessage
                 });
-                console.error(`Failed to upload file ${fileItem.file.name}:`, errorMessage);
+                debugError(`Failed to upload file ${fileItem.file.name}`, errorMessage);
               } else {
                 uploadResults.success.push(fileItem.file.name);
               }
@@ -164,7 +165,7 @@ export function TaskCreateView() {
                 fileName: fileItem.file.name,
                 error: errorMessage
               });
-              console.error(`Failed to upload file ${fileItem.file.name}:`, error);
+              debugError(`Failed to upload file ${fileItem.file.name}`, error);
             }
           } else {
             // File had validation error before upload

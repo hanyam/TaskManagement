@@ -64,7 +64,8 @@ export function SignInForm({ locale, redirectTo }: SignInFormProps) {
         }
       } catch (error) {
         if (isMounted) {
-          console.error("Error processing Azure AD redirect:", error);
+          const { debugError } = await import("@/core/debug/logger");
+          debugError("Error processing Azure AD redirect", error);
           form.setError("azureAdToken", {
             type: "server",
             message: "auth:signIn.azureAdSignInFailed"

@@ -17,6 +17,11 @@ Create a `.env.local` based on the template below:
 NEXT_PUBLIC_API_BASE_URL=http://localhost:5010
 NEXT_PUBLIC_APP_NAME=Task Management Console
 
+# Debug Logging (Optional - for development)
+# See DEBUG_SETUP.md for details
+NEXT_PUBLIC_DEBUG_ENABLED=false
+NEXT_PUBLIC_DEBUG_LEVEL=all
+
 # Azure AD Configuration (Optional - for SSO)
 # See AZURE_AD_QUICKSTART.md for setup instructions
 NEXT_PUBLIC_AZURE_AD_CLIENT_ID=your-client-id-here
@@ -24,6 +29,8 @@ NEXT_PUBLIC_AZURE_AD_TENANT_ID=your-tenant-id-here
 NEXT_PUBLIC_AZURE_AD_REDIRECT_URI=http://localhost:3000
 NEXT_PUBLIC_AZURE_AD_SCOPES=api://your-backend-api-client-id/.default,openid,profile,email
 ```
+
+**Debug Logging**: See [DEBUG_SETUP.md](./DEBUG_SETUP.md) for client-side debug logging configuration.
 
 **Azure AD Setup**: See [AZURE_AD_QUICKSTART.md](./AZURE_AD_QUICKSTART.md) for a 5-minute setup guide, or [docs/AZURE_AD_SETUP.md](./docs/AZURE_AD_SETUP.md) for detailed documentation.
 
