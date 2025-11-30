@@ -20,7 +20,8 @@ public class CancelTaskCommandHandler(
     TaskManagementDbContext context,
     TaskEfCommandRepository taskCommandRepository,
     IFileStorageService fileStorageService,
-    ILogger<CancelTaskCommandHandler> logger) : ICommandHandler<CancelTaskCommand>
+    ILogger<CancelTaskCommandHandler> logger,
+    Domain.Interfaces.ITaskHistoryService taskHistoryService) : ICommandHandler<CancelTaskCommand>
 {
     private static readonly TaskStatus[] PreAcceptanceStatuses =
     {
@@ -40,6 +41,7 @@ public class CancelTaskCommandHandler(
     private readonly IFileStorageService _fileStorageService = fileStorageService;
     private readonly ILogger<CancelTaskCommandHandler> _logger = logger;
     private readonly TaskEfCommandRepository _taskCommandRepository = taskCommandRepository;
+    private readonly Domain.Interfaces.ITaskHistoryService _taskHistoryService = taskHistoryService;
 
     public async Task<Result> Handle(CancelTaskCommand request, CancellationToken cancellationToken)
     {
@@ -99,8 +101,19 @@ public class CancelTaskCommandHandler(
 
         if (SoftCancelableStatuses.Contains(task.Status))
         {
+            var previousStatus = task.Status;
             task.Cancel();
             task.SetUpdatedBy(request.RequestedById.ToString());
+
+            // Record history: Task cancelled
+            await _taskHistoryService.RecordStatusChangeAsync(
+                task.Id,
+                previousStatus,
+                task.Status,
+                "Cancelled",
+                request.RequestedById,
+                $"Task cancelled by {request.RequestedByRole}",
+                cancellationToken);
 
             await _taskCommandRepository.UpdateAsync(task, cancellationToken);
             await _context.SaveChangesAsync(cancellationToken);

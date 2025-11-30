@@ -91,6 +91,13 @@ public class UpdateTaskProgressCommandHandler(
             request.Notes);
 
         progressHistory.SetCreatedBy(request.UpdatedById.ToString());
+        
+        // If progress doesn't require approval, automatically accept it
+        if (!requiresAcceptance)
+        {
+            progressHistory.Accept(request.UpdatedById);
+        }
+        
         await _context.Set<TaskProgressHistory>().AddAsync(progressHistory, cancellationToken);
 
         await _taskCommandRepository.UpdateAsync(task, cancellationToken);
