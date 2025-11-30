@@ -154,9 +154,12 @@ public class Task : BaseEntity
 
         ProgressPercentage = percentage;
 
-        if (!requiresAcceptance && Type == TaskType.WithAcceptedProgress)
-            // If it's a task with accepted progress but no acceptance required, it's still pending
+        // For tasks with accepted progress, if acceptance is required, move to UnderReview status
+        // so manager can review and accept the progress update
+        if (requiresAcceptance && Type == TaskType.WithAcceptedProgress)
+        {
             SetUnderReview();
+        }
     }
 
     public void AcceptProgress()
@@ -232,7 +235,14 @@ public class Task : BaseEntity
         ManagerFeedback = feedback;
 
         if (sendBackForRework)
+        {
             Status = TaskStatus.Assigned;
+            // Reset progress to 0 when sending back for rework if task type supports progress tracking
+            if (Type == TaskType.WithProgress || Type == TaskType.WithAcceptedProgress)
+            {
+                ProgressPercentage = 0;
+            }
+        }
         else if (accepted)
             Status = TaskStatus.Accepted;
         else

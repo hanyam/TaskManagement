@@ -91,6 +91,11 @@
     },
     "progress": {
       "title": "Update progress",
+      "accept": "Accept Progress",
+      "acceptSuccess": "Progress update accepted successfully",
+      "acceptError": "Failed to accept progress update",
+      "pending": "Pending Approval",
+      "acceptedBy": "Accepted by",
       "fields": {
         "progressPercentage": "Progress (%)",
         "notes": "Notes"

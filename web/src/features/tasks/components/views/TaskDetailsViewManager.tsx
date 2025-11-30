@@ -11,6 +11,9 @@ import { debugLog, debugComponent, debugGroup } from "@/core/debug/logger";
 import {
   useAssignTaskMutation,
   useReassignTaskMutation,
+  useAcceptTaskProgressMutation,
+  useAcceptTaskMutation,
+  useRejectTaskMutation,
   downloadAttachment
 } from "@/features/tasks/api/queries";
 import { FileAttachmentList } from "@/features/tasks/components/FileAttachmentList";
@@ -77,6 +80,53 @@ export function TaskDetailsViewManager({ taskId }: TaskDetailsViewManagerProps) 
     cancelTaskMutation
   } = useTaskDetails(taskId);
 
+  // Check if accept-progress link is available
+  const hasAcceptProgressLink = links?.some((link) => link.rel === "accept-progress");
+  
+  // Find pending progress entry
+  const pendingProgress = task?.recentProgressHistory?.find((p) => p.status === "Pending");
+  
+  // Accept progress mutation
+  const acceptProgressMutation = useAcceptTaskProgressMutation(taskId);
+  
+  // Accept/Reject task mutations (for UnderReview status)
+  const acceptTaskMutation = useAcceptTaskMutation(taskId);
+  const rejectTaskMutation = useRejectTaskMutation(taskId);
+  
+  const handleAcceptProgress = async () => {
+    if (!pendingProgress) return;
+    
+    try {
+      await acceptProgressMutation.mutateAsync({
+        progressHistoryId: pendingProgress.id
+      });
+      toast.success(t("tasks:progress.acceptSuccess"));
+      await refetch();
+    } catch (error) {
+      displayApiError(error, t("tasks:progress.acceptError"));
+    }
+  };
+
+  const handleAcceptTask = async () => {
+    try {
+      await acceptTaskMutation.mutateAsync();
+      toast.success(t("tasks:details.actions.accept"));
+      await refetch();
+    } catch (error) {
+      displayApiError(error, t("validation:server.INTERNAL_ERROR"));
+    }
+  };
+
+  const handleRejectTask = async () => {
+    try {
+      await rejectTaskMutation.mutateAsync({ reason: null });
+      toast.success(t("tasks:details.actions.reject"));
+      await refetch();
+    } catch (error) {
+      displayApiError(error, t("validation:server.INTERNAL_ERROR"));
+    }
+  };
+
   // Track last logged state to avoid duplicate logs
   const lastDataLogRef = useRef<string>("");
   const hasLoggedInitialDataRef = useRef<boolean>(false);
@@ -106,10 +156,23 @@ export function TaskDetailsViewManager({ taskId }: TaskDetailsViewManagerProps) 
           linksType: typeof links,
           linksIsArray: Array.isArray(links),
           linksLength: links?.length,
-          linkRels: links?.map((l) => l.rel) || []
+          linkRels: links?.map((l) => l.rel) || [],
+          hasAccept: links?.some((l) => l.rel === "accept") ?? false,
+          hasReject: links?.some((l) => l.rel === "reject") ?? false,
+          hasAcceptProgress: links?.some((l) => l.rel === "accept-progress") ?? false,
+          hasCancel: links?.some((l) => l.rel === "cancel") ?? false
         });
         debugLog("Attachments", { count: attachments?.length || 0 });
-        debugLog("State", { isLoading, error: error?.message, isMounted, canUpload, userRole });
+        debugLog("State", { 
+          isLoading, 
+          error: error?.message, 
+          isMounted, 
+          canUpload, 
+          userRole,
+          isEditMode,
+          isFinalReviewedState,
+          isCancelled: task?.status === 8
+        });
       });
     }
   }, [task, task?.id, task?.status, links, links?.length, attachments, attachments?.length, isLoading, error, isMounted, canUpload, userRole]);
@@ -125,7 +188,25 @@ export function TaskDetailsViewManager({ taskId }: TaskDetailsViewManagerProps) 
   const [isDeleteAttachmentOpen, setDeleteAttachmentOpen] = useState(false);
   const [attachmentToDelete, setAttachmentToDelete] = useState<string | null>(null);
 
-  const hasLink = (rel: string) => links.some((link) => link.rel === rel);
+  const hasLink = (rel: string) => {
+    if (!links || !Array.isArray(links)) {
+      return false;
+    }
+    const result = links.some((link) => link.rel === rel);
+    // Debug logging for accept/reject links
+    if (rel === "accept" || rel === "reject" || rel === "accept-progress") {
+      debugLog(`hasLink("${rel}")`, { 
+        result, 
+        linksCount: links.length,
+        linkRels: links.map(l => l.rel),
+        isEditMode,
+        isFinalReviewedState,
+        isCancelled: task?.status === 8,
+        taskStatus: task?.status
+      });
+    }
+    return result;
+  };
   const isFinalReviewedState = task?.status === 3 && task?.managerRating != null;
   const isCancelled = task?.status === 8;
 
@@ -248,6 +329,28 @@ export function TaskDetailsViewManager({ taskId }: TaskDetailsViewManagerProps) 
                 {t("tasks:details.actions.review")}
               </Button>
             )}
+
+            {!isEditMode && hasLink("accept") && !isFinalReviewedState && !isCancelled && (
+              <Button 
+                variant="primary" 
+                onClick={handleAcceptTask}
+                disabled={acceptTaskMutation.isPending}
+                icon={<CheckIcon />}
+              >
+                {acceptTaskMutation.isPending ? t("common:actions.loading") : t("common:actions.accept")}
+              </Button>
+            )}
+
+            {!isEditMode && hasLink("reject") && !isFinalReviewedState && !isCancelled && (
+              <Button 
+                variant="destructive" 
+                onClick={handleRejectTask}
+                disabled={rejectTaskMutation.isPending}
+                icon={<XMarkIcon />}
+              >
+                {rejectTaskMutation.isPending ? t("common:actions.loading") : t("common:actions.reject")}
+              </Button>
+            )}
           </div>
         </div>
       </header>
@@ -307,17 +410,57 @@ export function TaskDetailsViewManager({ taskId }: TaskDetailsViewManagerProps) 
           <h3 className="text-base font-semibold text-foreground">{t("tasks:details.sections.progressHistory")}</h3>
           <div className="space-y-3 rounded-lg border border-border bg-muted/20 p-3">
             {task.recentProgressHistory?.length ? (
-              task.recentProgressHistory.map((progress) => (
-                <div key={progress.id} className="flex flex-col gap-1 rounded-md border border-border/80 bg-background px-3 py-2">
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>{formatDate(progress.updatedAt)}</span>
-                    <span>{progress.updatedByEmail ?? progress.updatedById}</span>
+              task.recentProgressHistory.map((progress) => {
+                const isPending = progress.status === "Pending";
+                const canAccept = isPending && hasAcceptProgressLink;
+                
+                return (
+                  <div key={progress.id} className="flex flex-col gap-2 rounded-md border border-border/80 bg-background px-3 py-2">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                          <span>{formatDate(progress.updatedAt)}</span>
+                          <span>{progress.updatedByEmail ?? progress.updatedById}</span>
+                        </div>
+                        <div className="text-sm text-foreground">
+                          {progress.progressPercentage}% — {progress.notes ?? t("common:states.empty")}
+                        </div>
+                        {progress.status === "Pending" && (
+                          <span className="inline-flex items-center gap-1 mt-1 text-xs px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-600 dark:text-yellow-400">
+                            <span className="h-1.5 w-1.5 rounded-full bg-yellow-500"></span>
+                            {t("tasks:progress.pending")}
+                          </span>
+                        )}
+                        {progress.status === "Accepted" && progress.acceptedAt && (
+                          <div className="mt-1 text-xs text-muted-foreground">
+                            {t("tasks:progress.acceptedBy")} {progress.acceptedByEmail ?? progress.acceptedById} — {formatDate(progress.acceptedAt)}
+                          </div>
+                        )}
+                      </div>
+                      {canAccept && (
+                        <Button
+                          onClick={handleAcceptProgress}
+                          disabled={acceptProgressMutation.isPending}
+                          size="sm"
+                          className="flex-shrink-0"
+                        >
+                          {acceptProgressMutation.isPending ? (
+                            <>
+                              <Spinner className="h-4 w-4" />
+                              {t("common:actions.loading")}
+                            </>
+                          ) : (
+                            <>
+                              <CheckIcon className="h-4 w-4" />
+                              {t("tasks:progress.accept")}
+                            </>
+                          )}
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                  <div className="text-sm text-foreground">
-                    {progress.progressPercentage}% — {progress.notes ?? t("common:states.empty")}
-                  </div>
-                </div>
-              ))
+                );
+              })
             ) : (
               <p className="text-sm text-muted-foreground">{t("common:states.empty")}</p>
             )}

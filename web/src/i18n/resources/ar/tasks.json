@@ -91,6 +91,11 @@
     },
     "progress": {
       "title": "تحديث التقدم",
+      "accept": "قبول التقدم",
+      "acceptSuccess": "تم قبول تحديث التقدم بنجاح",
+      "acceptError": "فشل قبول تحديث التقدم",
+      "pending": "في انتظار الموافقة",
+      "acceptedBy": "تم القبول من قبل",
       "fields": {
         "progressPercentage": "نسبة التقدم (%)",
         "notes": "ملاحظات"

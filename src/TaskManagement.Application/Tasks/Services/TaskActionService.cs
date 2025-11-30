@@ -1,3 +1,4 @@
+using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Domain.Common;
 using TaskManagement.Domain.Constants;
 using DomainTask = TaskManagement.Domain.Entities.Task;
@@ -12,6 +13,13 @@ namespace TaskManagement.Application.Tasks.Services;
 /// </summary>
 public class TaskActionService : ITaskActionService
 {
+    private readonly ICurrentDateService _currentDateService;
+
+    public TaskActionService(ICurrentDateService currentDateService)
+    {
+        _currentDateService = currentDateService;
+    }
+
     public List<ApiActionLink> GetAvailableActions(DomainTask task, Guid currentUserId, string currentUserRole)
     {
         var links = new List<ApiActionLink>();
@@ -45,9 +53,15 @@ public class TaskActionService : ITaskActionService
                     });
 
                 // Assigned user can accept or reject the task
-                // BUT: Employees should NOT see accept/reject links in Created status
-                // Only show accept/reject if user is assigned AND is NOT an employee (i.e., is manager/admin/creator)
-                if (isAssignedUser && !isEmployee)
+                // Special case: For tasks with progress tracking (WithProgress or WithAcceptedProgress),
+                // show accept/reject links to employees if due date hasn't passed
+                // Otherwise, only show to non-employees (managers/admins/creators)
+                var isProgressTrackedTask = task.Type == TaskType.WithProgress || task.Type == TaskType.WithAcceptedProgress;
+                var dueDateNotPassed = !task.DueDate.HasValue || task.DueDate.Value > _currentDateService.UtcNow;
+                var canShowAcceptReject = isAssignedUser && 
+                    (!isEmployee || (isProgressTrackedTask && dueDateNotPassed));
+                
+                if (canShowAcceptReject)
                 {
                     links.Add(new ApiActionLink
                     {
@@ -160,6 +174,18 @@ public class TaskActionService : ITaskActionService
                         Href = $"/tasks/{task.Id}/reject",
                         Method = "POST"
                     });
+
+                // For tasks with progress approval, managers can accept progress updates
+                // The frontend will determine which progress entry is pending and use its ID
+                if (isManager && task.Type == TaskType.WithAcceptedProgress)
+                {
+                    links.Add(new ApiActionLink
+                    {
+                        Rel = "accept-progress",
+                        Href = $"/tasks/{task.Id}/progress/accept",
+                        Method = "POST"
+                    });
+                }
 
                 // Managers/Admins can cancel
                 if (canCancel)
