@@ -1,6 +1,9 @@
+using Microsoft.EntityFrameworkCore;
 using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Domain.Common;
 using TaskManagement.Domain.Constants;
+using TaskManagement.Domain.Entities;
+using TaskManagement.Infrastructure.Data;
 using DomainTask = TaskManagement.Domain.Entities.Task;
 using TaskStatus = TaskManagement.Domain.Entities.TaskStatus;
 using TaskType = TaskManagement.Domain.Entities.TaskType;
@@ -14,10 +17,12 @@ namespace TaskManagement.Application.Tasks.Services;
 public class TaskActionService : ITaskActionService
 {
     private readonly ICurrentDateService _currentDateService;
+    private readonly TaskManagementDbContext _context;
 
-    public TaskActionService(ICurrentDateService currentDateService)
+    public TaskActionService(ICurrentDateService currentDateService, TaskManagementDbContext context)
     {
         _currentDateService = currentDateService;
+        _context = context;
     }
 
     public List<ApiActionLink> GetAvailableActions(DomainTask task, Guid currentUserId, string currentUserRole)
@@ -53,13 +58,16 @@ public class TaskActionService : ITaskActionService
                     });
 
                 // Assigned user can accept or reject the task
-                // Special case: For tasks with progress tracking (WithProgress or WithAcceptedProgress),
-                // show accept/reject links to employees if due date hasn't passed
-                // Otherwise, only show to non-employees (managers/admins/creators)
+                // Employees can accept/reject if assigned, regardless of task type
+                // For progress-tracked tasks, also check that due date hasn't passed
                 var isProgressTrackedTask = task.Type == TaskType.WithProgress || task.Type == TaskType.WithAcceptedProgress;
                 var dueDateNotPassed = !task.DueDate.HasValue || task.DueDate.Value > _currentDateService.UtcNow;
+                
+                // Show accept/reject to:
+                // 1. Non-employees (managers/admins/creators) if assigned
+                // 2. Employees if assigned AND (not progress-tracked OR due date not passed)
                 var canShowAcceptReject = isAssignedUser && 
-                    (!isEmployee || (isProgressTrackedTask && dueDateNotPassed));
+                    (!isEmployee || !isProgressTrackedTask || dueDateNotPassed);
                 
                 if (canShowAcceptReject)
                 {
@@ -137,6 +145,24 @@ public class TaskActionService : ITaskActionService
                         Method = "POST"
                     });
 
+                // Assigned user can request deadline extension (if task has due date)
+                if (isAssignedUser && task.DueDate.HasValue)
+                    links.Add(new ApiActionLink
+                    {
+                        Rel = "request-extension",
+                        Href = $"/tasks/{task.Id}/extension-request",
+                        Method = "POST"
+                    });
+
+                // Assigned user can request more information
+                if (isAssignedUser)
+                    links.Add(new ApiActionLink
+                    {
+                        Rel = "request-more-info",
+                        Href = $"/tasks/{task.Id}/request-info",
+                        Method = "POST"
+                    });
+
                 // Managers/Admins can update
                 if (isManager)
                     links.Add(new ApiActionLink
@@ -153,6 +179,15 @@ public class TaskActionService : ITaskActionService
                         Rel = "cancel",
                         Href = $"/tasks/{task.Id}/cancel",
                         Method = "POST"
+                    });
+
+                // Managers/Admins can approve extension requests (if there are pending requests)
+                if (isManager && HasPendingExtensionRequest(task.Id))
+                    links.Add(new ApiActionLink
+                    {
+                        Rel = "approve-extension",
+                        Href = $"/tasks/{task.Id}/extension-request", // Frontend will handle showing list and approval
+                        Method = "GET" // This is a GET to list requests, actual approval is POST to /tasks/{id}/extension-request/{requestId}/approve
                     });
                 break;
 
@@ -232,6 +267,24 @@ public class TaskActionService : ITaskActionService
                             Href = $"/tasks/{task.Id}/mark-completed",
                             Method = "POST"
                         });
+
+                    // Assigned user can request deadline extension (if task has due date, only if not accepted by manager)
+                    if (isAssignedUser && task.DueDate.HasValue)
+                        links.Add(new ApiActionLink
+                        {
+                            Rel = "request-extension",
+                            Href = $"/tasks/{task.Id}/extension-request",
+                            Method = "POST"
+                        });
+
+                    // Assigned user can request more information (only if not accepted by manager)
+                    if (isAssignedUser)
+                        links.Add(new ApiActionLink
+                        {
+                            Rel = "request-more-info",
+                            Href = $"/tasks/{task.Id}/request-info",
+                            Method = "POST"
+                        });
                 }
 
                 // Managers/Admins can cancel (only if not accepted by manager)
@@ -241,6 +294,15 @@ public class TaskActionService : ITaskActionService
                         Rel = "cancel",
                         Href = $"/tasks/{task.Id}/cancel",
                         Method = "POST"
+                    });
+
+                // Managers/Admins can approve extension requests (if there are pending requests, only if not accepted by manager)
+                if (isManager && !isAcceptedByManager && HasPendingExtensionRequest(task.Id))
+                    links.Add(new ApiActionLink
+                    {
+                        Rel = "approve-extension",
+                        Href = $"/tasks/{task.Id}/extension-request", // Frontend will handle showing list and approval
+                        Method = "GET" // This is a GET to list requests, actual approval is POST to /tasks/{id}/extension-request/{requestId}/approve
                     });
                 break;
 
@@ -292,5 +354,28 @@ public class TaskActionService : ITaskActionService
         }
 
         return links;
+    }
+
+    /// <summary>
+    ///     Checks if there are any pending extension requests for the task.
+    ///     Returns false if there's an error to prevent breaking link generation.
+    /// </summary>
+    private bool HasPendingExtensionRequest(Guid taskId)
+    {
+        try
+        {
+            if (_context == null)
+                return false;
+
+            return _context.Set<DeadlineExtensionRequest>()
+                .AsNoTracking()
+                .Any(er => er.TaskId == taskId && er.Status == ExtensionRequestStatus.Pending);
+        }
+        catch
+        {
+            // If there's any error (e.g., DbContext not available, connection issue), 
+            // return false to prevent breaking the entire link generation
+            return false;
+        }
     }
 }

@@ -401,3 +401,4 @@ This document provides a comprehensive list of all actions that can be performed
 - [HATEOAS Implementation](HATEOAS.md) - How actions are dynamically determined
 - [Business Rules](BUSINESS_RULES.md) - Detailed business logic and constraints
 
+

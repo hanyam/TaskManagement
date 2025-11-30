@@ -120,7 +120,8 @@ public class TestServiceLocator : IServiceLocator
         if (serviceType == typeof(ICommandHandler<RequestMoreInfoCommand, TaskDto>) ||
             serviceType == typeof(IRequestHandler<RequestMoreInfoCommand, TaskDto>))
         {
-            return new RequestMoreInfoCommandHandler(taskCommandRepository, userQueryRepository, _context);
+            var mockTaskHistoryService = new Moq.Mock<TaskManagement.Domain.Interfaces.ITaskHistoryService>();
+            return new RequestMoreInfoCommandHandler(taskCommandRepository, userQueryRepository, _context, mockTaskHistoryService.Object);
         }
 
         if (serviceType == typeof(ICommandHandler<ReassignTaskCommand, TaskDto>) ||

@@ -393,3 +393,4 @@ const toggleLocale = () => {
 - [Technical Guidelines](SOLUTION_TECHNICAL_GUIDELINES.md) - Internationalization section
 - [Architecture](ARCHITECTURE.md) - System architecture
 
+

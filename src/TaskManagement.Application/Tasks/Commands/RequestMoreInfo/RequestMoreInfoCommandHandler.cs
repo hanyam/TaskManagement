@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using TaskManagement.Application.Common.Interfaces;
+using TaskManagement.Domain.Interfaces;
 using TaskManagement.Infrastructure.Data.Repositories;
 using TaskManagement.Domain.Common;
 using TaskManagement.Domain.DTOs;
@@ -7,6 +8,7 @@ using TaskManagement.Domain.Entities;
 using TaskManagement.Domain.Errors.Tasks;
 using TaskManagement.Infrastructure.Data;
 using Task = TaskManagement.Domain.Entities.Task;
+using TaskStatus = TaskManagement.Domain.Entities.TaskStatus;
 
 namespace TaskManagement.Application.Tasks.Commands.RequestMoreInfo;
 
@@ -16,11 +18,13 @@ namespace TaskManagement.Application.Tasks.Commands.RequestMoreInfo;
 public class RequestMoreInfoCommandHandler(
     TaskEfCommandRepository taskCommandRepository,
     UserDapperRepository userQueryRepository,
-    TaskManagementDbContext context) : ICommandHandler<RequestMoreInfoCommand, TaskDto>
+    TaskManagementDbContext context,
+    ITaskHistoryService taskHistoryService) : ICommandHandler<RequestMoreInfoCommand, TaskDto>
 {
     private readonly TaskManagementDbContext _context = context;
     private readonly TaskEfCommandRepository _taskCommandRepository = taskCommandRepository;
     private readonly UserDapperRepository _userQueryRepository = userQueryRepository;
+    private readonly ITaskHistoryService _taskHistoryService = taskHistoryService;
 
     public async Task<Result<TaskDto>> Handle(RequestMoreInfoCommand request, CancellationToken cancellationToken)
     {
@@ -47,6 +51,9 @@ public class RequestMoreInfoCommandHandler(
             errors.Add(Error.Forbidden("User is not assigned to this task", "Errors.Tasks.UserNotAssigned"));
         }
 
+        // Store previous status for history
+        var previousStatus = task.Status;
+
         // Set task under review (may throw exceptions)
         try
         {
@@ -66,6 +73,16 @@ public class RequestMoreInfoCommandHandler(
 
         await _taskCommandRepository.UpdateAsync(task, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
+
+        // Record history: Request more information with the employee's message
+        await _taskHistoryService.RecordStatusChangeAsync(
+            task.Id,
+            previousStatus,
+            task.Status,
+            "Requested More Information",
+            request.RequestedById,
+            request.RequestMessage, // Store the employee's request message in notes
+            cancellationToken);
 
         // Get assigned user for DTO
         User? assignedUser = null;
