@@ -31,6 +31,7 @@ public class UpdateTaskProgressCommandHandler(
         if (task == null)
         {
             errors.Add(TaskErrors.NotFoundById(request.TaskId));
+            return Result<TaskProgressDto>.Failure(errors);
         }
 
         // Validate progress percentage
@@ -39,44 +40,49 @@ public class UpdateTaskProgressCommandHandler(
             errors.Add(Error.Validation("Progress percentage must be between 0 and 100", "ProgressPercentage"));
         }
 
-        // Check if task type supports progress (only if task exists)
-        if (task != null && task.Type == TaskType.Simple && request.ProgressPercentage > 0)
+        // Check if task type supports progress
+        if (task.Type == TaskType.Simple && request.ProgressPercentage > 0)
         {
             errors.Add(Error.Validation("Simple tasks cannot have progress tracking", "Type"));
         }
 
-        if (errors.Any())
-        {
-            return Result<TaskProgressDto>.Failure(errors);
-        }
+        // Validate that new progress is not less than the last approved progress
+        // Get the most recent accepted progress entry using repository
+        var lastAcceptedProgress = await _taskCommandRepository.GetLastAcceptedProgressAsync(request.TaskId, cancellationToken);
 
-        // At this point, we know task exists (no errors were added for null check)
-        if (task == null)
+        // Determine the minimum allowed progress
+        // If there's a last accepted progress, use that; otherwise use current task progress or 0
+        var minAllowedProgress = lastAcceptedProgress?.ProgressPercentage ?? task.ProgressPercentage ?? 0;
+
+        // Validate that new progress is not less than the minimum allowed
+        if (request.ProgressPercentage < minAllowedProgress)
         {
-            return Result<TaskProgressDto>.Failure(TaskErrors.NotFoundById(request.TaskId));
+            errors.Add(Error.Validation(
+                $"Progress must be at least {minAllowedProgress}% (last approved progress). You can only increase the progress.",
+                "ProgressPercentage"));
         }
 
         // Determine if progress requires acceptance
         var requiresAcceptance = task.Type == TaskType.WithAcceptedProgress;
 
-        // Update task progress
+        // Update task progress (this may throw exceptions)
+        try
         {
-            try
-            {
-                task.UpdateProgress(request.ProgressPercentage, requiresAcceptance);
-                task.SetUpdatedBy(request.UpdatedById.ToString());
-            }
-            catch (Exception ex)
-            {
-                errors.Add(Error.Validation(ex.Message, "Progress"));
-            }
+            task.UpdateProgress(request.ProgressPercentage, requiresAcceptance);
+            task.SetUpdatedBy(request.UpdatedById.ToString());
+        }
+        catch (Exception ex)
+        {
+            errors.Add(Error.Validation(ex.Message, "Progress"));
         }
 
+        // Check all errors once before any database operations
         if (errors.Any())
         {
             return Result<TaskProgressDto>.Failure(errors);
         }
 
+        // All validations passed - proceed with database operations
         // Create progress history entry
         var progressHistory = new TaskProgressHistory(
             request.TaskId,

@@ -34,63 +34,52 @@ public class MarkTaskCompletedCommandHandler(
         if (task == null)
         {
             errors.Add(TaskErrors.NotFoundById(request.TaskId));
-        }
-
-        // Mark task as completed by employee (moves to PendingManagerReview) - only if task exists
-        if (task != null)
-        {
-            // Check if task is already accepted by manager (terminal state - no more actions allowed)
-            var isAcceptedByManager = task.Status == TaskStatus.Accepted && task.ManagerRating.HasValue;
-            if (isAcceptedByManager)
-            {
-                errors.Add(TaskErrors.TaskAlreadyAcceptedByManager);
-            }
-            
-            // Check if task is rejected by manager (terminal state - no more actions allowed)
-            if (task.Status == TaskStatus.RejectedByManager)
-            {
-                errors.Add(TaskErrors.TaskRejectedByManager);
-            }
-            
-            // Only proceed if no errors
-            if (!errors.Any())
-            {
-                var previousStatus = task.Status;
-                try
-                {
-                    task.MarkCompletedByEmployee();
-                    task.SetUpdatedBy(request.CompletedById.ToString());
-                    
-                    // Record history: Task marked as completed
-                    var notes = string.IsNullOrWhiteSpace(request.Comment) 
-                        ? "Task marked as completed" 
-                        : request.Comment;
-                    
-                    await _taskHistoryService.RecordStatusChangeAsync(
-                        task.Id,
-                        previousStatus,
-                        task.Status,
-                        "Marked as Completed",
-                        request.CompletedById,
-                        notes,
-                        cancellationToken);
-                }
-                catch (Exception ex)
-                {
-                    errors.Add(Error.Validation(ex.Message, "Status"));
-                }
-            }
-        }
-
-        if (errors.Any())
-        {
             return Result<TaskDto>.Failure(errors);
         }
 
-        // At this point, we know task exists (no errors were added for null check)
-        if (task == null)
+        // Check if task is already accepted by manager (terminal state - no more actions allowed)
+        var isAcceptedByManager = task.Status == TaskStatus.Accepted && task.ManagerRating.HasValue;
+        if (isAcceptedByManager)
         {
-            return Result<TaskDto>.Failure(TaskErrors.NotFoundById(request.TaskId));
+            errors.Add(TaskErrors.TaskAlreadyAcceptedByManager);
+        }
+        
+        // Check if task is rejected by manager (terminal state - no more actions allowed)
+        if (task.Status == TaskStatus.RejectedByManager)
+        {
+            errors.Add(TaskErrors.TaskRejectedByManager);
+        }
+        
+        // Mark task as completed by employee (moves to PendingManagerReview) - may throw exceptions
+        var previousStatus = task.Status;
+        try
+        {
+            task.MarkCompletedByEmployee();
+            task.SetUpdatedBy(request.CompletedById.ToString());
+            
+            // Record history: Task marked as completed
+            var notes = string.IsNullOrWhiteSpace(request.Comment) 
+                ? "Task marked as completed" 
+                : request.Comment;
+            
+            await _taskHistoryService.RecordStatusChangeAsync(
+                task.Id,
+                previousStatus,
+                task.Status,
+                "Marked as Completed",
+                request.CompletedById,
+                notes,
+                cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            errors.Add(Error.Validation(ex.Message, "Status"));
+        }
+
+        // Check all errors once before database operations
+        if (errors.Any())
+        {
+            return Result<TaskDto>.Failure(errors);
         }
 
         await _taskCommandRepository.UpdateAsync(task, cancellationToken);

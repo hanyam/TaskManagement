@@ -58,43 +58,36 @@ public class CancelTaskCommandHandler(
         {
             _logger.LogWarning("Task {TaskId} not found for cancellation", request.TaskId);
             errors.Add(TaskErrors.NotFoundById(request.TaskId));
-        }
-
-        if (task != null)
-        {
-            if (!IsAuthorized(request, task))
-            {
-                _logger.LogWarning(
-                    "User {UserId} is not authorized to cancel task {TaskId}",
-                    request.RequestedById,
-                    request.TaskId);
-                errors.Add(TaskErrors.CannotDeleteOtherUserTask);
-            }
-
-            if (IsTaskReviewed(task))
-            {
-                _logger.LogWarning(
-                    "Task {TaskId} has already been reviewed or completed and cannot be cancelled",
-                    request.TaskId);
-                errors.Add(TaskErrors.CannotCancelReviewedTask);
-            }
-
-            if (task.Status == TaskStatus.Cancelled)
-            {
-                _logger.LogInformation("Task {TaskId} is already cancelled", request.TaskId);
-                errors.Add(TaskErrors.TaskAlreadyCancelled);
-            }
-        }
-
-        if (errors.Any())
-        {
             return Result.Failure(errors);
         }
 
-        // At this point, we know task exists (no errors were added for null check)
-        if (task == null)
+        if (!IsAuthorized(request, task))
         {
-            return Result.Failure(TaskErrors.NotFoundById(request.TaskId));
+            _logger.LogWarning(
+                "User {UserId} is not authorized to cancel task {TaskId}",
+                request.RequestedById,
+                request.TaskId);
+            errors.Add(TaskErrors.CannotDeleteOtherUserTask);
+        }
+
+        if (IsTaskReviewed(task))
+        {
+            _logger.LogWarning(
+                "Task {TaskId} has already been reviewed or completed and cannot be cancelled",
+                request.TaskId);
+            errors.Add(TaskErrors.CannotCancelReviewedTask);
+        }
+
+        if (task.Status == TaskStatus.Cancelled)
+        {
+            _logger.LogInformation("Task {TaskId} is already cancelled", request.TaskId);
+            errors.Add(TaskErrors.TaskAlreadyCancelled);
+        }
+
+        // Check all errors once before database operations
+        if (errors.Any())
+        {
+            return Result.Failure(errors);
         }
 
         if (PreAcceptanceStatuses.Contains(task.Status))

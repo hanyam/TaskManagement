@@ -29,6 +29,7 @@ public class RejectTaskProgressCommandHandler(
         if (task == null)
         {
             errors.Add(TaskErrors.NotFoundById(request.TaskId));
+            return Result.Failure(errors);
         }
 
         // Get progress history entry
@@ -39,73 +40,62 @@ public class RejectTaskProgressCommandHandler(
         if (progressHistory == null)
         {
             errors.Add(Error.NotFound("Progress history entry", "ProgressHistoryId"));
+            return Result.Failure(errors);
         }
 
-        // Reject progress (only if both task and progress history exist)
-        if (task != null && progressHistory != null)
+        // Validate user is the task creator
+        if (task.CreatedById != request.RejectedById)
         {
-            // Validate user is the task creator
-            if (task.CreatedById != request.RejectedById)
-            {
-                errors.Add(Error.Forbidden("Only the task creator can reject progress updates"));
-            }
-
-            // Validate task is in UnderReview status
-            if (task.Status != TaskStatus.UnderReview)
-            {
-                errors.Add(Error.Validation("Task must be under review to reject progress", "Status"));
-            }
-
-            // Validate task type supports progress approval
-            if (task.Type != TaskType.WithAcceptedProgress)
-            {
-                errors.Add(Error.Validation("This task type does not require progress acceptance", "Type"));
-            }
-
-            // Validate progress history is pending
-            if (progressHistory.Status != ProgressStatus.Pending)
-            {
-                errors.Add(Error.Validation("Progress history entry is not pending", "ProgressHistoryId"));
-            }
-
-            if (!errors.Any())
-            {
-                try
-                {
-                    // Find the last accepted progress history entry to revert to
-                    var lastAcceptedProgress = await _context.Set<TaskProgressHistory>()
-                        .Where(ph => ph.TaskId == request.TaskId && ph.Status == ProgressStatus.Accepted)
-                        .OrderByDescending(ph => ph.CreatedAt)
-                        .FirstOrDefaultAsync(cancellationToken);
-
-                    // Reject the progress history entry
-                    progressHistory.Reject(request.RejectedById);
-                    progressHistory.SetUpdatedBy(request.RejectedById.ToString());
-                    
-                    // Revert progress percentage to the last accepted value (or 0 if none exists)
-                    // This must be done BEFORE changing status, as AcceptProgress() validates status is UnderReview
-                    var revertToPercentage = lastAcceptedProgress?.ProgressPercentage ?? 0;
-                    task.SetProgressPercentage(revertToPercentage);
-                    
-                    // Change status back to Accepted (task remains accepted, only progress was rejected)
-                    // AcceptProgress() changes status from UnderReview to Accepted
-                    task.AcceptProgress();
-                    task.SetUpdatedBy(request.RejectedById.ToString());
-                }
-                catch (Exception ex)
-                {
-                    errors.Add(Error.Validation(ex.Message, "Progress"));
-                }
-            }
+            errors.Add(Error.Forbidden("Only the task creator can reject progress updates"));
         }
 
-
-        // At this point, we know both task and progressHistory exist
-        if (task == null || progressHistory == null)
+        // Validate task is in UnderReview status
+        if (task.Status != TaskStatus.UnderReview)
         {
-            return Result.Failure(errors.Any() ? errors : new List<Error> { TaskErrors.NotFound });
+            errors.Add(Error.Validation("Task must be under review to reject progress", "Status"));
         }
 
+        // Validate task type supports progress approval
+        if (task.Type != TaskType.WithAcceptedProgress)
+        {
+            errors.Add(Error.Validation("This task type does not require progress acceptance", "Type"));
+        }
+
+        // Validate progress history is pending
+        if (progressHistory.Status != ProgressStatus.Pending)
+        {
+            errors.Add(Error.Validation("Progress history entry is not pending", "ProgressHistoryId"));
+        }
+
+        // Reject progress (may throw exceptions)
+        try
+        {
+            // Find the last accepted progress history entry to revert to
+            var lastAcceptedProgress = await _context.Set<TaskProgressHistory>()
+                .Where(ph => ph.TaskId == request.TaskId && ph.Status == ProgressStatus.Accepted)
+                .OrderByDescending(ph => ph.CreatedAt)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            // Reject the progress history entry
+            progressHistory.Reject(request.RejectedById);
+            progressHistory.SetUpdatedBy(request.RejectedById.ToString());
+            
+            // Revert progress percentage to the last accepted value (or 0 if none exists)
+            // This must be done BEFORE changing status, as AcceptProgress() validates status is UnderReview
+            var revertToPercentage = lastAcceptedProgress?.ProgressPercentage ?? 0;
+            task.SetProgressPercentage(revertToPercentage);
+            
+            // Change status back to Accepted (task remains accepted, only progress was rejected)
+            // AcceptProgress() changes status from UnderReview to Accepted
+            task.AcceptProgress();
+            task.SetUpdatedBy(request.RejectedById.ToString());
+        }
+        catch (Exception ex)
+        {
+            errors.Add(Error.Validation(ex.Message, "Progress"));
+        }
+
+        // Check all errors once before database operations
         if (errors.Any())
         {
             return Result.Failure(errors);

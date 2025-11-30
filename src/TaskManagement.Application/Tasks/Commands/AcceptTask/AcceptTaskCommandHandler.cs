@@ -35,35 +35,24 @@ public class AcceptTaskCommandHandler(
         if (task == null)
         {
             errors.Add(TaskErrors.NotFoundById(request.TaskId));
+            return Result<TaskDto>.Failure(errors);
         }
 
-        // Validate user is assigned to the task (only if task exists)
+        // Validate user is assigned to the task
         var assignments = await _context.Set<TaskAssignment>()
             .Where(ta => ta.TaskId == request.TaskId)
             .ToListAsync(cancellationToken);
 
-        if (task != null)
-        {
-            var isAssigned = (task.AssignedUserId.HasValue && task.AssignedUserId.Value == request.AcceptedById) ||
-                             assignments.Any(a => a.UserId == request.AcceptedById);
+        var isAssigned = (task.AssignedUserId.HasValue && task.AssignedUserId.Value == request.AcceptedById) ||
+                         assignments.Any(a => a.UserId == request.AcceptedById);
 
-            if (!isAssigned)
-                errors.Add(Error.Forbidden("User is not assigned to this task"));
-           
-            if(task.DueDate < _currentDateService.Now)
-                errors.Add(TaskErrors.CannotAcceptPassedDueDateTask);
-        }
+        if (!isAssigned)
+            errors.Add(Error.Forbidden("User is not assigned to this task"));
+       
+        if(task.DueDate < _currentDateService.Now)
+            errors.Add(TaskErrors.CannotAcceptPassedDueDateTask);
 
-        if (errors.Any())
-            return Result<TaskDto>.Failure(errors);
-
-        // At this point, we know task exists (no errors were added for null check)
-        if (task == null)
-        {
-            return Result<TaskDto>.Failure(TaskErrors.NotFoundById(request.TaskId));
-        }
-
-        // Accept task
+        // Accept task (may throw exceptions)
         var previousStatus = task.Status;
         try
         {
@@ -73,6 +62,11 @@ public class AcceptTaskCommandHandler(
         catch (Exception ex)
         {
             errors.Add(Error.Validation(ex.Message, "Status"));
+        }
+
+        // Check all errors once before database operations
+        if (errors.Any())
+        {
             return Result<TaskDto>.Failure(errors);
         }
 

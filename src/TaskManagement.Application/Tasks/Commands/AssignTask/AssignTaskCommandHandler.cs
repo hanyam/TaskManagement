@@ -31,6 +31,7 @@ public class AssignTaskCommandHandler(
         if (task == null)
         {
             errors.Add(TaskErrors.NotFoundById(request.TaskId));
+            return Result<TaskDto>.Failure(errors);
         }
 
         // Validate user IDs
@@ -87,15 +88,10 @@ public class AssignTaskCommandHandler(
             }
         }
 
+        // Check all errors once before database operations
         if (errors.Any())
         {
             return Result<TaskDto>.Failure(errors);
-        }
-
-        // At this point, we know task exists (no errors were added for null check)
-        if (task == null)
-        {
-            return Result<TaskDto>.Failure(TaskErrors.NotFoundById(request.TaskId));
         }
 
         // Clear existing assignments for this task

@@ -29,6 +29,7 @@ public class AcceptTaskProgressCommandHandler(
         if (task == null)
         {
             errors.Add(TaskErrors.NotFoundById(request.TaskId));
+            return Result.Failure(errors);
         }
 
         // Get progress history entry
@@ -39,64 +40,54 @@ public class AcceptTaskProgressCommandHandler(
         if (progressHistory == null)
         {
             errors.Add(Error.NotFound("Progress history entry", "ProgressHistoryId"));
-        }
-
-        // Accept progress (only if both task and progress history exist)
-        if (task != null && progressHistory != null)
-        {
-            // Validate user is the task creator
-            if (task.CreatedById != request.AcceptedById)
-            {
-                errors.Add(Error.Forbidden("Only the task creator can accept progress updates"));
-            }
-
-            // Validate task is in UnderReview status
-            if (task.Status != TaskStatus.UnderReview)
-            {
-                errors.Add(Error.Validation("Task must be under review to accept progress", "Status"));
-            }
-
-            // Validate task type supports progress approval
-            if (task.Type != TaskType.WithAcceptedProgress)
-            {
-                errors.Add(Error.Validation("This task type does not require progress acceptance", "Type"));
-            }
-
-            // Validate progress history is pending
-            if (progressHistory.Status != ProgressStatus.Pending)
-            {
-                errors.Add(Error.Validation("Progress history entry is not pending", "ProgressHistoryId"));
-            }
-
-            if (!errors.Any())
-            {
-                try
-                {
-                    // Accept the progress history entry
-                    progressHistory.Accept(request.AcceptedById);
-                    progressHistory.SetUpdatedBy(request.AcceptedById.ToString());
-                    
-                    // Accept progress - this changes status from UnderReview to Accepted
-                    // ProgressPercentage is already set to the new value, so we keep it
-                    task.AcceptProgress();
-                    task.SetUpdatedBy(request.AcceptedById.ToString());
-                }
-                catch (Exception ex)
-                {
-                    errors.Add(Error.Validation(ex.Message, "Progress"));
-                }
-            }
-        }
-
-        if (errors.Any())
-        {
             return Result.Failure(errors);
         }
 
-        // At this point, we know both task and progressHistory exist
-        if (task == null || progressHistory == null)
+        // Validate user is the task creator
+        if (task.CreatedById != request.AcceptedById)
         {
-            return Result.Failure(errors.Any() ? errors : new List<Error> { TaskErrors.NotFound });
+            errors.Add(Error.Forbidden("Only the task creator can accept progress updates"));
+        }
+
+        // Validate task is in UnderReview status
+        if (task.Status != TaskStatus.UnderReview)
+        {
+            errors.Add(Error.Validation("Task must be under review to accept progress", "Status"));
+        }
+
+        // Validate task type supports progress approval
+        if (task.Type != TaskType.WithAcceptedProgress)
+        {
+            errors.Add(Error.Validation("This task type does not require progress acceptance", "Type"));
+        }
+
+        // Validate progress history is pending
+        if (progressHistory.Status != ProgressStatus.Pending)
+        {
+            errors.Add(Error.Validation("Progress history entry is not pending", "ProgressHistoryId"));
+        }
+
+        // Accept the progress history entry (may throw exceptions)
+        try
+        {
+            // Accept the progress history entry
+            progressHistory.Accept(request.AcceptedById);
+            progressHistory.SetUpdatedBy(request.AcceptedById.ToString());
+            
+            // Accept progress - this changes status from UnderReview to Accepted
+            // ProgressPercentage is already set to the new value, so we keep it
+            task.AcceptProgress();
+            task.SetUpdatedBy(request.AcceptedById.ToString());
+        }
+        catch (Exception ex)
+        {
+            errors.Add(Error.Validation(ex.Message, "Progress"));
+        }
+
+        // Check all errors once before database operations
+        if (errors.Any())
+        {
+            return Result.Failure(errors);
         }
 
         _context.Set<TaskProgressHistory>().Update(progressHistory);

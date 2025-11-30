@@ -3,13 +3,13 @@
 import { Dialog, Transition } from "@headlessui/react";
 import { CheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Fragment } from "react";
+import { Fragment, useMemo, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { z } from "zod";
 
-import { useUpdateTaskProgressMutation } from "@/features/tasks/api/queries";
+import { useUpdateTaskProgressMutation, useTaskDetailsQuery } from "@/features/tasks/api/queries";
 import { displayApiError } from "@/features/tasks/utils/errorHandling";
 import { Button } from "@/ui/components/Button";
 import { FormFieldError } from "@/ui/components/FormFieldError";
@@ -25,18 +25,57 @@ interface UpdateProgressDialogProps {
 export function UpdateProgressDialog({ open, onOpenChange, taskId }: UpdateProgressDialogProps) {
   const { t } = useTranslation(["tasks", "validation"]);
   const mutation = useUpdateTaskProgressMutation(taskId);
+  
+  // Fetch task data to get last approved progress
+  const { data: taskResponse } = useTaskDetailsQuery(taskId, open); // Only fetch when dialog is open
+  const task = taskResponse?.data;
+  
+  // Find the last approved progress (status === 1) or use current progressPercentage
+  const lastApprovedProgress = useMemo(() => {
+    if (!task?.recentProgressHistory) {
+      // If no progress history, use current progressPercentage or 0
+      return task?.progressPercentage ?? 0;
+    }
+    
+    // Find the most recent accepted progress entry (status === 1)
+    const lastAccepted = task.recentProgressHistory
+      .filter(p => p.status === 1) // 1 = Accepted
+      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())[0];
+    
+    // If found, use that; otherwise use current progressPercentage or 0
+    return lastAccepted?.progressPercentage ?? task.progressPercentage ?? 0;
+  }, [task]);
+  
+  // Ensure lastApprovedProgress is a number (fallback to 0 if undefined)
+  const minProgress = lastApprovedProgress ?? 0;
+  
   const form = useForm<{ progressPercentage: number; notes?: string | null }>({
     resolver: zodResolver(
       z.object({
-        progressPercentage: z.number({ invalid_type_error: "validation:required" }).min(0).max(100),
+        progressPercentage: z
+          .number({ invalid_type_error: "validation:required" })
+          .min(minProgress, {
+            message: t("tasks:forms.progress.minProgressError", { min: minProgress }) || `Progress must be at least ${minProgress}% (last approved progress)`
+          })
+          .max(100),
         notes: z.string().max(500).optional()
       })
     ),
     defaultValues: {
-      progressPercentage: 0,
+      progressPercentage: minProgress,
       notes: ""
     }
   });
+  
+  // Update form when lastApprovedProgress changes or dialog opens
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        progressPercentage: minProgress,
+        notes: ""
+      });
+    }
+  }, [open, minProgress, form]);
 
   async function onSubmit(values: { progressPercentage: number; notes?: string | null }) {
     try {
@@ -71,13 +110,16 @@ export function UpdateProgressDialog({ open, onOpenChange, taskId }: UpdateProgr
                 <Input
                   id="progressPercentage"
                   type="number"
-                  min={0}
+                  min={minProgress}
                   max={100}
                   {...form.register("progressPercentage", { valueAsNumber: true })}
                 />
+                <p className="text-xs text-muted-foreground">
+                  {t("tasks:forms.progress.minProgressHint", { min: minProgress }) || `Minimum: ${minProgress}% (last approved progress). You can only increase the progress.`}
+                </p>
                 {form.formState.errors.progressPercentage ? (
                   <FormFieldError
-                    message={t("validation:required", {
+                    message={form.formState.errors.progressPercentage.message || t("validation:required", {
                       field: t("tasks:forms.progress.fields.progressPercentage")
                     })}
                   />

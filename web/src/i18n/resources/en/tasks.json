@@ -104,6 +104,8 @@
         "progressPercentage": "Progress (%)",
         "notes": "Notes"
       },
+      "minProgressHint": "Minimum: {min}% (last approved progress). You can only increase the progress.",
+      "minProgressError": "Progress must be at least {min}% (last approved progress). You can only increase the progress.",
       "success": "Progress updated."
     },
     "extension": {

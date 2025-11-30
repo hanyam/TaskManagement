@@ -34,41 +34,30 @@ public class RejectTaskCommandHandler(
         if (task == null)
         {
             errors.Add(TaskErrors.NotFoundById(request.TaskId));
+            return Result<TaskDto>.Failure(errors);
         }
 
-        // Validate user is assigned to the task (only if task exists)
+        // Validate user is assigned to the task
         var assignments = await _context.Set<TaskAssignment>()
             .Where(ta => ta.TaskId == request.TaskId)
             .ToListAsync(cancellationToken);
 
-        if (task != null)
+        var isAssigned = (task.AssignedUserId.HasValue && task.AssignedUserId.Value == request.RejectedById) ||
+                         assignments.Any(a => a.UserId == request.RejectedById);
+
+        // Check if already rejected
+        if (task.Status == TaskStatus.Rejected)
         {
-            var isAssigned = (task.AssignedUserId.HasValue && task.AssignedUserId.Value == request.RejectedById) ||
-                             assignments.Any(a => a.UserId == request.RejectedById);
-
-            // Check if already rejected
-            if (task.Status == TaskStatus.Rejected)
-            {
-                errors.Add(TaskErrors.TaskAlreadyCompleted);
-            }
-
-            if (!isAssigned)
-                errors.Add(Error.Forbidden("User is not assigned to this task"));
-
-            if (task.DueDate < _currentDateService.Now)
-                errors.Add(TaskErrors.CannotRejectPassedDueDateTask);
+            errors.Add(TaskErrors.TaskAlreadyCompleted);
         }
 
-        if (errors.Any())
-            return Result<TaskDto>.Failure(errors);
+        if (!isAssigned)
+            errors.Add(Error.Forbidden("User is not assigned to this task"));
 
-        // At this point, we know task exists (no errors were added for null check)
-        if (task == null)
-        {
-            return Result<TaskDto>.Failure(TaskErrors.NotFoundById(request.TaskId));
-        }
+        if (task.DueDate < _currentDateService.Now)
+            errors.Add(TaskErrors.CannotRejectPassedDueDateTask);
 
-        // Reject task
+        // Reject task (may throw exceptions)
         try
         {
             task.Reject();
@@ -77,6 +66,11 @@ public class RejectTaskCommandHandler(
         catch (Exception ex)
         {
             errors.Add(Error.Validation(ex.Message, "Status"));
+        }
+
+        // Check all errors once before database operations
+        if (errors.Any())
+        {
             return Result<TaskDto>.Failure(errors);
         }
 

@@ -31,47 +31,37 @@ public class RequestMoreInfoCommandHandler(
         if (task == null)
         {
             errors.Add(TaskErrors.NotFoundById(request.TaskId));
+            return Result<TaskDto>.Failure(errors);
         }
 
-        // Validate user is assigned to the task (only if task exists)
+        // Validate user is assigned to the task
         var assignments = await _context.Set<TaskAssignment>()
             .Where(ta => ta.TaskId == request.TaskId)
             .ToListAsync(cancellationToken);
 
-        if (task != null)
+        var isAssigned = (task.AssignedUserId.HasValue && task.AssignedUserId.Value == request.RequestedById) ||
+                         assignments.Any(a => a.UserId == request.RequestedById);
+
+        if (!isAssigned)
         {
-            var isAssigned = (task.AssignedUserId.HasValue && task.AssignedUserId.Value == request.RequestedById) ||
-                             assignments.Any(a => a.UserId == request.RequestedById);
-
-            if (!isAssigned)
-            {
-                errors.Add(Error.Forbidden("User is not assigned to this task"));
-            }
-
-            // Set task under review (only if no errors so far)
-            if (!errors.Any())
-            {
-                try
-                {
-                    task.SetUnderReview();
-                    task.SetUpdatedBy(request.RequestedById.ToString());
-                }
-                catch (Exception ex)
-                {
-                    errors.Add(Error.Validation(ex.Message, "Status"));
-                }
-            }
+            errors.Add(Error.Forbidden("User is not assigned to this task"));
         }
 
+        // Set task under review (may throw exceptions)
+        try
+        {
+            task.SetUnderReview();
+            task.SetUpdatedBy(request.RequestedById.ToString());
+        }
+        catch (Exception ex)
+        {
+            errors.Add(Error.Validation(ex.Message, "Status"));
+        }
+
+        // Check all errors once before database operations
         if (errors.Any())
         {
             return Result<TaskDto>.Failure(errors);
-        }
-
-        // At this point, we know task exists (no errors were added for null check)
-        if (task == null)
-        {
-            return Result<TaskDto>.Failure(TaskErrors.NotFoundById(request.TaskId));
         }
 
         await _taskCommandRepository.UpdateAsync(task, cancellationToken);

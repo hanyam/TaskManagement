@@ -34,85 +34,74 @@ public class ReviewCompletedTaskCommandHandler(
         if (task == null)
         {
             errors.Add(TaskErrors.NotFound);
+            return Result<TaskDto>.Failure(errors);
         }
 
-        // Verify task is in PendingManagerReview status (only if task exists)
-        if (task != null && task.Status != TaskStatus.PendingManagerReview)
+        // Verify task is in PendingManagerReview status
+        if (task.Status != TaskStatus.PendingManagerReview)
         {
             errors.Add(Error.Validation("Task must be in PendingManagerReview status to be reviewed", "Status"));
         }
 
-        if (errors.Any())
+        // Review the task (may throw exceptions)
+        var previousStatus = task.Status;
+        var performedById = _currentUserService.GetUserId() ?? Guid.Empty;
+        
+        try
         {
-            return Result<TaskDto>.Failure(errors);
-        }
+            task.ReviewByManager(request.Accepted, request.Rating, request.Feedback, request.SendBackForRework);
+            task.SetUpdatedBy("Manager"); // Set updated by current user
 
-        // Review the task (only if task exists and no errors)
-        if (task != null)
-        {
-            var previousStatus = task.Status;
-            var performedById = _currentUserService.GetUserId() ?? Guid.Empty;
+            // Record history based on review decision
+            string action;
+            string? notes = null;
             
-            try
+            if (request.SendBackForRework)
             {
-                task.ReviewByManager(request.Accepted, request.Rating, request.Feedback, request.SendBackForRework);
-                task.SetUpdatedBy("Manager"); // Set updated by current user
-
-                // Record history based on review decision
-                string action;
-                string? notes = null;
-                
-                if (request.SendBackForRework)
-                {
-                    action = "Sent Back for Rework";
-                    notes = request.Feedback;
-                }
-                else if (request.Accepted)
-                {
-                    action = "Reviewed and Accepted";
-                    notes = request.Rating > 0 
-                        ? $"Rating: {request.Rating}/5" + (request.Feedback != null ? $", Feedback: {request.Feedback}" : "")
-                        : request.Feedback;
-                }
-                else
-                {
-                    action = "Reviewed and Returned";
-                    notes = request.Rating > 0 
-                        ? $"Rating: {request.Rating}/5" + (request.Feedback != null ? $", Feedback: {request.Feedback}" : "")
-                        : request.Feedback;
-                }
-
-                await _taskHistoryService.RecordStatusChangeAsync(
-                    task.Id,
-                    previousStatus,
-                    task.Status,
-                    action,
-                    performedById,
-                    notes,
-                    cancellationToken);
-
-                await _context.SaveChangesAsync(cancellationToken);
+                action = "Sent Back for Rework";
+                notes = request.Feedback;
             }
-            catch (InvalidOperationException ex)
+            else if (request.Accepted)
             {
-                errors.Add(Error.Validation(ex.Message));
+                action = "Reviewed and Accepted";
+                notes = request.Rating > 0 
+                    ? $"Rating: {request.Rating}/5" + (request.Feedback != null ? $", Feedback: {request.Feedback}" : "")
+                    : request.Feedback;
             }
-            catch (ArgumentException ex)
+            else
             {
-                errors.Add(Error.Validation(ex.Message));
+                action = "Reviewed and Returned";
+                notes = request.Rating > 0 
+                    ? $"Rating: {request.Rating}/5" + (request.Feedback != null ? $", Feedback: {request.Feedback}" : "")
+                    : request.Feedback;
             }
+
+            await _taskHistoryService.RecordStatusChangeAsync(
+                task.Id,
+                previousStatus,
+                task.Status,
+                action,
+                performedById,
+                notes,
+                cancellationToken);
+        }
+        catch (InvalidOperationException ex)
+        {
+            errors.Add(Error.Validation(ex.Message));
+        }
+        catch (ArgumentException ex)
+        {
+            errors.Add(Error.Validation(ex.Message));
         }
 
+        // Check all errors once before database operations
         if (errors.Any())
         {
             return Result<TaskDto>.Failure(errors);
         }
 
-        // Map to DTO (only if task exists)
-        if (task == null)
-        {
-            return Result<TaskDto>.Failure(TaskErrors.NotFound);
-        }
+        // All validations passed - proceed with database operations
+        await _context.SaveChangesAsync(cancellationToken);
 
         var taskDto = new TaskDto
         {
