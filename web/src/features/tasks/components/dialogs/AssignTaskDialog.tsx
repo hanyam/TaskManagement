@@ -83,7 +83,7 @@ export function AssignTaskDialog({ open, onOpenChange, mutation, mode = "assign"
                 <Label htmlFor="assignUserIds">{t("tasks:forms.assign.fields.userIds")}</Label>
                 <Input
                   id="assignUserIds"
-                  placeholder="guid-1, guid-2"
+                  placeholder={t("tasks:forms.assign.fields.userIdsPlaceholder")}
                   {...form.register("userIds")}
                 />
                 {form.formState.errors.userIds ? (

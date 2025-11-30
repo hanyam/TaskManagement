@@ -15,11 +15,9 @@ import { Button } from "@/ui/components/Button";
 import { FormFieldError } from "@/ui/components/FormFieldError";
 import { Label } from "@/ui/components/Label";
 
-const markTaskCompleteSchema = z.object({
-  comment: z.string().max(1000, "Comment cannot exceed 1000 characters").optional().nullable()
-});
-
-type MarkTaskCompleteFormValues = z.infer<typeof markTaskCompleteSchema>;
+type MarkTaskCompleteFormValues = {
+  comment: string | null;
+};
 
 interface MarkTaskCompleteDialogProps {
   taskId: string;
@@ -36,6 +34,10 @@ export function MarkTaskCompleteDialog({
 }: MarkTaskCompleteDialogProps) {
   const { t } = useTranslation(["tasks", "common"]);
   const markCompleteMutation = useMarkTaskCompletedMutation(taskId);
+
+  const markTaskCompleteSchema = z.object({
+    comment: z.string().max(1000, t("tasks:forms.markComplete.fields.commentMaxLength")).optional().nullable()
+  });
 
   const {
     register,

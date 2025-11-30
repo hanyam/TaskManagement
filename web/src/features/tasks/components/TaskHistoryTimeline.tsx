@@ -12,18 +12,6 @@ interface TaskHistoryTimelineProps {
   taskId: string;
 }
 
-// Map status numbers to readable names
-const statusNames: Record<number, string> = {
-  0: "Created",
-  1: "Assigned",
-  2: "Under Review",
-  3: "Accepted",
-  4: "Rejected",
-  5: "Completed",
-  6: "Cancelled",
-  7: "Pending Manager Review",
-  8: "Rejected By Manager"
-};
 
 // Get icon and color for each action type
 function getActionIcon(action: string) {
@@ -95,8 +83,14 @@ export function TaskHistoryTimeline({ taskId }: TaskHistoryTimelineProps) {
           <div className="space-y-6">
             {history.map((entry) => {
               const { icon: Icon, color, bgColor } = getActionIcon(entry.action);
-              const fromStatusName = statusNames[entry.fromStatus] || `Status ${entry.fromStatus}`;
-              const toStatusName = statusNames[entry.toStatus] || `Status ${entry.toStatus}`;
+              const fromStatusKey = `tasks:history.statusNames.${entry.fromStatus}`;
+              const toStatusKey = `tasks:history.statusNames.${entry.toStatus}`;
+              const fromStatusName = t(fromStatusKey) !== fromStatusKey 
+                ? t(fromStatusKey) 
+                : t("tasks:history.statusFallback", { status: entry.fromStatus.toString() });
+              const toStatusName = t(toStatusKey) !== toStatusKey 
+                ? t(toStatusKey) 
+                : t("tasks:history.statusFallback", { status: entry.toStatus.toString() });
               const statusChanged = entry.fromStatus !== entry.toStatus;
               
               return (

@@ -102,6 +102,7 @@ export function RequestExtensionDialog({ open, onOpenChange, taskId }: RequestEx
                   id="extensionReason"
                   rows={3}
                   className="rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+                  placeholder={t("tasks:forms.extension.fields.reasonPlaceholder")}
                   {...form.register("reason")}
                 />
                 {form.formState.errors.reason ? (

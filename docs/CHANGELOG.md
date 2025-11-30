@@ -181,6 +181,94 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.0] - 2025-12-XX
+
+### Added
+
+#### Localization (i18n)
+- **Backend Localization**
+  - Full error message localization support (English and Arabic)
+  - `IUserSettingsService` for language detection from HTTP headers
+  - `ILocalizationService` for localized string retrieval
+  - `LocalizedErrorFactory` for creating localized errors
+  - Resource files: `Resources/en.json` and `Resources/ar.json`
+  - Automatic error message localization in `BaseController`
+  - Support for formatted messages with placeholders
+
+- **Frontend Localization**
+  - Complete UI localization (all forms, buttons, labels, placeholders)
+  - Status names localization in Task History Timeline
+  - All validation messages localized
+  - All toast notifications localized
+  - All dialog titles and descriptions localized
+  - Missing placeholder translations added
+
+#### Progress Management Enhancements
+- **Progress Acceptance/Rejection Workflow**
+  - Manager can accept/reject progress updates (not the whole task)
+  - Progress acceptance only updates progress percentage, task status remains `Accepted`
+  - Progress rejection reverts to last approved progress percentage
+  - Only task creator can accept/reject progress updates
+  - Automatic progress acceptance for `WithProgress` type tasks (no approval required)
+
+- **Employee Progress Updates**
+  - Form pre-fills with last approved progress percentage
+  - Validation prevents entering progress less than last approved
+  - Only allows increasing progress percentage
+  - Backend validation ensures progress is not decreased
+
+#### Error Handling Improvements
+- **Consolidated Error Collection**
+  - Refactored all command handlers to collect all validation errors before single check
+  - Removed multiple early return error checks
+  - Improved code readability and maintainability
+  - Single error check right before database operations
+
+- **Repository Pattern Adherence**
+  - Moved data access logic from handlers to repositories
+  - Added `GetLastAcceptedProgressAsync` to `ITaskEfCommandRepository`
+  - Removed direct `DbContext` usage in handlers
+
+#### Task History
+- **History Logging**
+  - Task cancellation now logged in Task History
+  - All status changes properly recorded
+
+### Changed
+
+- **Error Handling Pattern**
+  - All command handlers now follow consistent error collection pattern
+  - Errors collected in `List<Error>` before single validation check
+  - Improved error handling consistency across all handlers
+
+- **Progress History Display**
+  - `WithProgress` type tasks automatically mark progress as `Accepted` (not `Pending`)
+  - Progress history correctly displays status based on task type
+
+- **HATEOAS Links**
+  - Manager view for `UnderReview` status with `WithAcceptedProgress` type shows correct links
+  - Only `accept-progress`, `reject-progress`, and `cancel` links shown (not `accept`/`reject` task)
+
+### Fixed
+
+- **Localization Issues**
+  - Fixed missing placeholder translations in forms
+  - Fixed hardcoded English text in Task History Timeline
+  - Fixed hardcoded validation messages
+  - Fixed missing placeholders in dialogs
+
+- **Progress Management**
+  - Fixed progress acceptance affecting overall task status incorrectly
+  - Fixed progress rejection not reverting to last approved progress
+  - Fixed employee progress update allowing decreases
+
+- **UI Issues**
+  - Fixed buttons not showing in manager view for progress acceptance/rejection
+  - Fixed translation keys not resolving correctly
+  - Fixed status comparisons (string vs numeric)
+
+---
+
 ## [Unreleased]
 
 ### Planned Features
@@ -209,6 +297,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History
 
+- **1.1.0** (2025-12-XX): Localization support, progress management enhancements, error handling improvements
 - **1.0.0** (2024-01-15): Initial release with core task management features
 
 ---

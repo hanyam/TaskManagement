@@ -52,6 +52,7 @@
       "reject": "Reject task",
       "markCompleted": "Mark completed",
       "requestInfo": "Request information",
+      "requestInfoPlaceholder": "Enter your request for more information...",
       "updateProgress": "Update progress",
       "requestExtension": "Request extension",
       "approveExtension": "Approve extension",
@@ -88,7 +89,8 @@
       "title": "Assign task",
       "description": "Select one or more users to own the task.",
       "fields": {
-        "userIds": "Assignees"
+        "userIds": "Assignees",
+        "userIdsPlaceholder": "Enter user IDs separated by commas (e.g., guid-1, guid-2)"
       },
       "success": "Task assignment updated."
     },
@@ -115,7 +117,8 @@
       "title": "Request deadline extension",
       "fields": {
         "requestedDueDate": "Requested due date",
-        "reason": "Reason"
+        "reason": "Reason",
+        "reasonPlaceholder": "Enter the reason for requesting an extension..."
       },
       "success": "Deadline extension requested."
     },
@@ -154,7 +157,8 @@
       "description": "Mark this task as completed. You can optionally add a comment that will be recorded in the task history.",
       "fields": {
         "comment": "Comment (optional)",
-        "commentPlaceholder": "Add a comment about the completion..."
+        "commentPlaceholder": "Add a comment about the completion...",
+        "commentMaxLength": "Comment cannot exceed 1000 characters"
       },
       "submit": "Mark as Complete",
       "success": "Task marked as completed successfully."
@@ -164,7 +168,19 @@
     "title": "Task History",
     "description": "Complete timeline of all status changes and actions performed on this task.",
     "errorLoading": "Failed to load task history.",
-    "noHistory": "No history available for this task."
+    "noHistory": "No history available for this task.",
+    "statusNames": {
+      "0": "Created",
+      "1": "Assigned",
+      "2": "Under Review",
+      "3": "Accepted",
+      "4": "Rejected",
+      "5": "Completed",
+      "6": "Cancelled",
+      "7": "Pending Manager Review",
+      "8": "Rejected By Manager"
+    },
+    "statusFallback": "Status {status}"
   },
   "attachments": {
     "title": "Attachments",

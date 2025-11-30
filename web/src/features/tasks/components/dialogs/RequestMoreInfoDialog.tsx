@@ -71,6 +71,7 @@ export function RequestMoreInfoDialog({ open, onOpenChange, taskId }: RequestMor
                   id="requestMessage"
                   rows={4}
                   className="rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+                  placeholder={t("tasks:details.actions.requestInfoPlaceholder")}
                   {...form.register("requestMessage")}
                 />
                 {form.formState.errors.requestMessage ? (

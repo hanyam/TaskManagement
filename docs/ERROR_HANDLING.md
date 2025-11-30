@@ -1,7 +1,7 @@
 # Task Management API - Error Handling Documentation
 
-**Version:** 1.0  
-**Last Updated:** 2024-01-15
+**Version:** 2.0  
+**Last Updated:** December 2025
 
 ## Table of Contents
 
@@ -25,22 +25,31 @@ public class Error
     public string Code { get; }
     public string Message { get; }
     public string? Field { get; }
+    public string? MessageKey { get; } // Localization key
 }
 ```
 
 **Properties:**
 - `Code`: Error code identifier (e.g., "NOT_FOUND", "VALIDATION_ERROR")
-- `Message`: Human-readable error message
+- `Message`: Human-readable error message (localized)
 - `Field`: Optional field name for validation errors
+- `MessageKey`: Optional localization key for error message
 
-**Factory Methods:**
-- `Error.Create(code, message, field)`: Create custom error
-- `Error.NotFound(resource, field)`: Resource not found
-- `Error.Validation(message, field)`: Validation error
-- `Error.Unauthorized(message)`: Unauthorized access
-- `Error.Forbidden(message)`: Forbidden access
-- `Error.Conflict(message, field)`: Business rule conflict
-- `Error.Internal(message)`: Internal server error
+**Factory Methods (with localization support):**
+- `Error.Create(code, message, field, messageKey?)`: Create custom error
+- `Error.NotFound(resource, field, messageKey?)`: Resource not found
+- `Error.Validation(message, field, messageKey?)`: Validation error
+- `Error.Unauthorized(message, messageKey?)`: Unauthorized access
+- `Error.Forbidden(message, messageKey?)`: Forbidden access
+- `Error.Conflict(message, field, messageKey?)`: Business rule conflict
+- `Error.Internal(message, messageKey?)`: Internal server error
+
+**Localization:**
+- All error messages are automatically localized based on user's language preference
+- Language detected from HTTP headers: `X-Locale` or `Accept-Language`
+- Default language: English (`en`)
+- Supported languages: English (`en`), Arabic (`ar`)
+- Localization handled in `BaseController.LocalizeError()` method
 
 ### Result Pattern Usage
 
@@ -256,22 +265,32 @@ public class ApiResponse<T>
 
 **Location:** `src/TaskManagement.Domain/Errors/Tasks/TaskErrors.cs`
 
-**Error Definitions:**
+**Error Definitions (with localization):**
 ```csharp
 public static class TaskErrors
 {
     // Not found errors
-    public static Error NotFound => Error.NotFound("Task", "Id");
-    public static Error NotFoundById(Guid id) => Error.NotFound($"Task with ID '{id}'", "Id");
-    public static Error AssignedUserNotFound => Error.NotFound("Assigned user", "AssignedUserId");
+    public static Error NotFound => Error.NotFound("Task", "Id", "Errors.Tasks.NotFound");
+    public static Error NotFoundById(Guid taskId) => 
+        Error.NotFound($"Task with ID '{taskId}' not found", "Id", "Errors.Tasks.NotFoundById");
+    public static Error AssignedUserNotFound => 
+        Error.NotFound("Assigned user", "AssignedUserId", "Errors.Tasks.AssignedUserNotFound");
     
     // Validation errors
-    public static Error TitleRequired => Error.Validation("Title is required", "Title");
-    public static Error DueDateInPast => Error.Validation("Due date cannot be in the past", "DueDate");
+    public static Error TitleRequired => 
+        Error.Validation("Title is required", "Title", "Errors.Tasks.TitleRequired");
+    public static Error DueDateInPast => 
+        Error.Validation("Due date cannot be in the past", "DueDate", "Errors.Tasks.DueDateInPast");
+    public static Error ProgressMinNotMet => 
+        Error.Validation("Progress must be at least {0}% (last approved progress)", "ProgressPercentage", "Errors.Tasks.ProgressMinNotMet");
     
     // Business logic errors
-    public static Error TaskAlreadyCompleted => Error.Conflict("Task is already completed", "Status");
-    public static Error CannotUpdateCompletedTask => Error.Validation("Cannot update a completed task", "Status");
+    public static Error TaskAlreadyCompleted => 
+        Error.Conflict("Task is already completed", "Status", "Errors.Tasks.TaskAlreadyCompleted");
+    public static Error CannotUpdateCompletedTask => 
+        Error.Validation("Cannot update a completed task", "Status", "Errors.Tasks.CannotUpdateCompletedTask");
+    public static Error OnlyCreatorCanAcceptProgress => 
+        Error.Forbidden("Only the task creator can accept progress updates", "Errors.Tasks.OnlyCreatorCanAcceptProgress");
 }
 ```
 
@@ -279,6 +298,25 @@ public static class TaskErrors
 ```csharp
 return Result<TaskDto>.Failure(TaskErrors.NotFound);
 return Result<TaskDto>.Failure(TaskErrors.TitleRequired);
+return Result<TaskDto>.Failure(TaskErrors.NotFoundById(taskId));
+```
+
+**Localization Resource Files:**
+- Location: `src/TaskManagement.Application/Resources/`
+- Files: `en.json`, `ar.json`
+- Example:
+```json
+{
+  "Errors": {
+    "Tasks": {
+      "NotFound": "Task not found",
+      "NotFoundById": "Task with ID '{0}' not found",
+      "TitleRequired": "Title is required",
+      "OnlyCreatorCanAcceptProgress": "Only the task creator can accept progress updates",
+      "ProgressMinNotMet": "Progress must be at least {0}% (last approved progress). You can only increase the progress."
+    }
+  }
+}
 ```
 
 ### UserErrors Class
@@ -602,9 +640,60 @@ Trace ID: 0HMQ8VQJQJQJQ
 
 ---
 
+## Error Localization
+
+### How It Works
+
+1. **Error Creation**: Errors are created with a `MessageKey` parameter
+2. **Language Detection**: `IUserSettingsService` detects language from HTTP headers
+3. **Localization**: `BaseController.LocalizeError()` localizes error messages before sending response
+4. **Resource Files**: Localized strings stored in `Resources/en.json` and `Resources/ar.json`
+
+### Example Flow
+
+```csharp
+// Handler creates error with message key
+var error = Error.Validation(
+    "Progress must be at least 50%", 
+    "ProgressPercentage", 
+    "Errors.Tasks.ProgressMinNotMet"
+);
+
+// BaseController localizes the error
+var localizedMessage = _localizationService.GetString(
+    error.MessageKey, 
+    error.Message, 
+    minProgress
+);
+
+// Response sent with localized message
+return BadRequest(ApiResponse<T>.ErrorResponse(localizedMessage, ...));
+```
+
+### HTTP Headers
+
+**Request Headers:**
+- `X-Locale`: Primary language preference (e.g., `en`, `ar`)
+- `Accept-Language`: Fallback language preference (e.g., `en-US`, `ar-SA`)
+
+**Response:**
+- Error messages are automatically localized based on request headers
+- Default language: English (`en`)
+
+### Best Practices
+
+1. **Always provide MessageKey**: Use message keys for all user-facing errors
+2. **Use placeholders**: For dynamic values, use format placeholders (e.g., `{0}`, `{min}`)
+3. **Consistent naming**: Follow `Errors.{Entity}.{ErrorType}` pattern
+4. **Update both languages**: Always add translations to both `en.json` and `ar.json`
+5. **Test localization**: Verify errors display correctly in both languages
+
+---
+
 ## See Also
 
 - [API Reference](API_REFERENCE.md) - Error response examples
 - [Architecture Documentation](ARCHITECTURE.md) - Result pattern usage
 - [Domain Model](DOMAIN_MODEL.md) - Entity error handling
+- [Technical Guidelines](SOLUTION_TECHNICAL_GUIDELINES.md) - Internationalization section
 

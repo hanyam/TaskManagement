@@ -1018,11 +1018,69 @@ var role = User.FindFirst(ClaimTypes.Role)?.Value;
 
 ## Internationalization
 
-### Backend
+### Backend Localization
 
-**No i18n** - API returns English error messages. Frontend handles translation.
+**Localized Error Messages:**
+- All error messages are localized based on user's language preference
+- Language detection via HTTP headers: `X-Locale` or `Accept-Language`
+- Default language: English (`en`)
+- Supported languages: English (`en`), Arabic (`ar`)
 
-### Frontend
+**Services:**
+- `IUserSettingsService`: Retrieves user language preference from HTTP headers
+- `ILocalizationService`: Provides localized strings from resource files
+- `LocalizedErrorFactory`: Creates localized error instances
+
+**Error Localization:**
+```csharp
+// Error factory methods now accept optional messageKey parameter
+Error.NotFound("Task not found", "Id", "Errors.Tasks.NotFoundById")
+Error.Validation("Title is required", "Title", "Errors.Tasks.TitleRequired")
+Error.Forbidden("Insufficient permissions", "Errors.Tasks.OnlyCreatorCanAcceptProgress")
+```
+
+**Resource Files:**
+- Location: `src/TaskManagement.Application/Resources/`
+- Files: `en.json`, `ar.json`
+- Structure: Nested JSON with error keys
+
+**Example Resource File:**
+```json
+{
+  "Errors": {
+    "Tasks": {
+      "NotFoundById": "Task with ID '{0}' not found",
+      "TitleRequired": "Title is required",
+      "OnlyCreatorCanAcceptProgress": "Only the task creator can accept progress updates"
+    }
+  }
+}
+```
+
+**BaseController Localization:**
+```csharp
+public class BaseController : ControllerBase
+{
+    private readonly ILocalizationService _localizationService;
+    
+    protected string LocalizeError(Error error)
+    {
+        if (string.IsNullOrEmpty(error.MessageKey))
+            return error.Message;
+            
+        var localized = _localizationService.GetString(error.MessageKey, error.Message);
+        // Handles formatted messages with placeholders
+        return localized;
+    }
+}
+```
+
+**HTTP Headers:**
+- `X-Locale`: Primary language preference (e.g., `en`, `ar`)
+- `Accept-Language`: Fallback language preference (e.g., `en-US`, `ar-SA`)
+- `X-Locale-Dir`: Text direction (`ltr` or `rtl`)
+
+### Frontend Localization
 
 **Configuration:**
 ```typescript
@@ -1045,6 +1103,17 @@ const { t } = useTranslation(["tasks", "common"]);
 <Button>{t("common:actions.save")}</Button>
 ```
 
+**API Client Integration:**
+```typescript
+// Automatically sends locale headers with all requests
+const locale = useCurrentLocale();
+apiClient.request({
+  url: "/api/tasks",
+  method: "GET",
+  locale: locale // Sets X-Locale, Accept-Language, X-Locale-Dir headers
+});
+```
+
 **RTL Support:**
 - `I18nProvider` sets `<html dir={locale === "ar" ? "rtl" : "ltr"}>`
 - Use Tailwind logical utilities (`start`, `end`, `ms`, `me`)
@@ -1055,6 +1124,21 @@ const { t } = useTranslation(["tasks", "common"]);
 - **DatePicker** (`src/ui/components/DatePicker.tsx`): Beautiful calendar component using `react-day-picker` with RTL and i18n support. Use with React Hook Form `Controller` for form integration.
 - **LocaleSwitcher** (`src/core/routing/LocaleSwitcher.tsx`): Button component showing opposite language indicator ("ع" for English, "en" for Arabic) for quick locale switching.
 - All select dropdowns have automatic RTL arrow positioning via CSS.
+
+**Translation Keys Structure:**
+- Namespace-based: `tasks:forms.create.title`
+- Nested structure: `tasks:forms.progress.fields.progressPercentage`
+- ICU formatting: `tasks:list.summary` with `{start}`, `{end}`, `{total}` placeholders
+- Pluralization: `tasks:attachments.upload.selectedFiles` with `{count, plural, ...}`
+
+**Complete Localization Coverage:**
+- All form labels and placeholders
+- All button labels and actions
+- All error messages (from backend and frontend validation)
+- All status names and descriptions
+- All table headers and metadata
+- All toast notifications
+- All dialog titles and descriptions
 
 ---
 

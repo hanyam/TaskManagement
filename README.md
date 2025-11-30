@@ -484,6 +484,8 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 Comprehensive documentation is available in the `docs/` directory:
 
 - **[Technical Guidelines](docs/SOLUTION_TECHNICAL_GUIDELINES.md)** - Comprehensive technical standards, patterns, and conventions 🆕
+- **[Localization Guide](docs/LOCALIZATION.md)** - Complete i18n documentation (backend and frontend) 🆕
+- **[Task Actions by Role](docs/TASK_ACTIONS_BY_ROLE.md)** - Complete list of all task actions available to Employees and Managers 🆕
 - **[Architecture Documentation](docs/ARCHITECTURE.md)** - System architecture and design patterns
 - **[Domain Model](docs/DOMAIN_MODEL.md)** - Entity relationships and business rules
 - **[API Reference](docs/API_REFERENCE.md)** - Complete API endpoint documentation
