@@ -6,6 +6,7 @@ using TaskManagement.Domain.Entities;
 using TaskManagement.Domain.Errors.Tasks;
 using TaskManagement.Infrastructure.Data;
 using Task = TaskManagement.Domain.Entities.Task;
+using TaskStatus = TaskManagement.Domain.Entities.TaskStatus;
 
 namespace TaskManagement.Application.Tasks.Commands.MarkTaskCompleted;
 
@@ -35,14 +36,31 @@ public class MarkTaskCompletedCommandHandler(
         // Mark task as completed by employee (moves to PendingManagerReview) - only if task exists
         if (task != null)
         {
-            try
+            // Check if task is already accepted by manager (terminal state - no more actions allowed)
+            var isAcceptedByManager = task.Status == TaskStatus.Accepted && task.ManagerRating.HasValue;
+            if (isAcceptedByManager)
             {
-                task.MarkCompletedByEmployee();
-                task.SetUpdatedBy(request.CompletedById.ToString());
+                errors.Add(TaskErrors.TaskAlreadyAcceptedByManager);
             }
-            catch (Exception ex)
+            
+            // Check if task is rejected by manager (terminal state - no more actions allowed)
+            if (task.Status == TaskStatus.RejectedByManager)
             {
-                errors.Add(Error.Validation(ex.Message, "Status"));
+                errors.Add(TaskErrors.TaskRejectedByManager);
+            }
+            
+            // Only proceed if no errors
+            if (!errors.Any())
+            {
+                try
+                {
+                    task.MarkCompletedByEmployee();
+                    task.SetUpdatedBy(request.CompletedById.ToString());
+                }
+                catch (Exception ex)
+                {
+                    errors.Add(Error.Validation(ex.Message, "Status"));
+                }
             }
         }
 

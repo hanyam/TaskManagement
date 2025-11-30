@@ -27,6 +27,8 @@ public static class TaskErrors
     public static Error CannotAcceptPassedDueDateTask => Error.Validation("Cannot accept a passed due date task", "Status");
     public static Error CannotRejectPassedDueDateTask => Error.Validation("Cannot reject a passed due date task", "Status");
     public static Error TaskAlreadyCompleted => Error.Conflict("Task is already completed", "Status");
+    public static Error TaskAlreadyAcceptedByManager => Error.Conflict("Task has already been accepted by manager and cannot be modified", "Status");
+    public static Error TaskRejectedByManager => Error.Conflict("Task has been rejected by manager and cannot be modified", "Status");
     public static Error TaskNotAssigned => Error.Validation("Task must be assigned to a user", "AssignedUserId");
 
     // Task assignment errors

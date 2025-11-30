@@ -172,27 +172,34 @@ public class TaskActionService : ITaskActionService
                 break;
 
             case TaskStatus.Accepted:
-                // Assigned user can update progress
-                if (isAssignedUser &&
-                    (task.Type == TaskType.WithProgress || task.Type == TaskType.WithAcceptedProgress))
-                    links.Add(new ApiActionLink
-                    {
-                        Rel = "update-progress",
-                        Href = $"/tasks/{task.Id}/update-progress",
-                        Method = "POST"
-                    });
+                // Check if task is in "Accepted by Manager" state (Accepted status with ManagerRating set)
+                // If accepted by manager, this is a terminal state - no more actions allowed
+                var isAcceptedByManager = task.ManagerRating.HasValue;
+                
+                if (!isAcceptedByManager)
+                {
+                    // Assigned user can update progress (only if not accepted by manager)
+                    if (isAssignedUser &&
+                        (task.Type == TaskType.WithProgress || task.Type == TaskType.WithAcceptedProgress))
+                        links.Add(new ApiActionLink
+                        {
+                            Rel = "update-progress",
+                            Href = $"/tasks/{task.Id}/update-progress",
+                            Method = "POST"
+                        });
 
-                // Assigned user can mark as completed
-                if (isAssignedUser)
-                    links.Add(new ApiActionLink
-                    {
-                        Rel = "mark-completed",
-                        Href = $"/tasks/{task.Id}/mark-completed",
-                        Method = "POST"
-                    });
+                    // Assigned user can mark as completed (only if not accepted by manager)
+                    if (isAssignedUser)
+                        links.Add(new ApiActionLink
+                        {
+                            Rel = "mark-completed",
+                            Href = $"/tasks/{task.Id}/mark-completed",
+                            Method = "POST"
+                        });
+                }
 
-                // Managers/Admins can cancel
-                if (canCancel)
+                // Managers/Admins can cancel (only if not accepted by manager)
+                if (canCancel && !isAcceptedByManager)
                     links.Add(new ApiActionLink
                     {
                         Rel = "cancel",

@@ -92,13 +92,17 @@ public class DeleteTaskAttachmentCommandHandler(
                     errors.Add(TaskErrors.UnauthorizedFileAccess);
                 }
                 
+                // Employees can delete their own attachments when task is Assigned, Accepted (employee accepted, no ManagerRating), or UnderReview.
                 // Employees cannot delete attachments once the task is pending manager review, completed, or accepted by manager
                 // Check if task is in "Accepted by Manager" state (Accepted status with ManagerRating set)
                 var isAcceptedByManager = task.Status == Domain.Entities.TaskStatus.Accepted && task.ManagerRating.HasValue;
                 
-                if (task.Status == Domain.Entities.TaskStatus.PendingManagerReview ||
-                    task.Status == Domain.Entities.TaskStatus.Completed ||
-                    isAcceptedByManager)
+                // Allow deletion in: Assigned, Accepted (employee accepted, no ManagerRating), UnderReview
+                var canDelete = task.Status == Domain.Entities.TaskStatus.Assigned ||
+                                (task.Status == Domain.Entities.TaskStatus.Accepted && !isAcceptedByManager) ||
+                                task.Status == Domain.Entities.TaskStatus.UnderReview;
+                
+                if (!canDelete)
                 {
                     _logger.LogWarning(
                         "Employee {UserId} attempted to delete attachment {AttachmentId} for task {TaskId} in status {Status} (AcceptedByManager: {AcceptedByManager})",

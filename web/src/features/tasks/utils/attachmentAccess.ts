@@ -46,23 +46,25 @@ export function canViewAttachment(
   }
 
   // Assigned users (employees, not task creators):
-  // Manager-uploaded files: visible if task is Accepted (employee accepted) or later, but NOT in Created status
+  // Manager-uploaded files: visible if task is Assigned, Accepted (employee accepted) or later, but NOT in Created status
   if (attachmentType === "ManagerUploaded") {
     return (
       taskStatus !== "Created" &&
-      (taskStatus === "Accepted" ||
+      (taskStatus === "Assigned" ||
+      taskStatus === "Accepted" ||
       taskStatus === "UnderReview" ||
       taskStatus === "PendingManagerReview" ||
         taskStatus === "Completed")
     );
   }
 
-  // Employee-uploaded files: visible if task is Accepted (employee accepted, no ManagerRating) or later
-  // Employees should be able to see their own uploaded attachments immediately after uploading (Accepted status without ManagerRating)
+  // Employee-uploaded files: visible if task is Assigned, Accepted (employee accepted, no ManagerRating) or later
+  // Employees should be able to see their own uploaded attachments in Assigned status and after accepting (Accepted status without ManagerRating)
   if (attachmentType === "EmployeeUploaded") {
-    // Employee can see their own attachments in Accepted (employee accepted), UnderReview, PendingManagerReview, or Completed
+    // Employee can see their own attachments in Assigned, Accepted (employee accepted), UnderReview, PendingManagerReview, or Completed
     // Also visible in Accepted by Manager state
     return (
+      taskStatus === "Assigned" ||
       (taskStatus === "Accepted" && !isAcceptedByManager) ||
       taskStatus === "UnderReview" ||
       taskStatus === "PendingManagerReview" ||
@@ -102,16 +104,16 @@ export function canUploadAttachment(task: TaskDto, userRole: string): boolean {
     return taskStatus === "Created" || taskStatus === "Assigned";
   }
 
-  // Employees (assigned users, not creators) can upload attachments ONLY after they accept the task and while the task is still in progress.
-  // Allowed statuses: Accepted (employee accepted, no ManagerRating), UnderReview.
-  // NOT allowed: Created, Assigned (must accept first - this is the key requirement), PendingManagerReview, Completed, Cancelled, RejectedByManager, Accepted by Manager.
-  // Explicitly exclude Assigned status - employee must accept the task first
-  if (taskStatus === "Assigned" || taskStatus === "Created") {
+  // Employees (assigned users, not creators) can upload attachments when task is Assigned, Accepted (employee accepted, no ManagerRating), or UnderReview.
+  // Allowed statuses: Assigned, Accepted (employee accepted, no ManagerRating), UnderReview.
+  // NOT allowed: Created, PendingManagerReview, Completed, Cancelled, RejectedByManager, Accepted by Manager.
+  if (taskStatus === "Created") {
     return false;
   }
   
   const isAcceptedByManager = taskStatus === "Accepted" && task.managerRating != null;
   return (
+    taskStatus === "Assigned" ||
     (taskStatus === "Accepted" && !isAcceptedByManager) ||
     taskStatus === "UnderReview"
   );
@@ -196,9 +198,10 @@ export function canDeleteAttachment(
         return false;
       }
       
-      // Check task status - employees can delete in Accepted (employee accepted) or UnderReview
+      // Check task status - employees can delete in Assigned, Accepted (employee accepted) or UnderReview
       const isAcceptedByManager = taskStatus === "Accepted" && task.managerRating != null;
       return (
+        taskStatus === "Assigned" ||
         (taskStatus === "Accepted" && !isAcceptedByManager) ||
         taskStatus === "UnderReview"
       );

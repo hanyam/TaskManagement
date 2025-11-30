@@ -61,10 +61,11 @@ public class GetTaskAttachmentsQueryHandler(
             {
                 // Manager-uploaded files:
                 // - Admins and task creators can always view
-                // - Assigned users (employees) can view when task is Accepted (employee accepted) or later, but NOT in Created status
+                // - Assigned users (employees) can view when task is Assigned, Accepted (employee accepted) or later, but NOT in Created status
                 if (isAdmin || isManager ||
                     (task.Status != Domain.Entities.TaskStatus.Created &&
-                     (task.Status == Domain.Entities.TaskStatus.Accepted ||
+                     (task.Status == Domain.Entities.TaskStatus.Assigned ||
+                      task.Status == Domain.Entities.TaskStatus.Accepted ||
                       task.Status == Domain.Entities.TaskStatus.UnderReview ||
                       task.Status == Domain.Entities.TaskStatus.PendingManagerReview ||
                       task.Status == Domain.Entities.TaskStatus.Completed)))
@@ -77,12 +78,13 @@ public class GetTaskAttachmentsQueryHandler(
                 // Employee-uploaded files:
                 // - Admins can always view
                 // - Task creators can view during review phase (PendingManagerReview) and after manager accepts (Accepted with ManagerRating)
-                // - Assigned users (employees) can view when task is Accepted (employee accepted, no ManagerRating) or later
+                // - Assigned users (employees) can view when task is Assigned, Accepted (employee accepted, no ManagerRating) or later
                 if (isAdmin ||
                     (isManager && (task.Status == Domain.Entities.TaskStatus.PendingManagerReview ||
                                    isAcceptedByManager)) ||
                     (!isManager && !isAdmin &&
-                     ((task.Status == Domain.Entities.TaskStatus.Accepted && !isAcceptedByManager) ||
+                     (task.Status == Domain.Entities.TaskStatus.Assigned ||
+                      (task.Status == Domain.Entities.TaskStatus.Accepted && !isAcceptedByManager) ||
                       task.Status == Domain.Entities.TaskStatus.UnderReview ||
                       task.Status == Domain.Entities.TaskStatus.PendingManagerReview ||
                       task.Status == Domain.Entities.TaskStatus.Completed ||

@@ -62,17 +62,16 @@ public class UploadTaskAttachmentCommandHandler(
         else if (task != null)
         {
             // Additional access control for employees:
-            // Employees can upload attachments ONLY after they accept the task and while the task is still in progress.
-            // Allowed statuses: Accepted (employee accepted, no ManagerRating), UnderReview.
-            // NOT allowed: Created, Assigned (must accept first), PendingManagerReview (marked complete), Completed, Cancelled, RejectedByManager, Accepted by Manager (has ManagerRating).
+            // Employees can upload attachments when task is Assigned, Accepted (employee accepted, no ManagerRating), or UnderReview.
+            // Allowed statuses: Assigned, Accepted (employee accepted, no ManagerRating), UnderReview.
+            // NOT allowed: Created, PendingManagerReview (marked complete), Completed, Cancelled, RejectedByManager, Accepted by Manager (has ManagerRating).
             if (user.Role == UserRole.Employee)
             {
-                // Explicitly exclude Assigned and Created statuses - employee must accept the task first
-                if (task.Status == Domain.Entities.TaskStatus.Assigned || 
-                    task.Status == Domain.Entities.TaskStatus.Created)
+                // Explicitly exclude Created status
+                if (task.Status == Domain.Entities.TaskStatus.Created)
                 {
                     _logger.LogWarning(
-                        "Employee {UserId} attempted to upload attachment for task {TaskId} in status {Status} - task must be accepted first",
+                        "Employee {UserId} attempted to upload attachment for task {TaskId} in status {Status}",
                         request.UploadedById,
                         request.TaskId,
                         task.Status);
@@ -83,8 +82,9 @@ public class UploadTaskAttachmentCommandHandler(
                     // Check if task is in "Accepted by Manager" state (Accepted status with ManagerRating set)
                     var isAcceptedByManager = task.Status == Domain.Entities.TaskStatus.Accepted && task.ManagerRating.HasValue;
                     
-                    // Allow only if: Accepted (employee accepted, no ManagerRating) or UnderReview
-                    var canUpload = (task.Status == Domain.Entities.TaskStatus.Accepted && !isAcceptedByManager) ||
+                    // Allow if: Assigned, Accepted (employee accepted, no ManagerRating) or UnderReview
+                    var canUpload = task.Status == Domain.Entities.TaskStatus.Assigned ||
+                                    (task.Status == Domain.Entities.TaskStatus.Accepted && !isAcceptedByManager) ||
                                     task.Status == Domain.Entities.TaskStatus.UnderReview;
                     
                     if (!canUpload)
