@@ -22,6 +22,7 @@ import { TaskHistoryTimeline } from "@/features/tasks/components/TaskHistoryTime
 import { UpdateProgressDialog } from "@/features/tasks/components/dialogs/UpdateProgressDialog";
 import { RequestExtensionDialog } from "@/features/tasks/components/dialogs/RequestExtensionDialog";
 import { RequestMoreInfoDialog } from "@/features/tasks/components/dialogs/RequestMoreInfoDialog";
+import { MarkTaskCompleteDialog } from "@/features/tasks/components/MarkTaskCompleteDialog";
 import { useTaskDetails } from "@/features/tasks/hooks/useTaskDetails";
 import { getTaskPriorityString } from "@/features/tasks/value-objects";
 import { AttachmentTypeEnum } from "@/features/tasks/value-objects";
@@ -137,6 +138,7 @@ export function TaskDetailsViewEmployee({ taskId }: TaskDetailsViewEmployeeProps
   const [isProgressOpen, setProgressOpen] = useState(false);
   const [isExtensionOpen, setExtensionOpen] = useState(false);
   const [isMoreInfoOpen, setMoreInfoOpen] = useState(false);
+  const [isMarkCompleteOpen, setMarkCompleteOpen] = useState(false);
 
   const hasLink = (rel: string) => {
     if (!links || !Array.isArray(links)) {
@@ -244,14 +246,8 @@ export function TaskDetailsViewEmployee({ taskId }: TaskDetailsViewEmployeeProps
     }
   }
 
-  async function handleMarkCompleted() {
-    try {
-      await markCompleteMutation.mutateAsync();
-      toast.success(t("tasks:details.actions.markCompleted"));
-      router.refresh();
-    } catch (error) {
-      displayApiError(error, t("validation:server.INTERNAL_ERROR"));
-    }
+  function handleMarkCompleted() {
+    setMarkCompleteOpen(true);
   }
 
   if (isLoading) {
@@ -478,6 +474,16 @@ export function TaskDetailsViewEmployee({ taskId }: TaskDetailsViewEmployeeProps
       <UpdateProgressDialog open={isProgressOpen} onOpenChange={setProgressOpen} taskId={task.id} />
       <RequestExtensionDialog open={isExtensionOpen} onOpenChange={setExtensionOpen} taskId={task.id} />
       <RequestMoreInfoDialog open={isMoreInfoOpen} onOpenChange={setMoreInfoOpen} taskId={task.id} />
+      <MarkTaskCompleteDialog
+        taskId={task.id}
+        taskTitle={task.title}
+        isOpen={isMarkCompleteOpen}
+        onClose={() => {
+          setMarkCompleteOpen(false);
+          refetch();
+          router.refresh();
+        }}
+      />
     </div>
   );
 }

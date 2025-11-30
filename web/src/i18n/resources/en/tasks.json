@@ -134,6 +134,16 @@
       },
       "success": "Task review submitted successfully.",
       "error": "Failed to submit review. Please try again."
+    },
+    "markComplete": {
+      "title": "Mark Task as Complete",
+      "description": "Mark this task as completed. You can optionally add a comment that will be recorded in the task history.",
+      "fields": {
+        "comment": "Comment (optional)",
+        "commentPlaceholder": "Add a comment about the completion..."
+      },
+      "submit": "Mark as Complete",
+      "success": "Task marked as completed successfully."
     }
   },
   "history": {

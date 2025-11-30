@@ -331,10 +331,11 @@ export function useMarkTaskCompletedMutation(taskId: string) {
   const locale = useCurrentLocale();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async () => {
+    mutationFn: async (payload: { comment?: string | null }) => {
       const { data } = await apiClient.request<TaskDto>({
         path: `/tasks/${taskId}/complete`,
         method: "POST",
+        body: payload,
         locale
       });
       await queryClient.invalidateQueries({ queryKey: taskKeys.detail(taskId) });

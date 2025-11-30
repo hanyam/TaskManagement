@@ -144,7 +144,8 @@ public class TestServiceLocator : IServiceLocator
         if (serviceType == typeof(ICommandHandler<MarkTaskCompletedCommand, TaskDto>) ||
             serviceType == typeof(IRequestHandler<MarkTaskCompletedCommand, TaskDto>))
         {
-            return new MarkTaskCompletedCommandHandler(taskCommandRepository, userQueryRepository, _context);
+            var mockTaskHistoryService = new Moq.Mock<TaskManagement.Domain.Interfaces.ITaskHistoryService>();
+            return new MarkTaskCompletedCommandHandler(taskCommandRepository, userQueryRepository, _context, mockTaskHistoryService.Object);
         }
 
         // Handle query handlers

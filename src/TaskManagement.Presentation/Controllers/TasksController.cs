@@ -597,30 +597,32 @@ public class TasksController(
     }
 
     /// <summary>
-    ///     Marks a task as completed (manager).
+    ///     Marks a task as completed by employee (transitions to PendingManagerReview).
     /// </summary>
     /// <param name="id">The task ID.</param>
+    /// <param name="request">The mark completed request with optional comment.</param>
     /// <returns>Updated task information.</returns>
     [HttpPost("{id}/complete")]
     [SwaggerOperation(
         Summary = "Mark Task as Completed",
-        Description = "Marks a task as completed by a Manager. Changes task status to 'Completed'. This is a manager action to mark a task as finished. For employee-initiated completion, use the employee's mark-completed action which transitions to 'PendingManagerReview'. Returns the updated task with new HATEOAS links."
+        Description = "Marks a task as completed by an employee. Changes task status to 'PendingManagerReview' and records a history entry with optional comment. This action is available to employees when the task is in 'Assigned' or 'Accepted' status. Returns the updated task with new HATEOAS links."
     )]
     [ProducesResponseType(typeof(ApiResponse<TaskDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
-    [Authorize(Roles = Manager)]
+    [Authorize]
     [EnsureUserId]
-    public async Task<IActionResult> MarkTaskCompleted(Guid id)
+    public async Task<IActionResult> MarkTaskCompleted(Guid id, [FromBody] MarkTaskCompletedRequest? request = null)
     {
         var userId = GetRequiredUserId();
 
         var command = new MarkTaskCompletedCommand
         {
             TaskId = id,
-            CompletedById = userId
+            CompletedById = userId,
+            Comment = request?.Comment
         };
 
         var result = await _commandMediator.Send(command);
@@ -733,6 +735,11 @@ public class TasksController(
 /// <summary>
 ///     Request DTO for reviewing a completed task.
 /// </summary>
+public record MarkTaskCompletedRequest
+{
+    public string? Comment { get; init; }
+}
+
 public record ReviewCompletedTaskRequest
 {
     public bool Accepted { get; init; }

@@ -4,6 +4,7 @@ using TaskManagement.Domain.Common;
 using TaskManagement.Domain.DTOs;
 using TaskManagement.Domain.Entities;
 using TaskManagement.Domain.Errors.Tasks;
+using TaskManagement.Domain.Interfaces;
 using TaskManagement.Infrastructure.Data;
 using Task = TaskManagement.Domain.Entities.Task;
 using TaskStatus = TaskManagement.Domain.Entities.TaskStatus;
@@ -11,16 +12,18 @@ using TaskStatus = TaskManagement.Domain.Entities.TaskStatus;
 namespace TaskManagement.Application.Tasks.Commands.MarkTaskCompleted;
 
 /// <summary>
-///     Handler for marking a task as completed (manager).
+///     Handler for marking a task as completed by employee.
 /// </summary>
 public class MarkTaskCompletedCommandHandler(
     TaskEfCommandRepository taskCommandRepository,
     UserDapperRepository userQueryRepository,
-    TaskManagementDbContext context) : ICommandHandler<MarkTaskCompletedCommand, TaskDto>
+    TaskManagementDbContext context,
+    ITaskHistoryService taskHistoryService) : ICommandHandler<MarkTaskCompletedCommand, TaskDto>
 {
     private readonly TaskManagementDbContext _context = context;
     private readonly TaskEfCommandRepository _taskCommandRepository = taskCommandRepository;
     private readonly UserDapperRepository _userQueryRepository = userQueryRepository;
+    private readonly ITaskHistoryService _taskHistoryService = taskHistoryService;
 
     public async Task<Result<TaskDto>> Handle(MarkTaskCompletedCommand request, CancellationToken cancellationToken)
     {
@@ -52,10 +55,25 @@ public class MarkTaskCompletedCommandHandler(
             // Only proceed if no errors
             if (!errors.Any())
             {
+                var previousStatus = task.Status;
                 try
                 {
                     task.MarkCompletedByEmployee();
                     task.SetUpdatedBy(request.CompletedById.ToString());
+                    
+                    // Record history: Task marked as completed
+                    var notes = string.IsNullOrWhiteSpace(request.Comment) 
+                        ? "Task marked as completed" 
+                        : request.Comment;
+                    
+                    await _taskHistoryService.RecordStatusChangeAsync(
+                        task.Id,
+                        previousStatus,
+                        task.Status,
+                        "Marked as Completed",
+                        request.CompletedById,
+                        notes,
+                        cancellationToken);
                 }
                 catch (Exception ex)
                 {
