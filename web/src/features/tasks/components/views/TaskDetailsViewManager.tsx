@@ -2,7 +2,7 @@
 
 import { ArrowPathIcon, CheckIcon, PencilIcon, StarIcon, StopIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
@@ -18,6 +18,7 @@ import { TaskStatusBadge } from "@/features/tasks/components/TaskStatusBadge";
 import { TaskEditForm } from "@/features/tasks/components/TaskEditForm";
 import { TaskMetadata } from "@/features/tasks/components/TaskMetadata";
 import { ReviewCompletedTaskModal } from "@/features/tasks/components/ReviewCompletedTaskModal";
+import { TaskHistoryTimeline } from "@/features/tasks/components/TaskHistoryTimeline";
 import { AssignTaskDialog } from "@/features/tasks/components/dialogs/AssignTaskDialog";
 import { ApproveExtensionDialog } from "@/features/tasks/components/dialogs/ApproveExtensionDialog";
 import { CancelTaskDialog } from "@/features/tasks/components/dialogs/CancelTaskDialog";
@@ -38,10 +39,14 @@ interface TaskDetailsViewManagerProps {
 }
 
 export function TaskDetailsViewManager({ taskId }: TaskDetailsViewManagerProps) {
-  // eslint-disable-next-line no-console
-  console.log("🔴 TaskDetailsViewManager RENDERING", { taskId });
-  debugComponent("TaskDetailsViewManager", "mount", { taskId });
   const { t } = useTranslation(["tasks", "common"]);
+  
+  // Log mount only once using useEffect
+  useEffect(() => {
+    // eslint-disable-next-line no-console
+    console.log("🔴 TaskDetailsViewManager RENDERING", { taskId });
+    debugComponent("TaskDetailsViewManager", "mount", { taskId });
+  }, [taskId]);
   const router = useRouter();
 
   const {
@@ -72,21 +77,42 @@ export function TaskDetailsViewManager({ taskId }: TaskDetailsViewManagerProps) 
     cancelTaskMutation
   } = useTaskDetails(taskId);
 
-  // Debug: Log data when it changes (works for all logged-in users regardless of role)
+  // Track last logged state to avoid duplicate logs
+  const lastDataLogRef = useRef<string>("");
+  const hasLoggedInitialDataRef = useRef<boolean>(false);
+
+  // Debug: Log data only once when task loads, and again only if task/links/attachments actually change
   useEffect(() => {
-    debugGroup("TaskDetailsViewManager - Data", () => {
-      debugLog("Task loaded", { taskId: task?.id, status: task?.status, title: task?.title });
-      debugLog("Links received", {
-        links,
-        linksType: typeof links,
-        linksIsArray: Array.isArray(links),
-        linksLength: links?.length,
-        linkRels: links?.map((l) => l.rel) || []
+    // Skip if still loading or no task
+    if (isLoading || !task) {
+      return;
+    }
+
+    // Create a key from meaningful data (task ID, status, links count, attachments count)
+    const dataKey = `${task.id}-${task.status}-${links?.length || 0}-${attachments?.length || 0}`;
+    
+    // Only log if:
+    // 1. This is the first time we have complete data, OR
+    // 2. The data actually changed (task status, links, or attachments count changed)
+    const shouldLog = !hasLoggedInitialDataRef.current || lastDataLogRef.current !== dataKey;
+    
+    if (shouldLog) {
+      hasLoggedInitialDataRef.current = true;
+      lastDataLogRef.current = dataKey;
+      debugGroup("TaskDetailsViewManager - Data", () => {
+        debugLog("Task loaded", { taskId: task?.id, status: task?.status, title: task?.title });
+        debugLog("Links received", {
+          links,
+          linksType: typeof links,
+          linksIsArray: Array.isArray(links),
+          linksLength: links?.length,
+          linkRels: links?.map((l) => l.rel) || []
+        });
+        debugLog("Attachments", { count: attachments?.length || 0 });
+        debugLog("State", { isLoading, error: error?.message, isMounted, canUpload, userRole });
       });
-      debugLog("Attachments", { count: attachments?.length || 0 });
-      debugLog("State", { isLoading, error: error?.message, isMounted, canUpload, userRole });
-    });
-  }, [task, links, attachments, isLoading, error, isMounted, canUpload, userRole]);
+    }
+  }, [task, task?.id, task?.status, links, links?.length, attachments, attachments?.length, isLoading, error, isMounted, canUpload, userRole]);
 
   const assignMutation = useAssignTaskMutation(taskId);
   const reassignMutation = useReassignTaskMutation(taskId);
@@ -370,6 +396,11 @@ export function TaskDetailsViewManager({ taskId }: TaskDetailsViewManagerProps) 
         </section>
 
         <TaskMetadata task={task} />
+      </div>
+
+      {/* Task History Timeline */}
+      <div className="mt-6">
+        <TaskHistoryTimeline taskId={taskId} />
       </div>
 
       {/* Dialogs */}

@@ -31,35 +31,49 @@ public class UpdateTaskProgressCommandHandler(
         if (task == null)
         {
             errors.Add(TaskErrors.NotFoundById(request.TaskId));
-            return Result<TaskProgressDto>.Failure(errors);
         }
 
         // Validate progress percentage
         if (request.ProgressPercentage < 0 || request.ProgressPercentage > 100)
         {
             errors.Add(Error.Validation("Progress percentage must be between 0 and 100", "ProgressPercentage"));
+        }
+
+        // Check if task type supports progress (only if task exists)
+        if (task != null && task.Type == TaskType.Simple && request.ProgressPercentage > 0)
+        {
+            errors.Add(Error.Validation("Simple tasks cannot have progress tracking", "Type"));
+        }
+
+        if (errors.Any())
+        {
             return Result<TaskProgressDto>.Failure(errors);
         }
 
-        // Check if task type supports progress
-        if (task.Type == TaskType.Simple && request.ProgressPercentage > 0)
+        // At this point, we know task exists (no errors were added for null check)
+        if (task == null)
         {
-            errors.Add(Error.Validation("Simple tasks cannot have progress tracking", "Type"));
-            return Result<TaskProgressDto>.Failure(errors);
+            return Result<TaskProgressDto>.Failure(TaskErrors.NotFoundById(request.TaskId));
         }
 
         // Determine if progress requires acceptance
         var requiresAcceptance = task.Type == TaskType.WithAcceptedProgress;
 
         // Update task progress
-        try
         {
-            task.UpdateProgress(request.ProgressPercentage, requiresAcceptance);
-            task.SetUpdatedBy(request.UpdatedById.ToString());
+            try
+            {
+                task.UpdateProgress(request.ProgressPercentage, requiresAcceptance);
+                task.SetUpdatedBy(request.UpdatedById.ToString());
+            }
+            catch (Exception ex)
+            {
+                errors.Add(Error.Validation(ex.Message, "Progress"));
+            }
         }
-        catch (Exception ex)
+
+        if (errors.Any())
         {
-            errors.Add(Error.Validation(ex.Message, "Progress"));
             return Result<TaskProgressDto>.Failure(errors);
         }
 

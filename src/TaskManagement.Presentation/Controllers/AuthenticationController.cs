@@ -16,8 +16,8 @@ namespace TaskManagement.Presentation.Controllers;
 /// </summary>
 [ApiController]
 [Route("authentication")]
-public class AuthenticationController(ICommandMediator commandMediator, IRequestMediator requestMediator)
-    : BaseController(commandMediator, requestMediator)
+public class AuthenticationController(ICommandMediator commandMediator, IRequestMediator requestMediator, ICurrentUserService currentUserService)
+    : BaseController(commandMediator, requestMediator, currentUserService)
 {
     /// <summary>
     ///     Authenticates a user with Azure AD token and returns a JWT token.

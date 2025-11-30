@@ -117,8 +117,54 @@ export function createApiClient(resolveAuthToken: ResolveAuthTokenFn): ApiClient
             status: response.status,
             ok: response.ok,
             hasData: envelope.data !== undefined,
-            hasLinks: envelope.links !== undefined,
+            hasLinks: (envelope.links?.length ?? 0) > 0,
             linksCount: envelope.links?.length || 0
+          });
+        }
+
+        // Handle 401 Unauthorized - token expired or invalid
+        if (response.status === 401 && config.auth !== false) {
+          // Clear expired session
+          if (typeof window !== "undefined") {
+            const { clearClientAuthSession } = await import("@/core/auth/session.client");
+            clearClientAuthSession();
+
+            // Try to refresh token silently
+            const { attemptSilentTokenRefresh } = await import("@/core/auth/tokenRefresh");
+            const refreshedToken = await attemptSilentTokenRefresh();
+
+            if (refreshedToken) {
+              // Retry the request with the new token (only once)
+              const newHeaders = buildHeaders(method, refreshedToken, config);
+              const retryResponse = await fetch(url, {
+                ...requestInit,
+                headers: newHeaders
+              });
+
+              if (retryResponse.ok) {
+                const retryEnvelope = await parseJson<TResponse>(retryResponse);
+                if (retryEnvelope.success && retryEnvelope.data !== undefined) {
+                  return {
+                    data: retryEnvelope.data,
+                    message: retryEnvelope.message ?? null,
+                    traceId: retryEnvelope.traceId ?? null,
+                    links: retryEnvelope.links ?? undefined
+                  };
+                }
+              }
+            }
+
+            // If retry failed or not applicable, redirect to sign-in
+            if (!window.location.pathname.includes("/sign-in")) {
+              const currentPath = window.location.pathname + window.location.search;
+              window.location.href = `/sign-in?redirect=${encodeURIComponent(currentPath)}`;
+            }
+          }
+
+          throw createApiError({
+            status: response.status,
+            envelope,
+            fallbackMessage: "Authentication required. Please sign in again."
           });
         }
 

@@ -62,27 +62,41 @@ public class UploadTaskAttachmentCommandHandler(
         else if (task != null)
         {
             // Additional access control for employees:
-            // Employees can upload attachments after they accept the task and while the task is still in progress.
+            // Employees can upload attachments ONLY after they accept the task and while the task is still in progress.
             // Allowed statuses: Accepted (employee accepted, no ManagerRating), UnderReview.
-            // NOT allowed: PendingManagerReview (marked complete), Completed, Accepted by Manager (has ManagerRating).
+            // NOT allowed: Created, Assigned (must accept first), PendingManagerReview (marked complete), Completed, Cancelled, RejectedByManager, Accepted by Manager (has ManagerRating).
             if (user.Role == UserRole.Employee)
             {
-                // Check if task is in "Accepted by Manager" state (Accepted status with ManagerRating set)
-                var isAcceptedByManager = task.Status == Domain.Entities.TaskStatus.Accepted && task.ManagerRating.HasValue;
-                
-                // Allow only if: Accepted (employee accepted, no ManagerRating) or UnderReview
-                var canUpload = (task.Status == Domain.Entities.TaskStatus.Accepted && !isAcceptedByManager) ||
-                                task.Status == Domain.Entities.TaskStatus.UnderReview;
-                
-                if (!canUpload)
+                // Explicitly exclude Assigned and Created statuses - employee must accept the task first
+                if (task.Status == Domain.Entities.TaskStatus.Assigned || 
+                    task.Status == Domain.Entities.TaskStatus.Created)
                 {
                     _logger.LogWarning(
-                        "Employee {UserId} attempted to upload attachment for task {TaskId} in invalid status {Status} (AcceptedByManager: {AcceptedByManager})",
+                        "Employee {UserId} attempted to upload attachment for task {TaskId} in status {Status} - task must be accepted first",
                         request.UploadedById,
                         request.TaskId,
-                        task.Status,
-                        isAcceptedByManager);
+                        task.Status);
                     errors.Add(TaskErrors.UnauthorizedFileAccess);
+                }
+                else
+                {
+                    // Check if task is in "Accepted by Manager" state (Accepted status with ManagerRating set)
+                    var isAcceptedByManager = task.Status == Domain.Entities.TaskStatus.Accepted && task.ManagerRating.HasValue;
+                    
+                    // Allow only if: Accepted (employee accepted, no ManagerRating) or UnderReview
+                    var canUpload = (task.Status == Domain.Entities.TaskStatus.Accepted && !isAcceptedByManager) ||
+                                    task.Status == Domain.Entities.TaskStatus.UnderReview;
+                    
+                    if (!canUpload)
+                    {
+                        _logger.LogWarning(
+                            "Employee {UserId} attempted to upload attachment for task {TaskId} in invalid status {Status} (AcceptedByManager: {AcceptedByManager})",
+                            request.UploadedById,
+                            request.TaskId,
+                            task.Status,
+                            isAcceptedByManager);
+                        errors.Add(TaskErrors.UnauthorizedFileAccess);
+                    }
                 }
             }
         }

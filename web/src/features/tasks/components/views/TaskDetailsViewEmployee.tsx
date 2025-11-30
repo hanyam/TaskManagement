@@ -2,7 +2,7 @@
 
 import { ArrowPathIcon, StarIcon } from "@heroicons/react/24/outline";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
@@ -12,11 +12,13 @@ import {
   useAcceptTaskMutation,
   useRejectTaskMutation,
   useMarkTaskCompletedMutation,
+  useDeleteAttachmentMutation,
   downloadAttachment
 } from "@/features/tasks/api/queries";
 import { FileAttachmentList } from "@/features/tasks/components/FileAttachmentList";
 import { TaskStatusBadge } from "@/features/tasks/components/TaskStatusBadge";
 import { TaskMetadata } from "@/features/tasks/components/TaskMetadata";
+import { TaskHistoryTimeline } from "@/features/tasks/components/TaskHistoryTimeline";
 import { UpdateProgressDialog } from "@/features/tasks/components/dialogs/UpdateProgressDialog";
 import { RequestExtensionDialog } from "@/features/tasks/components/dialogs/RequestExtensionDialog";
 import { RequestMoreInfoDialog } from "@/features/tasks/components/dialogs/RequestMoreInfoDialog";
@@ -25,6 +27,8 @@ import { getTaskPriorityString } from "@/features/tasks/value-objects";
 import { AttachmentTypeEnum } from "@/features/tasks/value-objects";
 import { displayApiError } from "@/features/tasks/utils/errorHandling";
 import { formatDate } from "@/features/tasks/utils/dateFormatting";
+import { canDeleteAttachment } from "@/features/tasks/utils/attachmentAccess";
+import { useAuth } from "@/core/auth/AuthProvider";
 import { Button } from "@/ui/components/Button";
 import { FileUpload } from "@/ui/components/FileUpload";
 import { Spinner } from "@/ui/components/Spinner";
@@ -34,13 +38,18 @@ interface TaskDetailsViewEmployeeProps {
 }
 
 export function TaskDetailsViewEmployee({ taskId }: TaskDetailsViewEmployeeProps) {
-  // Direct console.log to verify component is rendering (always shows)
-  // eslint-disable-next-line no-console
-  console.log("🔴 TaskDetailsViewEmployee RENDERING", { taskId });
-  
-  debugComponent("TaskDetailsViewEmployee", "mount", { taskId });
   const { t } = useTranslation(["tasks", "common"]);
   const router = useRouter();
+  const { session } = useAuth();
+  const currentUserId = session?.user?.id || "";
+  const userRole = session?.user?.role || "";
+
+  // Log mount only once using useEffect
+  useEffect(() => {
+    // eslint-disable-next-line no-console
+    console.log("🔴 TaskDetailsViewEmployee RENDERING", { taskId });
+    debugComponent("TaskDetailsViewEmployee", "mount", { taskId });
+  }, [taskId]);
 
   const {
     task,
@@ -57,21 +66,69 @@ export function TaskDetailsViewEmployee({ taskId }: TaskDetailsViewEmployeeProps
     uploadMutation
   } = useTaskDetails(taskId);
 
-  // Debug: Log response structure
+  const deleteAttachmentMutation = useDeleteAttachmentMutation(taskId);
+  const isDeletingRef = useRef<string | null>(null);
+
+  const handleDeleteAttachment = async (attachmentId: string) => {
+    // Prevent duplicate calls for the same attachment
+    if (isDeletingRef.current === attachmentId) {
+      return;
+    }
+    
+    isDeletingRef.current = attachmentId;
+    try {
+      await deleteAttachmentMutation.mutateAsync(attachmentId);
+      toast.success(t("tasks:attachments.actions.deleteSuccess"));
+      await refetchAttachments();
+    } catch (error) {
+      // Only display error once - displayApiError already handles showing the toast
+      displayApiError(error, t("tasks:attachments.actions.deleteError"));
+    } finally {
+      // Clear the ref after a short delay to allow for retries
+      setTimeout(() => {
+        if (isDeletingRef.current === attachmentId) {
+          isDeletingRef.current = null;
+        }
+      }, 1000);
+    }
+  };
+
+  // Track last logged state to avoid duplicate logs
+  const lastDataLogRef = useRef<string>("");
+  const hasLoggedInitialDataRef = useRef<boolean>(false);
+
+  // Debug: Log data only once when task loads, and again only if task/links/attachments actually change
   useEffect(() => {
-    debugGroup("TaskDetailsViewEmployee - Data", () => {
-      debugLog("Task loaded", { taskId: task?.id, status: task?.status, title: task?.title });
-      debugLog("Links received", {
-        links,
-        linksType: typeof links,
-        linksIsArray: Array.isArray(links),
-        linksLength: links?.length,
-        linkRels: links?.map((l) => l.rel) || []
+    // Skip if still loading or no task
+    if (isLoading || !task) {
+      return;
+    }
+
+    // Create a key from meaningful data (task ID, status, links count, attachments count)
+    const dataKey = `${task.id}-${task.status}-${links?.length || 0}-${attachments?.length || 0}`;
+
+    // Only log if:
+    // 1. This is the first time we have complete data, OR
+    // 2. The data actually changed (task status, links, or attachments count changed)
+    const shouldLog = !hasLoggedInitialDataRef.current || lastDataLogRef.current !== dataKey;
+
+    if (shouldLog) {
+      hasLoggedInitialDataRef.current = true;
+      lastDataLogRef.current = dataKey;
+      debugGroup("TaskDetailsViewEmployee - Data", () => {
+        debugLog("Task loaded", { taskId: task?.id, status: task?.status, title: task?.title });
+        debugLog("Links received", {
+          links,
+          linksType: typeof links,
+          linksIsArray: Array.isArray(links),
+          linksLength: links?.length,
+          linkRels: links?.map((l) => l.rel) || []
+        });
+        debugLog("Attachments", { count: attachments?.length || 0 });
+        debugLog("State", { isLoading, error: error?.message, isMounted, canUpload });
       });
-      debugLog("Attachments", { count: attachments?.length || 0 });
-      debugLog("State", { isLoading, error: error?.message, isMounted, canUpload });
-    });
-  }, [task, links, attachments, isLoading, error, isMounted, canUpload]);
+    }
+  }, [task, task?.id, task?.status, links, links?.length, attachments, attachments?.length, isLoading, error, isMounted, canUpload]);
 
   const acceptMutation = useAcceptTaskMutation(taskId);
   const rejectMutation = useRejectTaskMutation(taskId);
@@ -98,41 +155,51 @@ export function TaskDetailsViewEmployee({ taskId }: TaskDetailsViewEmployeeProps
   const isFinalReviewedState = task?.status === 3 && task?.managerRating != null;
   const isCancelled = task?.status === 8;
 
-  // Immediate debug log to verify component is rendering
-  // eslint-disable-next-line no-console
-  console.log("🔴 TaskDetailsViewEmployee render check", {
-    taskId,
-    hasTask: !!task,
-    hasLinks: !!links,
-    linksCount: links?.length || 0,
-    taskStatus: task?.status,
-    isCancelled
-  });
-  
-  debugLog("TaskDetailsViewEmployee render check", {
-    taskId,
-    hasTask: !!task,
-    hasLinks: !!links,
-    linksCount: links?.length || 0,
-    taskStatus: task?.status,
-    isCancelled
-  });
+  // Track last logged state to avoid duplicate logs
+  const lastRenderCheckRef = useRef<string>("");
+  const lastButtonCheckRef = useRef<string>("");
 
-  // Debug: Log mark-completed button state whenever relevant data changes
+  // Debug: Log render check only when meaningful data changes
   useEffect(() => {
-    debugLog("🔍 Mark Completed Button useEffect triggered", {
-      hasTask: !!task,
-      hasLinks: !!links,
-      linksIsArray: Array.isArray(links),
-      taskId: task?.id,
-      taskStatus: task?.status,
-      linksCount: links?.length || 0
-    });
+    if (!task) {
+      return;
+    }
 
-    if (task && links && Array.isArray(links)) {
-      const hasMarkCompletedLink = links.some((link) => link.rel === "mark-completed");
-      const shouldShow = hasMarkCompletedLink && !isCancelled;
-      
+    const checkKey = `${taskId}-${task.status}-${links?.length || 0}-${isCancelled}`;
+    if (lastRenderCheckRef.current !== checkKey) {
+      lastRenderCheckRef.current = checkKey;
+      // eslint-disable-next-line no-console
+      console.log("🔴 TaskDetailsViewEmployee render check", {
+        taskId,
+        hasTask: !!task,
+        hasLinks: !!links,
+        linksCount: links?.length || 0,
+        taskStatus: task?.status,
+        isCancelled
+      });
+      debugLog("TaskDetailsViewEmployee render check", {
+        taskId,
+        hasTask: !!task,
+        hasLinks: !!links,
+        linksCount: links?.length || 0,
+        taskStatus: task?.status,
+        isCancelled
+      });
+    }
+  }, [taskId, task, task?.status, links, links?.length, isCancelled]);
+
+  // Debug: Log mark-completed button state only when it actually changes
+  useEffect(() => {
+    if (!task || !links || !Array.isArray(links)) {
+      return;
+    }
+
+    const hasMarkCompletedLink = links.some((link) => link.rel === "mark-completed");
+    const shouldShow = hasMarkCompletedLink && !isCancelled;
+    const buttonCheckKey = `${taskId}-${hasMarkCompletedLink}-${isCancelled}-${shouldShow}`;
+
+    if (lastButtonCheckRef.current !== buttonCheckKey) {
+      lastButtonCheckRef.current = buttonCheckKey;
       debugGroup("Mark Completed Button Render Check", () => {
         debugLog("Link Check Result", {
           hasMarkCompletedLink,
@@ -140,7 +207,6 @@ export function TaskDetailsViewEmployee({ taskId }: TaskDetailsViewEmployeeProps
           shouldShow,
           taskStatus: task?.status,
           managerRating: task?.managerRating,
-          linksArray: links,
           linksCount: links?.length || 0,
           markCompletedLink: links.find((l) => l.rel === "mark-completed"),
           allLinkRels: links.map((l) => l.rel)
@@ -153,14 +219,8 @@ export function TaskDetailsViewEmployee({ taskId }: TaskDetailsViewEmployeeProps
           });
         }
       });
-    } else {
-      debugWarn("Mark Completed Button useEffect: Missing data", {
-        hasTask: !!task,
-        hasLinks: !!links,
-        linksIsArray: Array.isArray(links)
-      });
     }
-  }, [task, links, isCancelled]);
+  }, [taskId, task, links, isCancelled]);
 
   async function handleAcceptTask() {
     try {
@@ -358,6 +418,10 @@ export function TaskDetailsViewEmployee({ taskId }: TaskDetailsViewEmployeeProps
                     toast.error(t("tasks:attachments.actions.download"));
                   }
                 }}
+                onDelete={handleDeleteAttachment}
+                canDelete={(attachment) =>
+                  task ? canDeleteAttachment(attachment, task, currentUserId, userRole) : false
+                }
               />
             )}
 
@@ -403,6 +467,11 @@ export function TaskDetailsViewEmployee({ taskId }: TaskDetailsViewEmployeeProps
         </section>
 
         <TaskMetadata task={task} />
+      </div>
+
+      {/* Task History Timeline */}
+      <div className="mt-6">
+        <TaskHistoryTimeline taskId={taskId} />
       </div>
 
       {/* Dialogs */}

@@ -19,13 +19,15 @@ public class CreateTaskCommandHandler(
     UserDapperRepository userQueryRepository,
     TaskManagementDbContext context,
     ILogger<CreateTaskCommandHandler> logger,
-    IAuditLogService auditLogService) : ICommandHandler<CreateTaskCommand, TaskDto>
+    IAuditLogService auditLogService,
+    Domain.Interfaces.ITaskHistoryService taskHistoryService) : ICommandHandler<CreateTaskCommand, TaskDto>
 {
     private readonly TaskManagementDbContext _context = context;
     private readonly TaskEfCommandRepository _taskCommandRepository = taskCommandRepository;
     private readonly UserDapperRepository _userQueryRepository = userQueryRepository;
     private readonly ILogger<CreateTaskCommandHandler> _logger = logger;
     private readonly IAuditLogService _auditLogService = auditLogService;
+    private readonly Domain.Interfaces.ITaskHistoryService _taskHistoryService = taskHistoryService;
 
     public async Task<Result<TaskDto>> Handle(CreateTaskCommand request, CancellationToken cancellationToken)
     {
@@ -114,6 +116,17 @@ public class CreateTaskCommandHandler(
 
         // Add to repository using EF Core (for change tracking and complex operations)
         await _taskCommandRepository.AddAsync(task, cancellationToken);
+        
+        // Record history: Task created
+        await _taskHistoryService.RecordStatusChangeAsync(
+            task.Id,
+            Domain.Entities.TaskStatus.Created,
+            Domain.Entities.TaskStatus.Created,
+            "Created",
+            request.CreatedById,
+            request.AssignedUserId.HasValue ? $"Assigned to {assignedUser?.Email}" : "Draft task",
+            cancellationToken);
+        
         await _context.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation(

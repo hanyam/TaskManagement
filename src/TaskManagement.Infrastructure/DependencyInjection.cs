@@ -64,6 +64,9 @@ public static class DependencyInjection
         // Register authentication service
         services.AddScoped<IAuthenticationService, AuthenticationService>();
 
+        // Register task history service
+        services.AddScoped<Domain.Interfaces.ITaskHistoryService, Services.TaskHistoryService>();
+
         return services;
     }
 }

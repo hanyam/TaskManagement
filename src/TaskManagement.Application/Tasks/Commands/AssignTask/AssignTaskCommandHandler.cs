@@ -31,14 +31,12 @@ public class AssignTaskCommandHandler(
         if (task == null)
         {
             errors.Add(TaskErrors.NotFoundById(request.TaskId));
-            return Result<TaskDto>.Failure(errors);
         }
 
         // Validate user IDs
         if (!request.UserIds.Any())
         {
             errors.Add(Error.Validation("At least one user must be assigned", "UserIds"));
-            return Result<TaskDto>.Failure(errors);
         }
 
         // Get the assigner to check role and manager relationships
@@ -46,47 +44,58 @@ public class AssignTaskCommandHandler(
         if (assigner == null)
         {
             errors.Add(TaskErrors.CreatedByNotFound);
-            return Result<TaskDto>.Failure(errors);
         }
 
-        // Validate that all users exist and check manager relationships
-        foreach (var userId in request.UserIds)
+        // Validate that all users exist and check manager relationships (only if assigner exists)
+        if (assigner != null)
         {
-            var user = await _userQueryRepository.GetByIdAsync(userId, cancellationToken);
-            if (user == null)
+            foreach (var userId in request.UserIds)
             {
-                errors.Add(TaskErrors.AssignedUserNotFound);
-                return Result<TaskDto>.Failure(errors);
-            }
-
-            if (!user.IsActive)
-            {
-                errors.Add(TaskErrors.AssignedUserInactive);
-                return Result<TaskDto>.Failure(errors);
-            }
-
-            // Check manager-employee relationship (Admin can bypass)
-            if (assigner.Role != UserRole.Admin)
-            {
-                if (assigner.Role == UserRole.Manager)
+                var user = await _userQueryRepository.GetByIdAsync(userId, cancellationToken);
+                if (user == null)
                 {
-                    var isManager = await _userQueryRepository.IsManagerOfEmployeeAsync(
-                        request.AssignedById,
-                        userId,
-                        cancellationToken);
-                    if (!isManager)
-                    {
-                        errors.Add(TaskErrors.AssignerMustBeManagerOfAssignee);
-                        return Result<TaskDto>.Failure(errors);
-                    }
+                    errors.Add(TaskErrors.AssignedUserNotFound);
                 }
                 else
                 {
-                    // Employees cannot assign tasks
-                    errors.Add(TaskErrors.AssignerMustBeManagerOfAssignee);
-                    return Result<TaskDto>.Failure(errors);
+                    if (!user.IsActive)
+                    {
+                        errors.Add(TaskErrors.AssignedUserInactive);
+                    }
+
+                    // Check manager-employee relationship (Admin can bypass)
+                    if (assigner.Role != UserRole.Admin)
+                    {
+                        if (assigner.Role == UserRole.Manager)
+                        {
+                            var isManager = await _userQueryRepository.IsManagerOfEmployeeAsync(
+                                request.AssignedById,
+                                userId,
+                                cancellationToken);
+                            if (!isManager)
+                            {
+                                errors.Add(TaskErrors.AssignerMustBeManagerOfAssignee);
+                            }
+                        }
+                        else
+                        {
+                            // Employees cannot assign tasks
+                            errors.Add(TaskErrors.AssignerMustBeManagerOfAssignee);
+                        }
+                    }
                 }
             }
+        }
+
+        if (errors.Any())
+        {
+            return Result<TaskDto>.Failure(errors);
+        }
+
+        // At this point, we know task exists (no errors were added for null check)
+        if (task == null)
+        {
+            return Result<TaskDto>.Failure(TaskErrors.NotFoundById(request.TaskId));
         }
 
         // Clear existing assignments for this task

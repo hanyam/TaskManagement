@@ -28,6 +28,8 @@ public class TaskDto
     public DateTime? UpdatedAt { get; set; }
     public int? ManagerRating { get; set; }
     public string? ManagerFeedback { get; set; }
+    public bool IsManager { get; set; } // Indicates if the current user is the creator (manager) of this task
+    public Guid CurrentUserId { get; set; } // Current user's ID from backend (for impersonation support)
     public List<TaskAssignmentDto> Assignments { get; set; } = new();
     public List<TaskProgressDto> RecentProgressHistory { get; set; } = new();
 }

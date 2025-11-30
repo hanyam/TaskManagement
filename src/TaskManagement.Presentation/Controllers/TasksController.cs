@@ -23,6 +23,7 @@ using TaskManagement.Application.Tasks.Commands.UpdateTask;
 using TaskManagement.Application.Tasks.Commands.UpdateTaskProgress;
 using TaskManagement.Application.Tasks.Queries.GetTaskById;
 using TaskManagement.Application.Tasks.Queries.GetTasks;
+using TaskManagement.Application.Tasks.Queries.GetTaskHistory;
 using TaskManagement.Application.Tasks.Services;
 using TaskManagement.Domain.Common;
 using TaskManagement.Domain.Constants;
@@ -671,6 +672,29 @@ public class TasksController(
         // Generate HATEOAS links
         var links = await GenerateTaskLinks(id, userId);
         return HandleResultWithLinks(result, links);
+    }
+
+    /// <summary>
+    ///     Gets the history of a task.
+    /// </summary>
+    /// <param name="id">The task ID.</param>
+    /// <returns>List of task history entries.</returns>
+    [HttpGet("{id}/history")]
+    [SwaggerOperation(
+        Summary = "Get Task History",
+        Description = "Gets the complete history of status changes and actions for a task. Only accessible by task creator, assignee, manager, or admin."
+    )]
+    [ProducesResponseType(typeof(ApiResponse<List<TaskHistoryDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [EnsureUserId]
+    public async Task<IActionResult> GetTaskHistory(Guid id)
+    {
+        var userId = GetRequiredUserId();
+        var query = new GetTaskHistoryQuery(id, userId);
+        var result = await _requestMediator.Send(query);
+        return HandleResult(result);
     }
 
     /// <summary>

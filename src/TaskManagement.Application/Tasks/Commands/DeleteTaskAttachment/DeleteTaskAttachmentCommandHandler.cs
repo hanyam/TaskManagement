@@ -28,22 +28,24 @@ public class DeleteTaskAttachmentCommandHandler(
             request.TaskId,
             request.RequestedById);
 
+        var errors = new List<Error>();
+
         // Find attachment
         var attachment = await _context.Set<TaskAttachment>().FindAsync(new object[] { request.AttachmentId }, cancellationToken);
         if (attachment == null)
         {
             _logger.LogWarning("Attachment {AttachmentId} not found for deletion", request.AttachmentId);
-            return Result.Failure(TaskErrors.AttachmentNotFound);
+            errors.Add(TaskErrors.AttachmentNotFound);
         }
 
-        // Verify attachment belongs to the task
-        if (attachment.TaskId != request.TaskId)
+        // Verify attachment belongs to the task (only if attachment exists)
+        if (attachment != null && attachment.TaskId != request.TaskId)
         {
             _logger.LogWarning(
                 "Attachment {AttachmentId} does not belong to task {TaskId}",
                 request.AttachmentId,
                 request.TaskId);
-            return Result.Failure(TaskErrors.AttachmentNotFound);
+            errors.Add(TaskErrors.AttachmentNotFound);
         }
 
         // Verify task exists
@@ -51,7 +53,7 @@ public class DeleteTaskAttachmentCommandHandler(
         if (task == null)
         {
             _logger.LogWarning("Task {TaskId} not found for attachment deletion", request.TaskId);
-            return Result.Failure(TaskErrors.NotFound);
+            errors.Add(TaskErrors.NotFound);
         }
 
         // Determine user role for additional access control
@@ -59,36 +61,77 @@ public class DeleteTaskAttachmentCommandHandler(
         if (user == null)
         {
             _logger.LogWarning("User {UserId} not found for attachment deletion", request.RequestedById);
-            return Result.Failure(TaskErrors.UnauthorizedFileAccess);
+            errors.Add(TaskErrors.UnauthorizedFileAccess);
         }
 
-        // Additional rule: employees cannot modify attachments once the task is pending manager review, completed, or accepted by manager.
-        // Check if task is in "Accepted by Manager" state (Accepted status with ManagerRating set)
-        var isAcceptedByManager = task.Status == Domain.Entities.TaskStatus.Accepted && task.ManagerRating.HasValue;
-        
-        if (user.Role == UserRole.Employee &&
-            (task.Status == Domain.Entities.TaskStatus.PendingManagerReview ||
-             task.Status == Domain.Entities.TaskStatus.Completed ||
-             isAcceptedByManager))
+        // Additional validations (only if required entities exist)
+        if (attachment != null && task != null && user != null)
         {
-            _logger.LogWarning(
-                "Employee {UserId} attempted to delete attachment {AttachmentId} for task {TaskId} in status {Status} (AcceptedByManager: {AcceptedByManager})",
-                request.RequestedById,
-                request.AttachmentId,
-                request.TaskId,
-                task.Status,
-                isAcceptedByManager);
-            return Result.Failure(TaskErrors.UnauthorizedFileAccess);
+            // Additional rule: employees can only delete their own EmployeeUploaded attachments
+            // Employees cannot delete ManagerUploaded attachments
+            if (user.Role == UserRole.Employee)
+            {
+                // Employees can only delete EmployeeUploaded attachments (their own)
+                if (attachment.Type != AttachmentType.EmployeeUploaded)
+                {
+                    _logger.LogWarning(
+                        "Employee {UserId} attempted to delete ManagerUploaded attachment {AttachmentId} for task {TaskId}",
+                        request.RequestedById,
+                        request.AttachmentId,
+                        request.TaskId);
+                    errors.Add(TaskErrors.UnauthorizedFileAccess);
+                }
+                
+                // Employee must be the uploader
+                if (attachment.UploadedById != request.RequestedById)
+                {
+                    _logger.LogWarning(
+                        "Employee {UserId} attempted to delete attachment {AttachmentId} that they did not upload",
+                        request.RequestedById,
+                        request.AttachmentId);
+                    errors.Add(TaskErrors.UnauthorizedFileAccess);
+                }
+                
+                // Employees cannot delete attachments once the task is pending manager review, completed, or accepted by manager
+                // Check if task is in "Accepted by Manager" state (Accepted status with ManagerRating set)
+                var isAcceptedByManager = task.Status == Domain.Entities.TaskStatus.Accepted && task.ManagerRating.HasValue;
+                
+                if (task.Status == Domain.Entities.TaskStatus.PendingManagerReview ||
+                    task.Status == Domain.Entities.TaskStatus.Completed ||
+                    isAcceptedByManager)
+                {
+                    _logger.LogWarning(
+                        "Employee {UserId} attempted to delete attachment {AttachmentId} for task {TaskId} in status {Status} (AcceptedByManager: {AcceptedByManager})",
+                        request.RequestedById,
+                        request.AttachmentId,
+                        request.TaskId,
+                        task.Status,
+                        isAcceptedByManager);
+                    errors.Add(TaskErrors.UnauthorizedFileAccess);
+                }
+            }
+
+            // Access control: Only uploader or task creator can delete (admins handled at controller level)
+            // Note: For employees, this is already checked above, but we keep it for other roles
+            if (attachment.UploadedById != request.RequestedById && task.CreatedById != request.RequestedById)
+            {
+                _logger.LogWarning(
+                    "User {UserId} attempted to delete attachment {AttachmentId} without permission",
+                    request.RequestedById,
+                    request.AttachmentId);
+                errors.Add(TaskErrors.UnauthorizedFileAccess);
+            }
         }
 
-        // Access control: Only uploader or task creator can delete (admins handled at controller level)
-        if (attachment.UploadedById != request.RequestedById && task.CreatedById != request.RequestedById)
+        if (errors.Any())
         {
-            _logger.LogWarning(
-                "User {UserId} attempted to delete attachment {AttachmentId} without permission",
-                request.RequestedById,
-                request.AttachmentId);
-            return Result.Failure(TaskErrors.UnauthorizedFileAccess);
+            return Result.Failure(errors);
+        }
+
+        // At this point, we know attachment exists (no errors were added for null check)
+        if (attachment == null)
+        {
+            return Result.Failure(TaskErrors.AttachmentNotFound);
         }
 
         try

@@ -98,9 +98,21 @@ export function AuthProvider({ children, initialSession }: AuthProviderProps) {
       const currentSession = getClientSession();
       
       if (!currentSession || isTokenExpired(currentSession.token, currentSession.expiresAt)) {
-        // Token expired - clear session
-        setSessionState(undefined);
-        clearClientAuthSession();
+        // Token expired - try silent refresh first
+        const { attemptSilentTokenRefresh } = await import("@/core/auth/tokenRefresh");
+        const refreshedToken = await attemptSilentTokenRefresh();
+        
+        if (refreshedToken) {
+          // Successfully refreshed - update session state
+          const newSession = getClientSession();
+          if (newSession) {
+            setSessionState(newSession);
+          }
+        } else {
+          // Silent refresh failed - clear session
+          setSessionState(undefined);
+          clearClientAuthSession();
+        }
       } else if (currentSession.token !== session.token) {
         // Session changed - update state
         setSessionState(currentSession);

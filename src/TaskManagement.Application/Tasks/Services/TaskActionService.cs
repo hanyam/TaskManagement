@@ -16,6 +16,7 @@ public class TaskActionService : ITaskActionService
     {
         var links = new List<ApiActionLink>();
         var isManager = currentUserRole == Manager || currentUserRole == Admin;
+        var isEmployee = currentUserRole == Employee;
         var isAssignedUser = task.AssignedUserId.HasValue && task.AssignedUserId.Value == currentUserId;
         var isCreator = task.CreatedById == currentUserId;
         var canCancel =
@@ -44,7 +45,9 @@ public class TaskActionService : ITaskActionService
                     });
 
                 // Assigned user can accept or reject the task
-                if (isAssignedUser)
+                // BUT: Employees should NOT see accept/reject links in Created status
+                // Only show accept/reject if user is assigned AND is NOT an employee (i.e., is manager/admin/creator)
+                if (isAssignedUser && !isEmployee)
                 {
                     links.Add(new ApiActionLink
                     {
@@ -81,6 +84,26 @@ public class TaskActionService : ITaskActionService
                 break;
 
             case TaskStatus.Assigned:
+                // Assigned user can accept or reject the task
+                // BUT: Employees should NOT see accept/reject links in Assigned status
+                // Only show accept/reject if user is assigned AND is NOT an employee (i.e., is manager/admin/creator)
+                if (isAssignedUser && !isEmployee)
+                {
+                    links.Add(new ApiActionLink
+                    {
+                        Rel = "accept",
+                        Href = $"/tasks/{task.Id}/accept",
+                        Method = "POST"
+                    });
+
+                    links.Add(new ApiActionLink
+                    {
+                        Rel = "reject",
+                        Href = $"/tasks/{task.Id}/reject",
+                        Method = "POST"
+                    });
+                }
+
                 // Assigned user can update progress (if task type supports it)
                 if (isAssignedUser &&
                     (task.Type == TaskType.WithProgress || task.Type == TaskType.WithAcceptedProgress))

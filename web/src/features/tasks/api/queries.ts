@@ -18,7 +18,8 @@ import type {
   ExtensionRequestDto,
   TaskProgressDto,
   ReviewCompletedTaskRequest,
-  TaskAttachmentDto
+  TaskAttachmentDto,
+  TaskHistoryDto
 } from "@/features/tasks/types";
 
 
@@ -28,7 +29,8 @@ export const taskKeys = {
   list: (filters: TaskListFilters) => [...taskKeys.lists(), filters] as const,
   detail: (taskId: string) => [...taskKeys.all, "detail", taskId] as const,
   dashboard: () => [...taskKeys.all, "dashboard"] as const,
-  attachments: (taskId: string) => [...taskKeys.all, "attachments", taskId] as const
+  attachments: (taskId: string) => [...taskKeys.all, "attachments", taskId] as const,
+  history: (taskId: string) => [...taskKeys.all, "history", taskId] as const
 };
 
 export function useTasksQuery(filters: TaskListFilters, options?: Partial<UseQueryOptions<GetTasksResponse>>) {
@@ -82,6 +84,23 @@ export function useDashboardStatsQuery() {
       return data;
     },
     staleTime: 60_000
+  });
+}
+
+export function useTaskHistoryQuery(taskId: string, enabled = true) {
+  const locale = useCurrentLocale();
+  return useQuery({
+    queryKey: taskKeys.history(taskId),
+    enabled: enabled && Boolean(taskId),
+    queryFn: async ({ signal }) => {
+      const { data } = await apiClient.request<TaskHistoryDto[]>({
+        path: `/tasks/${taskId}/history`,
+        method: "GET",
+        signal,
+        locale
+      });
+      return data;
+    }
   });
 }
 
@@ -426,6 +445,10 @@ export function useDeleteAttachmentMutation(taskId: string) {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: taskKeys.attachments(taskId) });
       await queryClient.invalidateQueries({ queryKey: taskKeys.detail(taskId) });
+    },
+    meta: {
+      // Disable global error toast - we handle errors in the component with displayApiError
+      showToastOnError: false
     }
   });
 }

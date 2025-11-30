@@ -12,9 +12,14 @@ namespace TaskManagement.Application.Tasks.Commands.ReviewCompletedTask;
 /// <summary>
 ///     Handler for reviewing a completed task by a manager.
 /// </summary>
-public class ReviewCompletedTaskCommandHandler(TaskManagementDbContext context) : ICommandHandler<ReviewCompletedTaskCommand, TaskDto>
+public class ReviewCompletedTaskCommandHandler(
+    TaskManagementDbContext context,
+    Domain.Interfaces.ITaskHistoryService taskHistoryService,
+    ICurrentUserService currentUserService) : ICommandHandler<ReviewCompletedTaskCommand, TaskDto>
 {
     private readonly TaskManagementDbContext _context = context;
+    private readonly Domain.Interfaces.ITaskHistoryService _taskHistoryService = taskHistoryService;
+    private readonly ICurrentUserService _currentUserService = currentUserService;
 
     public async Task<Result<TaskDto>> Handle(ReviewCompletedTaskCommand request, CancellationToken cancellationToken)
     {
@@ -29,36 +34,86 @@ public class ReviewCompletedTaskCommandHandler(TaskManagementDbContext context) 
         if (task == null)
         {
             errors.Add(TaskErrors.NotFound);
-            return Result<TaskDto>.Failure(errors);
         }
 
-        // Verify task is in PendingManagerReview status
-        if (task.Status != TaskStatus.PendingManagerReview)
+        // Verify task is in PendingManagerReview status (only if task exists)
+        if (task != null && task.Status != TaskStatus.PendingManagerReview)
         {
             errors.Add(Error.Validation("Task must be in PendingManagerReview status to be reviewed", "Status"));
+        }
+
+        if (errors.Any())
+        {
             return Result<TaskDto>.Failure(errors);
         }
 
-        // Review the task
-        try
+        // Review the task (only if task exists and no errors)
+        if (task != null)
         {
-            task.ReviewByManager(request.Accepted, request.Rating, request.Feedback, request.SendBackForRework);
-            task.SetUpdatedBy("Manager"); // Set updated by current user
+            var previousStatus = task.Status;
+            var performedById = _currentUserService.GetUserId() ?? Guid.Empty;
+            
+            try
+            {
+                task.ReviewByManager(request.Accepted, request.Rating, request.Feedback, request.SendBackForRework);
+                task.SetUpdatedBy("Manager"); // Set updated by current user
 
-            await _context.SaveChangesAsync(cancellationToken);
+                // Record history based on review decision
+                string action;
+                string? notes = null;
+                
+                if (request.SendBackForRework)
+                {
+                    action = "Sent Back for Rework";
+                    notes = request.Feedback;
+                }
+                else if (request.Accepted)
+                {
+                    action = "Reviewed and Accepted";
+                    notes = request.Rating > 0 
+                        ? $"Rating: {request.Rating}/5" + (request.Feedback != null ? $", Feedback: {request.Feedback}" : "")
+                        : request.Feedback;
+                }
+                else
+                {
+                    action = "Reviewed and Returned";
+                    notes = request.Rating > 0 
+                        ? $"Rating: {request.Rating}/5" + (request.Feedback != null ? $", Feedback: {request.Feedback}" : "")
+                        : request.Feedback;
+                }
+
+                await _taskHistoryService.RecordStatusChangeAsync(
+                    task.Id,
+                    previousStatus,
+                    task.Status,
+                    action,
+                    performedById,
+                    notes,
+                    cancellationToken);
+
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+            catch (InvalidOperationException ex)
+            {
+                errors.Add(Error.Validation(ex.Message));
+            }
+            catch (ArgumentException ex)
+            {
+                errors.Add(Error.Validation(ex.Message));
+            }
         }
-        catch (InvalidOperationException ex)
+
+        if (errors.Any())
         {
-            errors.Add(Error.Validation(ex.Message));
             return Result<TaskDto>.Failure(errors);
         }
-        catch (ArgumentException ex)
+
+        // Map to DTO (only if task exists)
+        if (task == null)
         {
-            errors.Add(Error.Validation(ex.Message));
-            return Result<TaskDto>.Failure(errors);
+            return Result<TaskDto>.Failure(TaskErrors.NotFound);
         }
 
-        // Map to DTO
         var taskDto = new TaskDto
         {
             Id = task.Id,

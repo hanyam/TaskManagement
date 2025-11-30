@@ -17,12 +17,14 @@ public class AcceptTaskCommandHandler(
     ICurrentDateService currentDateService,
     TaskEfCommandRepository taskCommandRepository,
     UserDapperRepository userQueryRepository,
-    TaskManagementDbContext context) : ICommandHandler<AcceptTaskCommand, TaskDto>
+    TaskManagementDbContext context,
+    Domain.Interfaces.ITaskHistoryService taskHistoryService) : ICommandHandler<AcceptTaskCommand, TaskDto>
 {
     private readonly TaskManagementDbContext _context = context;
     private readonly TaskEfCommandRepository _taskCommandRepository = taskCommandRepository;
     private readonly UserDapperRepository _userQueryRepository = userQueryRepository;
     private readonly ICurrentDateService _currentDateService = currentDateService;
+    private readonly Domain.Interfaces.ITaskHistoryService _taskHistoryService = taskHistoryService;
 
     public async Task<Result<TaskDto>> Handle(AcceptTaskCommand request, CancellationToken cancellationToken)
     {
@@ -33,27 +35,36 @@ public class AcceptTaskCommandHandler(
         if (task == null)
         {
             errors.Add(TaskErrors.NotFoundById(request.TaskId));
-            return Result<TaskDto>.Failure(errors);
         }
 
-        // Validate user is assigned to the task
+        // Validate user is assigned to the task (only if task exists)
         var assignments = await _context.Set<TaskAssignment>()
             .Where(ta => ta.TaskId == request.TaskId)
             .ToListAsync(cancellationToken);
 
-        var isAssigned = (task.AssignedUserId.HasValue && task.AssignedUserId.Value == request.AcceptedById) ||
-                         assignments.Any(a => a.UserId == request.AcceptedById);
+        if (task != null)
+        {
+            var isAssigned = (task.AssignedUserId.HasValue && task.AssignedUserId.Value == request.AcceptedById) ||
+                             assignments.Any(a => a.UserId == request.AcceptedById);
 
-        if (!isAssigned)
-            errors.Add(Error.Forbidden("User is not assigned to this task"));
-       
-        if(task.DueDate < _currentDateService.Now)
-            errors.Add(TaskErrors.CannotAcceptPassedDueDateTask);
+            if (!isAssigned)
+                errors.Add(Error.Forbidden("User is not assigned to this task"));
+           
+            if(task.DueDate < _currentDateService.Now)
+                errors.Add(TaskErrors.CannotAcceptPassedDueDateTask);
+        }
 
         if (errors.Any())
             return Result<TaskDto>.Failure(errors);
 
+        // At this point, we know task exists (no errors were added for null check)
+        if (task == null)
+        {
+            return Result<TaskDto>.Failure(TaskErrors.NotFoundById(request.TaskId));
+        }
+
         // Accept task
+        var previousStatus = task.Status;
         try
         {
             task.Accept();
@@ -64,6 +75,16 @@ public class AcceptTaskCommandHandler(
             errors.Add(Error.Validation(ex.Message, "Status"));
             return Result<TaskDto>.Failure(errors);
         }
+
+        // Record history: Task accepted
+        await _taskHistoryService.RecordStatusChangeAsync(
+            task.Id,
+            previousStatus,
+            task.Status,
+            "Accepted",
+            request.AcceptedById,
+            "Employee accepted the task",
+            cancellationToken);
 
         await _taskCommandRepository.UpdateAsync(task, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);

@@ -30,19 +30,31 @@ public class MarkTaskCompletedCommandHandler(
         if (task == null)
         {
             errors.Add(TaskErrors.NotFoundById(request.TaskId));
+        }
+
+        // Mark task as completed by employee (moves to PendingManagerReview) - only if task exists
+        if (task != null)
+        {
+            try
+            {
+                task.MarkCompletedByEmployee();
+                task.SetUpdatedBy(request.CompletedById.ToString());
+            }
+            catch (Exception ex)
+            {
+                errors.Add(Error.Validation(ex.Message, "Status"));
+            }
+        }
+
+        if (errors.Any())
+        {
             return Result<TaskDto>.Failure(errors);
         }
 
-        // Mark task as completed by employee (moves to PendingManagerReview)
-        try
+        // At this point, we know task exists (no errors were added for null check)
+        if (task == null)
         {
-            task.MarkCompletedByEmployee();
-            task.SetUpdatedBy(request.CompletedById.ToString());
-        }
-        catch (Exception ex)
-        {
-            errors.Add(Error.Validation(ex.Message, "Status"));
-            return Result<TaskDto>.Failure(errors);
+            return Result<TaskDto>.Failure(TaskErrors.NotFoundById(request.TaskId));
         }
 
         await _taskCommandRepository.UpdateAsync(task, cancellationToken);

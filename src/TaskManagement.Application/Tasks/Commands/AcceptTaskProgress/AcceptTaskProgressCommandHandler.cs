@@ -28,7 +28,6 @@ public class AcceptTaskProgressCommandHandler(
         if (task == null)
         {
             errors.Add(TaskErrors.NotFoundById(request.TaskId));
-            return Result.Failure(errors);
         }
 
         // Get progress history entry
@@ -39,21 +38,33 @@ public class AcceptTaskProgressCommandHandler(
         if (progressHistory == null)
         {
             errors.Add(Error.NotFound("Progress history entry", "ProgressHistoryId"));
+        }
+
+        // Accept progress (only if both task and progress history exist)
+        if (task != null && progressHistory != null)
+        {
+            try
+            {
+                progressHistory.Accept(request.AcceptedById);
+                progressHistory.SetUpdatedBy(request.AcceptedById.ToString());
+                task.AcceptProgress();
+                task.SetUpdatedBy(request.AcceptedById.ToString());
+            }
+            catch (Exception ex)
+            {
+                errors.Add(Error.Validation(ex.Message, "Progress"));
+            }
+        }
+
+        if (errors.Any())
+        {
             return Result.Failure(errors);
         }
 
-        // Accept progress
-        try
+        // At this point, we know both task and progressHistory exist
+        if (task == null || progressHistory == null)
         {
-            progressHistory.Accept(request.AcceptedById);
-            progressHistory.SetUpdatedBy(request.AcceptedById.ToString());
-            task.AcceptProgress();
-            task.SetUpdatedBy(request.AcceptedById.ToString());
-        }
-        catch (Exception ex)
-        {
-            errors.Add(Error.Validation(ex.Message, "Progress"));
-            return Result.Failure(errors);
+            return Result.Failure(errors.Any() ? errors : new List<Error> { TaskErrors.NotFound });
         }
 
         _context.Set<TaskProgressHistory>().Update(progressHistory);

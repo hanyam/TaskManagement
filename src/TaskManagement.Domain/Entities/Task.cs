@@ -47,6 +47,7 @@ public class Task : BaseEntity
     // Navigation properties
     public ICollection<TaskAssignment> Assignments { get; private set; } = new List<TaskAssignment>();
     public ICollection<TaskProgressHistory> ProgressHistory { get; private set; } = new List<TaskProgressHistory>();
+    public ICollection<TaskHistory> History { get; private set; } = new List<TaskHistory>();
 
     public ICollection<DeadlineExtensionRequest> ExtensionRequests { get; private set; } =
         new List<DeadlineExtensionRequest>();
@@ -235,7 +236,8 @@ public class Task : BaseEntity
         else if (accepted)
             Status = TaskStatus.Accepted;
         else
-            Status = TaskStatus.RejectedByManager;
+            // When manager rejects, return to Accepted status since user already accepted the task
+            Status = TaskStatus.Accepted;
     }
 }
 

@@ -49,36 +49,52 @@ public class CancelTaskCommandHandler(
             request.RequestedById,
             request.RequestedByRole);
 
+        var errors = new List<Error>();
+
         var task = await _context.Set<DomainTask>()
             .FirstOrDefaultAsync(t => t.Id == request.TaskId, cancellationToken);
 
         if (task == null)
         {
             _logger.LogWarning("Task {TaskId} not found for cancellation", request.TaskId);
+            errors.Add(TaskErrors.NotFoundById(request.TaskId));
+        }
+
+        if (task != null)
+        {
+            if (!IsAuthorized(request, task))
+            {
+                _logger.LogWarning(
+                    "User {UserId} is not authorized to cancel task {TaskId}",
+                    request.RequestedById,
+                    request.TaskId);
+                errors.Add(TaskErrors.CannotDeleteOtherUserTask);
+            }
+
+            if (IsTaskReviewed(task))
+            {
+                _logger.LogWarning(
+                    "Task {TaskId} has already been reviewed or completed and cannot be cancelled",
+                    request.TaskId);
+                errors.Add(TaskErrors.CannotCancelReviewedTask);
+            }
+
+            if (task.Status == TaskStatus.Cancelled)
+            {
+                _logger.LogInformation("Task {TaskId} is already cancelled", request.TaskId);
+                errors.Add(TaskErrors.TaskAlreadyCancelled);
+            }
+        }
+
+        if (errors.Any())
+        {
+            return Result.Failure(errors);
+        }
+
+        // At this point, we know task exists (no errors were added for null check)
+        if (task == null)
+        {
             return Result.Failure(TaskErrors.NotFoundById(request.TaskId));
-        }
-
-        if (!IsAuthorized(request, task))
-        {
-            _logger.LogWarning(
-                "User {UserId} is not authorized to cancel task {TaskId}",
-                request.RequestedById,
-                request.TaskId);
-            return Result.Failure(TaskErrors.CannotDeleteOtherUserTask);
-        }
-
-        if (IsTaskReviewed(task))
-        {
-            _logger.LogWarning(
-                "Task {TaskId} has already been reviewed or completed and cannot be cancelled",
-                request.TaskId);
-            return Result.Failure(TaskErrors.CannotCancelReviewedTask);
-        }
-
-        if (task.Status == TaskStatus.Cancelled)
-        {
-            _logger.LogInformation("Task {TaskId} is already cancelled", request.TaskId);
-            return Result.Failure(TaskErrors.TaskAlreadyCancelled);
         }
 
         if (PreAcceptanceStatuses.Contains(task.Status))

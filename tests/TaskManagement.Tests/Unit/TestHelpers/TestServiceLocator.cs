@@ -79,7 +79,8 @@ public class TestServiceLocator : IServiceLocator
         {
             var mockLogger = new Moq.Mock<Microsoft.Extensions.Logging.ILogger<CreateTaskCommandHandler>>();
             var mockAuditLogService = new Moq.Mock<TaskManagement.Application.Common.Services.IAuditLogService>();
-            return new CreateTaskCommandHandler(taskCommandRepository, userQueryRepository, _context, mockLogger.Object, mockAuditLogService.Object);
+            var mockTaskHistoryService = new Moq.Mock<TaskManagement.Domain.Interfaces.ITaskHistoryService>();
+            return new CreateTaskCommandHandler(taskCommandRepository, userQueryRepository, _context, mockLogger.Object, mockAuditLogService.Object, mockTaskHistoryService.Object);
         }
 
         // Handle command handlers as both ICommandHandler and IRequestHandler
@@ -105,7 +106,8 @@ public class TestServiceLocator : IServiceLocator
             serviceType == typeof(IRequestHandler<AcceptTaskCommand, TaskDto>))
         {
             var currentDateService = GetService<ICurrentDateService>();
-            return new AcceptTaskCommandHandler(currentDateService, taskCommandRepository, userQueryRepository, _context);
+            var mockTaskHistoryService = new Moq.Mock<TaskManagement.Domain.Interfaces.ITaskHistoryService>();
+            return new AcceptTaskCommandHandler(currentDateService, taskCommandRepository, userQueryRepository, _context, mockTaskHistoryService.Object);
         }
 
         if (serviceType == typeof(ICommandHandler<RejectTaskCommand, TaskDto>) ||

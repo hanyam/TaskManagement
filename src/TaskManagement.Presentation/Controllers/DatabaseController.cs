@@ -18,8 +18,8 @@ namespace TaskManagement.Presentation.Controllers;
 [ApiController]
 [Route("database")]
 [Authorize(Roles = Admin)]
-public class DatabaseController(ICommandMediator commandMediator, IRequestMediator requestMediator)
-    : BaseController(commandMediator, requestMediator)
+public class DatabaseController(ICommandMediator commandMediator, IRequestMediator requestMediator, ICurrentUserService currentUserService)
+    : BaseController(commandMediator, requestMediator, currentUserService)
 {
 
     /// <summary>

@@ -28,7 +28,6 @@ public class ApproveExtensionRequestCommandHandler(
         if (task == null)
         {
             errors.Add(TaskErrors.NotFoundById(request.TaskId));
-            return Result.Failure(errors);
         }
 
         // Get extension request
@@ -39,29 +38,40 @@ public class ApproveExtensionRequestCommandHandler(
         if (extensionRequest == null)
         {
             errors.Add(Error.NotFound("Extension request", "ExtensionRequestId"));
-            return Result.Failure(errors);
         }
 
-        if (extensionRequest.Status != ExtensionRequestStatus.Pending)
+        if (extensionRequest != null && extensionRequest.Status != ExtensionRequestStatus.Pending)
         {
             errors.Add(Error.Validation("Extension request has already been processed", "Status"));
+        }
+
+        // Approve extension request (only if no errors so far)
+        if (task != null && extensionRequest != null)
+        {
+            try
+            {
+                extensionRequest.Approve(request.ApprovedById, request.ReviewNotes);
+                extensionRequest.SetUpdatedBy(request.ApprovedById.ToString());
+
+                // Apply extension to task
+                task.ExtendDeadline(extensionRequest.RequestedDueDate, extensionRequest.Reason);
+                task.SetUpdatedBy(request.ApprovedById.ToString());
+            }
+            catch (Exception ex)
+            {
+                errors.Add(Error.Validation(ex.Message, "Extension"));
+            }
+        }
+
+        if (errors.Any())
+        {
             return Result.Failure(errors);
         }
 
-        // Approve extension request
-        try
+        // At this point, we know both task and extensionRequest exist
+        if (task == null || extensionRequest == null)
         {
-            extensionRequest.Approve(request.ApprovedById, request.ReviewNotes);
-            extensionRequest.SetUpdatedBy(request.ApprovedById.ToString());
-
-            // Apply extension to task
-            task.ExtendDeadline(extensionRequest.RequestedDueDate, extensionRequest.Reason);
-            task.SetUpdatedBy(request.ApprovedById.ToString());
-        }
-        catch (Exception ex)
-        {
-            errors.Add(Error.Validation(ex.Message, "Extension"));
-            return Result.Failure(errors);
+            return Result.Failure(errors.Any() ? errors : new List<Error> { TaskErrors.NotFound });
         }
 
         _context.Set<DeadlineExtensionRequest>().Update(extensionRequest);

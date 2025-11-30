@@ -34,6 +34,10 @@
   "recentTasks": {
     "title": "Tasks requiring attention",
     "empty": "No tasks require your attention right now."
+  },
+  "actions": {
+    "reorder": "Reorder cards",
+    "dragToReorder": "Drag to reorder"
   }
 }
 

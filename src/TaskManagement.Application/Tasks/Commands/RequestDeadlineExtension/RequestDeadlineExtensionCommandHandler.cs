@@ -32,34 +32,44 @@ public class RequestDeadlineExtensionCommandHandler(
         if (task == null)
         {
             errors.Add(TaskErrors.NotFoundById(request.TaskId));
-            return Result<ExtensionRequestDto>.Failure(errors);
         }
 
-        // Validate user is assigned to the task
+        // Validate user is assigned to the task (only if task exists)
         var assignments = await _context.Set<TaskAssignment>()
             .Where(ta => ta.TaskId == request.TaskId)
             .ToListAsync(cancellationToken);
 
-        var isAssigned = (task.AssignedUserId.HasValue && task.AssignedUserId.Value == request.RequestedById) ||
-                         assignments.Any(a => a.UserId == request.RequestedById);
-
-        if (!isAssigned)
+        if (task != null)
         {
-            errors.Add(Error.Forbidden("User is not assigned to this task"));
+            var isAssigned = (task.AssignedUserId.HasValue && task.AssignedUserId.Value == request.RequestedById) ||
+                             assignments.Any(a => a.UserId == request.RequestedById);
+
+            if (!isAssigned)
+            {
+                errors.Add(Error.Forbidden("User is not assigned to this task"));
+            }
+
+            // Validate requested due date
+            if (request.RequestedDueDate <= DateTime.UtcNow)
+            {
+                errors.Add(Error.Validation("Requested due date must be in the future", "RequestedDueDate"));
+            }
+
+            if (task.DueDate.HasValue && request.RequestedDueDate <= task.DueDate.Value)
+            {
+                errors.Add(Error.Validation("Requested due date must be after the current due date", "RequestedDueDate"));
+            }
+        }
+
+        if (errors.Any())
+        {
             return Result<ExtensionRequestDto>.Failure(errors);
         }
 
-        // Validate requested due date
-        if (request.RequestedDueDate <= DateTime.UtcNow)
+        // At this point, we know task exists (no errors were added for null check)
+        if (task == null)
         {
-            errors.Add(Error.Validation("Requested due date must be in the future", "RequestedDueDate"));
-            return Result<ExtensionRequestDto>.Failure(errors);
-        }
-
-        if (task.DueDate.HasValue && request.RequestedDueDate <= task.DueDate.Value)
-        {
-            errors.Add(Error.Validation("Requested due date must be after the current due date", "RequestedDueDate"));
-            return Result<ExtensionRequestDto>.Failure(errors);
+            return Result<ExtensionRequestDto>.Failure(TaskErrors.NotFoundById(request.TaskId));
         }
 
         // Create extension request
@@ -81,7 +91,7 @@ public class RequestDeadlineExtensionCommandHandler(
         {
             Id = extensionRequest.Id,
             TaskId = extensionRequest.TaskId,
-            TaskTitle = task.Title,
+            TaskTitle = task!.Title,
             RequestedById = extensionRequest.RequestedById,
             RequestedByEmail = requestedByUser?.Email,
             RequestedDueDate = extensionRequest.RequestedDueDate,

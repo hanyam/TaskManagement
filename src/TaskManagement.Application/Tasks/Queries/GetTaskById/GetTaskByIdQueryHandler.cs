@@ -49,6 +49,12 @@ public class GetTaskByIdQueryHandler(TaskDapperRepository taskRepository) : IReq
             return Result<TaskDto>.Failure(errors);
         }
 
+        // Set IsManager property: true if current user is the creator of the task
+        taskDto.IsManager = taskDto.CreatedById == request.UserId;
+        
+        // Set CurrentUserId property: current user's ID from backend (supports impersonation)
+        taskDto.CurrentUserId = request.UserId;
+
         return Result<TaskDto>.Success(taskDto);
     }
 }

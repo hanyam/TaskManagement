@@ -136,6 +136,12 @@
       "error": "Failed to submit review. Please try again."
     }
   },
+  "history": {
+    "title": "Task History",
+    "description": "Complete timeline of all status changes and actions performed on this task.",
+    "errorLoading": "Failed to load task history.",
+    "noHistory": "No history available for this task."
+  },
   "attachments": {
     "title": "Attachments",
     "empty": "No attachments available",

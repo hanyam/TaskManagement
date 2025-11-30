@@ -34,33 +34,39 @@ public class RejectTaskCommandHandler(
         if (task == null)
         {
             errors.Add(TaskErrors.NotFoundById(request.TaskId));
-            return Result<TaskDto>.Failure(errors);
         }
 
-        // Validate user is assigned to the task
+        // Validate user is assigned to the task (only if task exists)
         var assignments = await _context.Set<TaskAssignment>()
             .Where(ta => ta.TaskId == request.TaskId)
             .ToListAsync(cancellationToken);
 
-        var isAssigned = (task.AssignedUserId.HasValue && task.AssignedUserId.Value == request.RejectedById) ||
-                         assignments.Any(a => a.UserId == request.RejectedById);
-
-
-        // Check if already rejected
-        if (task.Status == TaskStatus.Rejected)
+        if (task != null)
         {
-            errors.Add(TaskErrors.TaskAlreadyCompleted);
-            return Result<TaskDto>.Failure(errors);
+            var isAssigned = (task.AssignedUserId.HasValue && task.AssignedUserId.Value == request.RejectedById) ||
+                             assignments.Any(a => a.UserId == request.RejectedById);
+
+            // Check if already rejected
+            if (task.Status == TaskStatus.Rejected)
+            {
+                errors.Add(TaskErrors.TaskAlreadyCompleted);
+            }
+
+            if (!isAssigned)
+                errors.Add(Error.Forbidden("User is not assigned to this task"));
+
+            if (task.DueDate < _currentDateService.Now)
+                errors.Add(TaskErrors.CannotRejectPassedDueDateTask);
         }
-
-        if (!isAssigned)
-            errors.Add(Error.Forbidden("User is not assigned to this task"));
-
-        if (task.DueDate < _currentDateService.Now)
-            errors.Add(TaskErrors.CannotRejectPassedDueDateTask);
 
         if (errors.Any())
             return Result<TaskDto>.Failure(errors);
+
+        // At this point, we know task exists (no errors were added for null check)
+        if (task == null)
+        {
+            return Result<TaskDto>.Failure(TaskErrors.NotFoundById(request.TaskId));
+        }
 
         // Reject task
         try

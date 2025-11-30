@@ -31,33 +31,47 @@ public class RequestMoreInfoCommandHandler(
         if (task == null)
         {
             errors.Add(TaskErrors.NotFoundById(request.TaskId));
-            return Result<TaskDto>.Failure(errors);
         }
 
-        // Validate user is assigned to the task
+        // Validate user is assigned to the task (only if task exists)
         var assignments = await _context.Set<TaskAssignment>()
             .Where(ta => ta.TaskId == request.TaskId)
             .ToListAsync(cancellationToken);
 
-        var isAssigned = (task.AssignedUserId.HasValue && task.AssignedUserId.Value == request.RequestedById) ||
-                         assignments.Any(a => a.UserId == request.RequestedById);
-
-        if (!isAssigned)
+        if (task != null)
         {
-            errors.Add(Error.Forbidden("User is not assigned to this task"));
+            var isAssigned = (task.AssignedUserId.HasValue && task.AssignedUserId.Value == request.RequestedById) ||
+                             assignments.Any(a => a.UserId == request.RequestedById);
+
+            if (!isAssigned)
+            {
+                errors.Add(Error.Forbidden("User is not assigned to this task"));
+            }
+
+            // Set task under review (only if no errors so far)
+            if (!errors.Any())
+            {
+                try
+                {
+                    task.SetUnderReview();
+                    task.SetUpdatedBy(request.RequestedById.ToString());
+                }
+                catch (Exception ex)
+                {
+                    errors.Add(Error.Validation(ex.Message, "Status"));
+                }
+            }
+        }
+
+        if (errors.Any())
+        {
             return Result<TaskDto>.Failure(errors);
         }
 
-        // Set task under review
-        try
+        // At this point, we know task exists (no errors were added for null check)
+        if (task == null)
         {
-            task.SetUnderReview();
-            task.SetUpdatedBy(request.RequestedById.ToString());
-        }
-        catch (Exception ex)
-        {
-            errors.Add(Error.Validation(ex.Message, "Status"));
-            return Result<TaskDto>.Failure(errors);
+            return Result<TaskDto>.Failure(TaskErrors.NotFoundById(request.TaskId));
         }
 
         await _taskCommandRepository.UpdateAsync(task, cancellationToken);

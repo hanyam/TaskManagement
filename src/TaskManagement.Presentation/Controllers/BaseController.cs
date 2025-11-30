@@ -1,10 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using Microsoft.AspNetCore.Http;
 using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Domain.Common;
-using TaskManagement.Domain.Constants;
-using static TaskManagement.Domain.Constants.CustomClaimTypes;
 
 namespace TaskManagement.Presentation.Controllers;
 
@@ -16,39 +12,20 @@ namespace TaskManagement.Presentation.Controllers;
 public abstract class BaseController(
     ICommandMediator commandMediator,
     IRequestMediator requestMediator,
-    ICurrentUserService? currentUserService = null)
+    ICurrentUserService currentUserService)
     : ControllerBase
 {
     protected readonly ICommandMediator _commandMediator = commandMediator;
     protected readonly IRequestMediator _requestMediator = requestMediator;
-    protected readonly ICurrentUserService? _currentUserService = currentUserService;
+    protected readonly ICurrentUserService _currentUserService = currentUserService;
 
     /// <summary>
-    ///     Gets the current user ID from ICurrentUserService (with override support) or falls back to HttpContext.User.
-    ///     If EnsureUserIdAttribute is used, this will always return a value (throws if not set).
+    ///     Gets the current user ID from ICurrentUserService (with override support for testing).
     /// </summary>
     /// <returns>The user ID if available, otherwise null.</returns>
     protected Guid? GetCurrentUserId()
     {
-        // Check if EnsureUserIdAttribute already set it in HttpContext.Items
-        if (HttpContext.Items.TryGetValue("CurrentUserId", out var storedUserId) && storedUserId is Guid guid)
-        {
-            return guid;
-        }
-
-        if (_currentUserService != null)
-        {
-            return _currentUserService.GetUserId();
-        }
-
-        // Fallback to HttpContext.User for backward compatibility
-        var userIdClaim = User.FindFirst(UserId)?.Value;
-        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-        {
-            return null;
-        }
-
-        return userId;
+        return _currentUserService.GetUserId();
     }
 
     /// <summary>
@@ -69,18 +46,12 @@ public abstract class BaseController(
     }
 
     /// <summary>
-    ///     Gets the current user email from ICurrentUserService (with override support) or falls back to HttpContext.User.
+    ///     Gets the current user email from ICurrentUserService (with override support for testing).
     /// </summary>
     /// <returns>The user email if available, otherwise null.</returns>
     protected string? GetCurrentUserEmail()
     {
-        if (_currentUserService != null)
-        {
-            return _currentUserService.GetUserEmail();
-        }
-
-        // Fallback to HttpContext.User for backward compatibility
-        return User.Identity?.Name ?? User.FindFirst(Email)?.Value;
+        return _currentUserService.GetUserEmail();
     }
 
     /// <summary>

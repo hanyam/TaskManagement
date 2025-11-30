@@ -3,6 +3,7 @@ import { getAttachmentTypeString, getTaskStatusString } from "@/features/tasks/v
 
 /**
  * Checks if a user can view a specific attachment based on task status and attachment type.
+ * Uses backend-provided isManager property instead of client-side role for task creator relationship.
  */
 export function canViewAttachment(
   attachment: TaskAttachmentDto,
@@ -18,7 +19,8 @@ export function canViewAttachment(
   const taskStatus = getTaskStatusString(task.status);
   const attachmentType = getAttachmentTypeString(attachment.type);
 
-  const isManager = roleLower === "manager";
+  // Use backend-provided isManager property (indicates if current user is task creator)
+  const isManager = task.isManager ?? false;
   const isAdmin = roleLower === "admin";
 
   // Admins can always view all attachments regardless of status
@@ -29,28 +31,28 @@ export function canViewAttachment(
   // Check if task is in "Accepted by Manager" state (Accepted status with ManagerRating set)
   const isAcceptedByManager = taskStatus === "Accepted" && task.managerRating != null;
 
-  // Managers have special rules:
+  // Task creators (managers) have special rules:
   if (isManager) {
     if (attachmentType === "ManagerUploaded") {
-      // Manager-uploaded files: always visible to managers
+      // Manager-uploaded files: always visible to task creators
       return true;
     }
 
     if (attachmentType === "EmployeeUploaded") {
-      // Employee-uploaded files: visible to manager during review phase (PendingManagerReview) and after manager accepts (Accepted with ManagerRating)
-      // Managers should see employee attachments while reviewing and after accepting
+      // Employee-uploaded files: visible to task creator during review phase (PendingManagerReview) and after manager accepts (Accepted with ManagerRating)
+      // Task creators should see employee attachments while reviewing and after accepting
       return taskStatus === "PendingManagerReview" || isAcceptedByManager;
     }
   }
 
-  // Employee / other roles:
+  // Assigned users (employees, not task creators):
   // Manager-uploaded files: visible if task is Accepted (employee accepted) or later, but NOT in Created status
   if (attachmentType === "ManagerUploaded") {
     return (
       taskStatus !== "Created" &&
       (taskStatus === "Accepted" ||
-        taskStatus === "UnderReview" ||
-        taskStatus === "PendingManagerReview" ||
+      taskStatus === "UnderReview" ||
+      taskStatus === "PendingManagerReview" ||
         taskStatus === "Completed")
     );
   }
@@ -59,13 +61,13 @@ export function canViewAttachment(
   // Employees should be able to see their own uploaded attachments immediately after uploading (Accepted status without ManagerRating)
   if (attachmentType === "EmployeeUploaded") {
     // Employee can see their own attachments in Accepted (employee accepted), UnderReview, PendingManagerReview, or Completed
-    // But NOT in Accepted by Manager state (unless it's also in other statuses)
+    // Also visible in Accepted by Manager state
     return (
       (taskStatus === "Accepted" && !isAcceptedByManager) ||
       taskStatus === "UnderReview" ||
       taskStatus === "PendingManagerReview" ||
       taskStatus === "Completed" ||
-      isAcceptedByManager // Also visible in Accepted by Manager state
+      isAcceptedByManager
     );
   }
 
@@ -74,6 +76,7 @@ export function canViewAttachment(
 
 /**
  * Checks if a user can upload attachments to a task.
+ * Uses backend-provided isManager property instead of client-side role.
  * Note: This is a UI-level check. Backend will enforce actual authorization.
  */
 export function canUploadAttachment(task: TaskDto, userRole: string): boolean {
@@ -84,33 +87,44 @@ export function canUploadAttachment(task: TaskDto, userRole: string): boolean {
 
   const taskStatus = getTaskStatusString(task.status);
   const roleLower = userRole?.toLowerCase() || "";
+  const isAdmin = roleLower === "admin";
+  
+  // Use backend-provided isManager property (indicates if current user is task creator)
+  const isManager = task.isManager ?? false;
 
-  // Managers can upload when creating/editing task (Created, Assigned statuses)
-  if (roleLower === "manager" || roleLower === "admin") {
+  // Admins can always upload
+  if (isAdmin) {
     return taskStatus === "Created" || taskStatus === "Assigned";
   }
 
-  // Employees can upload attachments after they accept the task and while the task is still in progress.
-  // Allowed statuses: Accepted (employee accepted, no ManagerRating), UnderReview.
-  // Not allowed: Created, Assigned (must accept first), PendingManagerReview (marked complete), Completed, Cancelled, RejectedByManager, Accepted by Manager.
-  if (roleLower === "employee") {
-    const isAcceptedByManager = taskStatus === "Accepted" && task.managerRating != null;
-    return (
-      (taskStatus === "Accepted" && !isAcceptedByManager) ||
-      taskStatus === "UnderReview"
-    );
+  // Task creators (managers) can upload when creating/editing task (Created, Assigned statuses)
+  if (isManager) {
+    return taskStatus === "Created" || taskStatus === "Assigned";
   }
 
-  return false;
+  // Employees (assigned users, not creators) can upload attachments ONLY after they accept the task and while the task is still in progress.
+  // Allowed statuses: Accepted (employee accepted, no ManagerRating), UnderReview.
+  // NOT allowed: Created, Assigned (must accept first - this is the key requirement), PendingManagerReview, Completed, Cancelled, RejectedByManager, Accepted by Manager.
+  // Explicitly exclude Assigned status - employee must accept the task first
+  if (taskStatus === "Assigned" || taskStatus === "Created") {
+    return false;
+  }
+  
+  const isAcceptedByManager = taskStatus === "Accepted" && task.managerRating != null;
+  return (
+    (taskStatus === "Accepted" && !isAcceptedByManager) ||
+    taskStatus === "UnderReview"
+  );
 }
 
 /**
  * Checks if a user can delete a specific attachment.
+ * Uses backend-provided isManager property instead of client-side role for task creator relationship.
  */
 export function canDeleteAttachment(
   attachment: TaskAttachmentDto,
   task: TaskDto,
-  currentUserId: string,
+  currentUserId: string, // Keep for backward compatibility, but prefer task.currentUserId
   userRole: string
 ): boolean {
   // Safety check: ensure task exists
@@ -118,42 +132,89 @@ export function canDeleteAttachment(
     return false;
   }
 
-  const roleLower = userRole?.toLowerCase() || "";
+  // Use backend-provided currentUserId (supports impersonation) or fallback to cached session
+  const backendCurrentUserId = task.currentUserId || currentUserId;
+  if (!backendCurrentUserId) {
+    return false;
+  }
+
+  const roleLower = userRole?.toLowerCase()?.trim() || "";
   const taskStatus = getTaskStatusString(task.status);
   const isAdmin = roleLower === "admin";
-  const isManager = roleLower === "manager";
-  const isEmployee = roleLower === "employee";
+  
+  // Use backend-provided isManager property (indicates if current user is task creator)
+  const isManager = task.isManager ?? false;
 
-  // Admins can always delete
+  // Check if user is the uploader or task creator (only if IDs are valid)
+  // Use backend currentUserId for accurate comparison (supports impersonation)
+  const isUploader = Boolean(attachment.uploadedById && backendCurrentUserId && attachment.uploadedById === backendCurrentUserId);
+  const isCreator = Boolean(task.createdById && backendCurrentUserId && task.createdById === backendCurrentUserId);
+  
+  // Check attachment type
+  const attachmentType = getAttachmentTypeString(attachment.type);
+  
+  // Determine if user is an employee
+  // CRITICAL: Use task.isManager from backend as the PRIMARY source of truth
+  // If task.isManager is false, the user is an employee (even if they created the task, they're viewing as employee)
+  // The backend sets isManager based on the current user's relationship to the task
+  const isEmployee = !isManager;
+  
+  // Admins can always delete any attachment
   if (isAdmin) {
     return true;
   }
 
-  // Check if user is the uploader or task creator
-  const isUploader = attachment.uploadedById === currentUserId;
-  const isCreator = task.createdById === currentUserId;
-
-  if (!isUploader && !isCreator) {
+  // ============================================
+  // MANAGER ATTACHMENTS - Separate validation
+  // ============================================
+  if (attachmentType === "ManagerUploaded") {
+    // CRITICAL: Employees can NEVER delete manager attachments
+    // Use task.isManager from backend as the ONLY source of truth
+    // If isManager is false, user is an employee (even if isCreator is true)
+    if (!isManager) {
+      return false;
+    }
+    
+    // Only managers (task.isManager = true from backend) can delete manager attachments
+    // They can delete if they uploaded it OR created the task
+    if (isManager && (isUploader || isCreator)) {
+      return true;
+    }
+    
+    // All other cases: cannot delete manager attachments
     return false;
   }
 
-  // Employees cannot delete attachments once task is pending manager review, completed, or accepted by manager
-  // They can delete in Accepted (employee accepted, no ManagerRating) or UnderReview statuses
-  if (isEmployee && !isCreator) {
-    const isAcceptedByManager = taskStatus === "Accepted" && task.managerRating != null;
-    // Employee uploader can delete in Accepted (employee accepted) or UnderReview, but not PendingManagerReview, Completed, or Accepted by Manager
-    return (
-      (taskStatus === "Accepted" && !isAcceptedByManager) ||
-      taskStatus === "UnderReview"
-    );
+  // ============================================
+  // EMPLOYEE ATTACHMENTS - Separate validation
+  // ============================================
+  if (attachmentType === "EmployeeUploaded") {
+    // Employees can delete their own employee attachments (with status restrictions)
+    if (isEmployee) {
+      // Must be the uploader
+      if (!isUploader) {
+        return false;
+      }
+      
+      // Check task status - employees can delete in Accepted (employee accepted) or UnderReview
+      const isAcceptedByManager = taskStatus === "Accepted" && task.managerRating != null;
+      return (
+        (taskStatus === "Accepted" && !isAcceptedByManager) ||
+        taskStatus === "UnderReview"
+      );
+    }
+    
+    // Task creators (managers) can delete employee attachments if they uploaded it or created the task
+    // Only allow if isManager is true (from backend)
+    if (isManager && (isUploader || isCreator)) {
+      return true;
+    }
+    
+    // All other cases: cannot delete employee attachments
+    return false;
   }
 
-  // Managers and task creators can delete (subject to backend validation)
-  // Managers can delete their own uploads, creators can delete any attachment
-  if (isManager || isCreator) {
-    return true;
-  }
-
+  // Unknown attachment type - cannot delete
   return false;
 }
 

@@ -44,13 +44,12 @@ public class UpdateTaskCommandHandler(
         {
             _logger.LogWarning("Task {TaskId} not found for update", request.TaskId);
             errors.Add(TaskErrors.NotFoundById(request.TaskId));
-            return Result<TaskDto>.Failure(errors);
         }
 
-        // Validate assigned user exists if provided
+        // Validate assigned user exists if provided (only if task exists)
         User? assignedUser = null;
         User? updater = null;
-        if (request.AssignedUserId.HasValue && request.AssignedUserId.Value != Guid.Empty)
+        if (task != null && request.AssignedUserId.HasValue && request.AssignedUserId.Value != Guid.Empty)
         {
             assignedUser = await _userQueryRepository.GetByIdAsync(request.AssignedUserId.Value, cancellationToken);
             if (assignedUser == null)
@@ -108,6 +107,12 @@ public class UpdateTaskCommandHandler(
                 request.TaskId,
                 request.UpdatedById);
             return Result<TaskDto>.Failure(errors);
+        }
+
+        // At this point, we know task exists (no errors were added for null check)
+        if (task == null)
+        {
+            return Result<TaskDto>.Failure(TaskErrors.NotFoundById(request.TaskId));
         }
 
         // Update task properties

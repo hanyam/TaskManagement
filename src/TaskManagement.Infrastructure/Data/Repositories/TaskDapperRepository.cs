@@ -145,6 +145,7 @@ public class TaskDapperRepository(IConfiguration configuration) : DapperQueryRep
                     T.AssignedUserId,
                     T.Status,
                     T.DueDate,
+                    T.ManagerRating,
                     CASE WHEN TA.TaskId IS NOT NULL THEN 1 ELSE 0 END AS HasAssignment
                 FROM [Tasks].[Tasks] AS T
                 LEFT JOIN [Tasks].[TaskAssignments] AS TA ON TA.TaskId = T.Id AND TA.UserId = @UserId
@@ -156,9 +157,10 @@ public class TaskDapperRepository(IConfiguration configuration) : DapperQueryRep
                 -- Tasks created by user
                 COUNT(CASE WHEN CreatedById = @UserId THEN 1 END) AS TasksCreatedByUser,
                 
-                -- Tasks completed (assigned to or created by user, or has assignment)
+                -- Tasks completed: Status = 5 (Completed) OR Status = 3 (Accepted) with ManagerRating (Accepted by Manager)
                 COUNT(CASE 
-                    WHEN Status = 5 -- Completed
+                    WHEN (Status = 5 -- Completed
+                          OR (Status = 3 AND ManagerRating IS NOT NULL)) -- Accepted by Manager
                         AND (AssignedUserId = @UserId 
                              OR CreatedById = @UserId 
                              OR HasAssignment = 1)
@@ -166,11 +168,13 @@ public class TaskDapperRepository(IConfiguration configuration) : DapperQueryRep
                 END) AS TasksCompleted,
                 
                 -- Tasks near due date (within 3 days)
+                -- Exclude Completed (5), Cancelled (6), and Accepted by Manager (3 with ManagerRating)
                 COUNT(CASE 
                     WHEN DueDate IS NOT NULL
                         AND DueDate >= @Now
                         AND DueDate <= @NearDueDateThreshold
                         AND Status NOT IN (5, 6) -- Not Completed or Cancelled
+                        AND NOT (Status = 3 AND ManagerRating IS NOT NULL) -- Not Accepted by Manager
                         AND (AssignedUserId = @UserId 
                              OR CreatedById = @UserId 
                              OR HasAssignment = 1)
@@ -178,25 +182,28 @@ public class TaskDapperRepository(IConfiguration configuration) : DapperQueryRep
                 END) AS TasksNearDueDate,
                 
                 -- Tasks delayed (past due date)
+                -- Exclude Completed (5), Cancelled (6), and Accepted by Manager (3 with ManagerRating)
                 COUNT(CASE 
                     WHEN DueDate IS NOT NULL
                         AND DueDate < @Now
                         AND Status NOT IN (5, 6) -- Not Completed or Cancelled
+                        AND NOT (Status = 3 AND ManagerRating IS NOT NULL) -- Not Accepted by Manager
                         AND (AssignedUserId = @UserId 
                              OR CreatedById = @UserId 
                              OR HasAssignment = 1)
                     THEN 1 
                 END) AS TasksDelayed,
                 
-                -- Tasks in progress (Assigned or Accepted)
+                -- Tasks in progress: Assigned (1) OR Accepted (3) WITHOUT ManagerRating (not Accepted by Manager)
                 COUNT(CASE 
-                    WHEN Status IN (1, 3) -- Assigned or Accepted
+                    WHEN (Status = 1 -- Assigned
+                          OR (Status = 3 AND ManagerRating IS NULL)) -- Accepted (employee accepted, not manager accepted)
                         AND (AssignedUserId = @UserId 
                              OR HasAssignment = 1)
                     THEN 1 
                 END) AS TasksInProgress,
                 
-                -- Tasks under review (UnderReview or PendingManagerReview)
+                -- Tasks under review: UnderReview (2) OR PendingManagerReview (7)
                 COUNT(CASE 
                     WHEN Status IN (2, 7) -- UnderReview or PendingManagerReview
                         AND (AssignedUserId = @UserId 
@@ -205,7 +212,7 @@ public class TaskDapperRepository(IConfiguration configuration) : DapperQueryRep
                     THEN 1 
                 END) AS TasksUnderReview,
                 
-                -- Tasks pending acceptance (Created status)
+                -- Tasks pending acceptance: Created (0) status where user is assigned or in assignments
                 COUNT(CASE 
                     WHEN Status = 0 -- Created
                         AND (AssignedUserId = @UserId 

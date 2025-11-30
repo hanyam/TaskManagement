@@ -39,12 +39,14 @@ public class CreateTaskCommandHandlerTests
         _mockUserQueryRepository = new Mock<UserDapperRepository>(configuration);
         var mockLogger = new Mock<ILogger<CreateTaskCommandHandler>>();
         var mockAuditLogService = new Mock<IAuditLogService>();
+        var mockTaskHistoryService = new Mock<TaskManagement.Domain.Interfaces.ITaskHistoryService>();
         _handler = new CreateTaskCommandHandler(
             _mockTaskCommandRepository.Object,
             _mockUserQueryRepository.Object,
             _mockContext.Object,
             mockLogger.Object,
-            mockAuditLogService.Object);
+            mockAuditLogService.Object,
+            mockTaskHistoryService.Object);
     }
 
     [Fact]

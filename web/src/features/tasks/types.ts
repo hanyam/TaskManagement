@@ -22,6 +22,8 @@ export interface TaskDto {
   updatedAt?: string | null;
   managerRating?: number | null;
   managerFeedback?: string | null;
+  isManager: boolean; // Indicates if the current user is the creator (manager) of this task
+  currentUserId: string; // Current user's ID from backend (for impersonation support)
   assignments?: TaskAssignmentDto[];
   recentProgressHistory?: TaskProgressDto[];
 }
@@ -96,6 +98,19 @@ export interface DashboardStatsDto {
   tasksInProgress: number;
   tasksUnderReview: number;
   tasksPendingAcceptance: number;
+}
+
+export interface TaskHistoryDto {
+  id: string;
+  taskId: string;
+  fromStatus: number;
+  toStatus: number;
+  action: string;
+  performedById: string;
+  performedByEmail?: string | null;
+  performedByName?: string | null;
+  notes?: string | null;
+  createdAt: string;
 }
 
 export interface CreateTaskRequest {
