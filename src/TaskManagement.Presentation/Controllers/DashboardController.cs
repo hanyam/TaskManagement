@@ -17,8 +17,8 @@ namespace TaskManagement.Presentation.Controllers;
 [ApiController]
 [Route("dashboard")]
 [Authorize]
-public class DashboardController(ICommandMediator commandMediator, IRequestMediator requestMediator, ICurrentUserService currentUserService)
-    : BaseController(commandMediator, requestMediator, currentUserService)
+public class DashboardController(ICommandMediator commandMediator, IRequestMediator requestMediator, ICurrentUserService currentUserService, Application.Common.Interfaces.ILocalizationService localizationService)
+    : BaseController(commandMediator, requestMediator, currentUserService, localizationService)
 {
     /// <summary>
     ///     Gets dashboard statistics for the current user.

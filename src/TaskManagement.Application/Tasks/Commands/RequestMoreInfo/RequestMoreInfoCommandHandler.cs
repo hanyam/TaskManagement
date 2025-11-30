@@ -44,7 +44,7 @@ public class RequestMoreInfoCommandHandler(
 
         if (!isAssigned)
         {
-            errors.Add(Error.Forbidden("User is not assigned to this task"));
+            errors.Add(Error.Forbidden("User is not assigned to this task", "Errors.Tasks.UserNotAssigned"));
         }
 
         // Set task under review (may throw exceptions)

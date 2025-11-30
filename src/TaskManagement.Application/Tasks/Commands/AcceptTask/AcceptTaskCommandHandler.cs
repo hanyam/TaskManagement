@@ -47,7 +47,7 @@ public class AcceptTaskCommandHandler(
                          assignments.Any(a => a.UserId == request.AcceptedById);
 
         if (!isAssigned)
-            errors.Add(Error.Forbidden("User is not assigned to this task"));
+            errors.Add(Error.Forbidden("User is not assigned to this task", "Errors.Tasks.UserNotAssigned"));
        
         if(task.DueDate < _currentDateService.Now)
             errors.Add(TaskErrors.CannotAcceptPassedDueDateTask);

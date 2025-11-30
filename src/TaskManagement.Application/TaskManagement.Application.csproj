@@ -20,4 +20,9 @@
       <PackageReference Include="Serilog" />
     </ItemGroup>
 
+    <ItemGroup>
+      <EmbeddedResource Include="Resources\en.json" />
+      <EmbeddedResource Include="Resources\ar.json" />
+    </ItemGroup>
+
 </Project>

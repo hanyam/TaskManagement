@@ -228,7 +228,7 @@ export function TaskCreateView() {
         <form onSubmit={form.handleSubmit(handleSubmit)} className="grid gap-6" noValidate>
           <div className="grid gap-2">
             <Label htmlFor="title">{t("tasks:forms.create.fields.title")}</Label>
-            <Input id="title" {...form.register("title")} />
+            <Input id="title" placeholder={t("tasks:forms.create.fields.titlePlaceholder")} {...form.register("title")} />
             {form.formState.errors.title ? (
               <FormFieldError
                 message={t(form.formState.errors.title.message ?? "validation:required", {
@@ -244,6 +244,7 @@ export function TaskCreateView() {
               id="description"
               rows={4}
               className="rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              placeholder={t("tasks:forms.create.fields.descriptionPlaceholder")}
               {...form.register("description")}
             />
             {form.formState.errors.description ? (
@@ -307,7 +308,7 @@ export function TaskCreateView() {
                     id="dueDate"
                     value={field.value}
                     onChange={field.onChange}
-                    placeholder={t("tasks:forms.create.fields.dueDate")}
+                    placeholder={t("tasks:forms.create.fields.dueDatePlaceholder")}
                   />
                 )}
               />

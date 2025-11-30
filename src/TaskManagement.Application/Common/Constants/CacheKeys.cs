@@ -15,5 +15,10 @@ public static class CacheKeys
     ///     Cache key for current date/time override (used by ICurrentDateService and TestingController).
     /// </summary>
     public const string CurrentDateOverride = "CurrentDate_Override";
+
+    /// <summary>
+    ///     Cache key for user settings override (used by IUserSettingsService and TestingController).
+    /// </summary>
+    public const string UserSettingsOverride = "UserSettings_Override";
 }
 

@@ -25,8 +25,9 @@ namespace TaskManagement.Presentation.Controllers;
 public class TaskAttachmentsController(
     ICommandMediator commandMediator,
     IRequestMediator requestMediator,
-    ICurrentUserService currentUserService)
-    : BaseController(commandMediator, requestMediator, currentUserService)
+    ICurrentUserService currentUserService,
+    Application.Common.Interfaces.ILocalizationService localizationService)
+    : BaseController(commandMediator, requestMediator, currentUserService, localizationService)
 {
     /// <summary>
     ///     Uploads a file attachment to a task.

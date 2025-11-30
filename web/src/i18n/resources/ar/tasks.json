@@ -71,9 +71,12 @@
       "instructions": "أدخل بيانات المهمة واختر المكلف لبدء العمل.",
       "fields": {
         "title": "العنوان",
+        "titlePlaceholder": "أدخل عنوان المهمة...",
         "description": "الوصف",
+        "descriptionPlaceholder": "أدخل وصف المهمة...",
         "priority": "الأولوية",
         "dueDate": "تاريخ الاستحقاق",
+        "dueDatePlaceholder": "اختر تاريخ الاستحقاق",
         "assignedUserId": "المستخدم المكلف",
         "assignedUserIdPlaceholder": "ابحث عن شخص…",
         "searchUserPlaceholder": "اكتب الاسم أو البريد الإلكتروني للبحث...",

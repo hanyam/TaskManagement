@@ -65,11 +65,16 @@ public static class DependencyInjection
         // Register audit logging service
         services.AddScoped<IAuditLogService, AuditLogService>();
 
-        // Register current user and date services (with override support for testing)
-        services.AddHttpContextAccessor(); // Required for CurrentUserService
+        // Register current user, date, and settings services (with override support for testing)
+        services.AddHttpContextAccessor(); // Required for CurrentUserService and UserSettingsService
         services.AddMemoryCache(); // Required for override mechanism
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<ICurrentDateService, CurrentDateService>();
+        services.AddScoped<IUserSettingsService, UserSettingsService>();
+        
+        // Register localization services
+        services.AddScoped<ILocalizationService, LocalizationService>();
+        services.AddScoped<LocalizedErrorFactory>();
 
         return services;
     }

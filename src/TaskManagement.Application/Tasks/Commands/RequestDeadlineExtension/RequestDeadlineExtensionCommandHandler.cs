@@ -45,18 +45,18 @@ public class RequestDeadlineExtensionCommandHandler(
 
         if (!isAssigned)
         {
-            errors.Add(Error.Forbidden("User is not assigned to this task"));
+            errors.Add(Error.Forbidden("User is not assigned to this task", "Errors.Tasks.UserNotAssigned"));
         }
 
         // Validate requested due date
         if (request.RequestedDueDate <= DateTime.UtcNow)
         {
-            errors.Add(Error.Validation("Requested due date must be in the future", "RequestedDueDate"));
+            errors.Add(Error.Validation("Requested due date must be in the future", "RequestedDueDate", "Errors.Tasks.RequestedDueDateMustBeFuture"));
         }
 
         if (task.DueDate.HasValue && request.RequestedDueDate <= task.DueDate.Value)
         {
-            errors.Add(Error.Validation("Requested due date must be after the current due date", "RequestedDueDate"));
+            errors.Add(Error.Validation("Requested due date must be after the current due date", "RequestedDueDate", "Errors.Tasks.RequestedDueDateMustBeAfterCurrent"));
         }
 
         // Check all errors once before database operations

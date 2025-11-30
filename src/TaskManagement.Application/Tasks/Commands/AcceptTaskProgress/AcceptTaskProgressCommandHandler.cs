@@ -39,32 +39,32 @@ public class AcceptTaskProgressCommandHandler(
 
         if (progressHistory == null)
         {
-            errors.Add(Error.NotFound("Progress history entry", "ProgressHistoryId"));
+            errors.Add(Error.NotFound("Progress history entry", "ProgressHistoryId", "Errors.Tasks.ProgressHistoryNotFound"));
             return Result.Failure(errors);
         }
 
         // Validate user is the task creator
         if (task.CreatedById != request.AcceptedById)
         {
-            errors.Add(Error.Forbidden("Only the task creator can accept progress updates"));
+            errors.Add(Error.Forbidden("Only the task creator can accept progress updates", "Errors.Tasks.OnlyCreatorCanAcceptProgress"));
         }
 
         // Validate task is in UnderReview status
         if (task.Status != TaskStatus.UnderReview)
         {
-            errors.Add(Error.Validation("Task must be under review to accept progress", "Status"));
+            errors.Add(Error.Validation("Task must be under review to accept progress", "Status", "Errors.Tasks.TaskMustBeUnderReview"));
         }
 
         // Validate task type supports progress approval
         if (task.Type != TaskType.WithAcceptedProgress)
         {
-            errors.Add(Error.Validation("This task type does not require progress acceptance", "Type"));
+            errors.Add(Error.Validation("This task type does not require progress acceptance", "Type", "Errors.Tasks.TaskTypeNoProgressAcceptance"));
         }
 
         // Validate progress history is pending
         if (progressHistory.Status != ProgressStatus.Pending)
         {
-            errors.Add(Error.Validation("Progress history entry is not pending", "ProgressHistoryId"));
+            errors.Add(Error.Validation("Progress history entry is not pending", "ProgressHistoryId", "Errors.Tasks.ProgressHistoryNotPending"));
         }
 
         // Accept the progress history entry (may throw exceptions)

@@ -37,13 +37,13 @@ public class UpdateTaskProgressCommandHandler(
         // Validate progress percentage
         if (request.ProgressPercentage < 0 || request.ProgressPercentage > 100)
         {
-            errors.Add(Error.Validation("Progress percentage must be between 0 and 100", "ProgressPercentage"));
+            errors.Add(Error.Validation("Progress percentage must be between 0 and 100", "ProgressPercentage", "Errors.Tasks.ProgressPercentageInvalid"));
         }
 
         // Check if task type supports progress
         if (task.Type == TaskType.Simple && request.ProgressPercentage > 0)
         {
-            errors.Add(Error.Validation("Simple tasks cannot have progress tracking", "Type"));
+            errors.Add(Error.Validation("Simple tasks cannot have progress tracking", "Type", "Errors.Tasks.SimpleTaskNoProgress"));
         }
 
         // Validate that new progress is not less than the last approved progress
@@ -59,7 +59,7 @@ public class UpdateTaskProgressCommandHandler(
         {
             errors.Add(Error.Validation(
                 $"Progress must be at least {minAllowedProgress}% (last approved progress). You can only increase the progress.",
-                "ProgressPercentage"));
+                "ProgressPercentage", "Errors.Tasks.ProgressMinNotMet"));
         }
 
         // Determine if progress requires acceptance

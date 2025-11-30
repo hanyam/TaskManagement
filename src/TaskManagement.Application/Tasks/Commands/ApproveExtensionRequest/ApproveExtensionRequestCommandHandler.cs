@@ -38,13 +38,13 @@ public class ApproveExtensionRequestCommandHandler(
 
         if (extensionRequest == null)
         {
-            errors.Add(Error.NotFound("Extension request", "ExtensionRequestId"));
+            errors.Add(Error.NotFound("Extension request", "ExtensionRequestId", "Errors.Tasks.ExtensionRequestNotFound"));
             return Result.Failure(errors);
         }
 
         if (extensionRequest.Status != ExtensionRequestStatus.Pending)
         {
-            errors.Add(Error.Validation("Extension request has already been processed", "Status"));
+            errors.Add(Error.Validation("Extension request has already been processed", "Status", "Errors.Tasks.ExtensionRequestAlreadyProcessed"));
         }
 
         // Approve extension request (may throw exceptions)

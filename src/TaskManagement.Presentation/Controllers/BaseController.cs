@@ -12,12 +12,14 @@ namespace TaskManagement.Presentation.Controllers;
 public abstract class BaseController(
     ICommandMediator commandMediator,
     IRequestMediator requestMediator,
-    ICurrentUserService currentUserService)
+    ICurrentUserService currentUserService,
+    Application.Common.Interfaces.ILocalizationService localizationService)
     : ControllerBase
 {
     protected readonly ICommandMediator _commandMediator = commandMediator;
     protected readonly IRequestMediator _requestMediator = requestMediator;
     protected readonly ICurrentUserService _currentUserService = currentUserService;
+    protected readonly Application.Common.Interfaces.ILocalizationService _localizationService = localizationService;
 
     /// <summary>
     ///     Gets the current user ID from ICurrentUserService (with override support for testing).
@@ -70,9 +72,12 @@ public abstract class BaseController(
         if (result.Errors.Any()) allErrors.AddRange(result.Errors);
         if (result.Error != null) allErrors.Add(result.Error);
 
+        // Localize error messages
+        var localizedErrors = allErrors.Select(e => LocalizeError(e)).ToList();
+
         return allErrors.Any()
-            ? BadRequest(ApiResponse<T>.ErrorResponse(allErrors, HttpContext.TraceIdentifier))
-            : BadRequest(ApiResponse<T>.ErrorResponse("An error occurred", HttpContext.TraceIdentifier));
+            ? BadRequest(ApiResponse<T>.ErrorResponse(localizedErrors, HttpContext.TraceIdentifier))
+            : BadRequest(ApiResponse<T>.ErrorResponse(_localizationService.GetString("Errors.System.InternalServerError", "An error occurred"), HttpContext.TraceIdentifier));
     }
 
     /// <summary>
@@ -90,9 +95,12 @@ public abstract class BaseController(
         if (result.Errors.Any()) allErrors.AddRange(result.Errors);
         if (result.Error != null) allErrors.Add(result.Error);
 
+        // Localize error messages
+        var localizedErrors = allErrors.Select(e => LocalizeError(e)).ToList();
+
         return allErrors.Any()
-            ? BadRequest(ApiResponse.ErrorResponse(allErrors, HttpContext.TraceIdentifier))
-            : BadRequest(ApiResponse.ErrorResponse("An error occurred", HttpContext.TraceIdentifier));
+            ? BadRequest(ApiResponse.ErrorResponse(localizedErrors, HttpContext.TraceIdentifier))
+            : BadRequest(ApiResponse.ErrorResponse(_localizationService.GetString("Errors.System.InternalServerError", "An error occurred"), HttpContext.TraceIdentifier));
     }
 
     /// <summary>
@@ -118,8 +126,69 @@ public abstract class BaseController(
         if (result.Errors.Any()) allErrors.AddRange(result.Errors);
         if (result.Error != null) allErrors.Add(result.Error);
 
+        // Localize error messages
+        var localizedErrors = allErrors.Select(e => LocalizeError(e)).ToList();
+
         return allErrors.Any()
-            ? BadRequest(ApiResponse<T>.ErrorResponse(allErrors, HttpContext.TraceIdentifier))
-            : BadRequest(ApiResponse<T>.ErrorResponse("An error occurred", HttpContext.TraceIdentifier));
+            ? BadRequest(ApiResponse<T>.ErrorResponse(localizedErrors, HttpContext.TraceIdentifier))
+            : BadRequest(ApiResponse<T>.ErrorResponse(_localizationService.GetString("Errors.System.InternalServerError", "An error occurred"), HttpContext.TraceIdentifier));
+    }
+
+    /// <summary>
+    ///     Localizes an error message if a message key is provided, otherwise returns the original error.
+    /// </summary>
+    private Error LocalizeError(Error error)
+    {
+        if (string.IsNullOrWhiteSpace(error.MessageKey))
+        {
+            return error; // No key, return as-is
+        }
+
+        // Try to extract format arguments from the original message for common patterns
+        var formatArgs = ExtractFormatArguments(error.Message, error.MessageKey);
+        
+        var localizedMessage = formatArgs.Length > 0
+            ? _localizationService.GetString(error.MessageKey, error.Message, formatArgs)
+            : _localizationService.GetString(error.MessageKey, error.Message);
+        
+        return Error.Create(error.Code, localizedMessage, error.Field, error.MessageKey);
+    }
+
+    /// <summary>
+    ///     Extracts format arguments from error messages for common patterns.
+    /// </summary>
+    private object[] ExtractFormatArguments(string originalMessage, string messageKey)
+    {
+        // Handle ProgressMinNotMet: "Progress must be at least {X}%..."
+        if (messageKey == "Errors.Tasks.ProgressMinNotMet")
+        {
+            var match = System.Text.RegularExpressions.Regex.Match(originalMessage, @"at least (\d+)%");
+            if (match.Success && int.TryParse(match.Groups[1].Value, out var minProgress))
+            {
+                return new object[] { minProgress };
+            }
+        }
+
+        // Handle NotFoundById: "Task with ID '{X}' not found"
+        if (messageKey.Contains(".NotFoundById"))
+        {
+            var match = System.Text.RegularExpressions.Regex.Match(originalMessage, @"ID '([^']+)'");
+            if (match.Success)
+            {
+                return new object[] { match.Groups[1].Value };
+            }
+        }
+
+        // Handle NotFoundByEmail: "User with email '{X}' not found"
+        if (messageKey.Contains(".NotFoundByEmail"))
+        {
+            var match = System.Text.RegularExpressions.Regex.Match(originalMessage, @"email '([^']+)'");
+            if (match.Success)
+            {
+                return new object[] { match.Groups[1].Value };
+            }
+        }
+
+        return Array.Empty<object>();
     }
 }

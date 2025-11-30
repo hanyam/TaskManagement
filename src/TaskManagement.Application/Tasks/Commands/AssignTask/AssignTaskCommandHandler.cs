@@ -37,7 +37,7 @@ public class AssignTaskCommandHandler(
         // Validate user IDs
         if (!request.UserIds.Any())
         {
-            errors.Add(Error.Validation("At least one user must be assigned", "UserIds"));
+            errors.Add(Error.Validation("At least one user must be assigned", "UserIds", "Errors.Tasks.AtLeastOneUserRequired"));
         }
 
         // Get the assigner to check role and manager relationships

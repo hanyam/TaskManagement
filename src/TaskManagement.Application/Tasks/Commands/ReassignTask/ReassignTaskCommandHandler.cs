@@ -37,7 +37,7 @@ public class ReassignTaskCommandHandler(
         // Validate user IDs
         if (!request.NewUserIds.Any())
         {
-            errors.Add(Error.Validation("At least one user must be assigned", "NewUserIds"));
+            errors.Add(Error.Validation("At least one user must be assigned", "NewUserIds", "Errors.Tasks.AtLeastOneUserRequired"));
         }
 
         // Validate that all users exist

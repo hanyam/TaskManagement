@@ -71,9 +71,12 @@
       "instructions": "Provide task metadata and assign an owner to kick off work.",
       "fields": {
         "title": "Title",
+        "titlePlaceholder": "Enter task title...",
         "description": "Description",
+        "descriptionPlaceholder": "Enter task description...",
         "priority": "Priority",
         "dueDate": "Due date",
+        "dueDatePlaceholder": "Select due date",
         "assignedUserId": "Assigned user",
         "assignedUserIdPlaceholder": "Search for a person…",
         "searchUserPlaceholder": "Type name or email to search...",

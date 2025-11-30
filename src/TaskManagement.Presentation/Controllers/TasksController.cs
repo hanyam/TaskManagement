@@ -48,8 +48,9 @@ public class TasksController(
     IRequestMediator requestMediator,
     ITaskActionService taskActionService,
     TaskManagementDbContext context,
-    ICurrentUserService currentUserService)
-    : BaseController(commandMediator, requestMediator, currentUserService)
+    ICurrentUserService currentUserService,
+    Application.Common.Interfaces.ILocalizationService localizationService)
+    : BaseController(commandMediator, requestMediator, currentUserService, localizationService)
 {
     private readonly TaskManagementDbContext _context = context;
     private readonly ITaskActionService _taskActionService = taskActionService;

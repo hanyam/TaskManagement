@@ -40,7 +40,7 @@ public class ReviewCompletedTaskCommandHandler(
         // Verify task is in PendingManagerReview status
         if (task.Status != TaskStatus.PendingManagerReview)
         {
-            errors.Add(Error.Validation("Task must be in PendingManagerReview status to be reviewed", "Status"));
+            errors.Add(Error.Validation("Task must be in PendingManagerReview status to be reviewed", "Status", "Errors.Tasks.TaskMustBePendingManagerReview"));
         }
 
         // Review the task (may throw exceptions)

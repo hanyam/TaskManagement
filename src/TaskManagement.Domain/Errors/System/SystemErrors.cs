@@ -8,75 +8,75 @@ namespace TaskManagement.Domain.Errors.System;
 public static class SystemErrors
 {
     // General system errors
-    public static Error InternalServerError => Error.Internal("An internal server error occurred");
-    public static Error ServiceUnavailable => Error.Internal("Service is temporarily unavailable");
-    public static Error DatabaseConnectionFailed => Error.Internal("Database connection failed");
-    public static Error DatabaseTimeout => Error.Internal("Database operation timed out");
-    public static Error ExternalServiceUnavailable => Error.Internal("External service is unavailable");
+    public static Error InternalServerError => Error.Create("INTERNAL_ERROR", "An internal server error occurred", null, "Errors.System.InternalServerError");
+    public static Error ServiceUnavailable => Error.Create("INTERNAL_ERROR", "Service is temporarily unavailable", null, "Errors.System.ServiceUnavailable");
+    public static Error DatabaseConnectionFailed => Error.Create("INTERNAL_ERROR", "Database connection failed", null, "Errors.System.DatabaseConnectionFailed");
+    public static Error DatabaseTimeout => Error.Create("INTERNAL_ERROR", "Database operation timed out", null, "Errors.System.DatabaseTimeout");
+    public static Error ExternalServiceUnavailable => Error.Create("INTERNAL_ERROR", "External service is unavailable", null, "Errors.System.ExternalServiceUnavailable");
 
     // Validation errors
-    public static Error InvalidInput => Error.Validation("Invalid input provided");
+    public static Error InvalidInput => Error.Create("VALIDATION_ERROR", "Invalid input provided", null, "Errors.System.InvalidInput");
 
     // Business logic errors
-    public static Error OperationNotAllowed => Error.Forbidden("Operation is not allowed");
-    public static Error ResourceInUse => Error.Conflict("Resource is currently in use");
-    public static Error ResourceLocked => Error.Conflict("Resource is locked by another operation");
-    public static Error ConcurrentModification => Error.Conflict("Resource was modified by another user");
+    public static Error OperationNotAllowed => Error.Create("FORBIDDEN", "Operation is not allowed", null, "Errors.System.OperationNotAllowed");
+    public static Error ResourceInUse => Error.Create("CONFLICT", "Resource is currently in use", null, "Errors.System.ResourceInUse");
+    public static Error ResourceLocked => Error.Create("CONFLICT", "Resource is locked by another operation", null, "Errors.System.ResourceLocked");
+    public static Error ConcurrentModification => Error.Create("CONFLICT", "Resource was modified by another user", null, "Errors.System.ConcurrentModification");
 
     // Network errors
-    public static Error NetworkTimeout => Error.Internal("Network operation timed out");
-    public static Error NetworkUnavailable => Error.Internal("Network is unavailable");
-    public static Error ConnectionRefused => Error.Internal("Connection was refused");
+    public static Error NetworkTimeout => Error.Create("INTERNAL_ERROR", "Network operation timed out", null, "Errors.System.NetworkTimeout");
+    public static Error NetworkUnavailable => Error.Create("INTERNAL_ERROR", "Network is unavailable", null, "Errors.System.NetworkUnavailable");
+    public static Error ConnectionRefused => Error.Create("INTERNAL_ERROR", "Connection was refused", null, "Errors.System.ConnectionRefused");
 
     // File system errors
-    public static Error FileNotFound => Error.NotFound("File", "Path");
-    public static Error FileAccessDenied => Error.Forbidden("File access denied");
-    public static Error FileTooLarge => Error.Validation("File size exceeds maximum allowed", "FileSize");
-    public static Error InvalidFileFormat => Error.Validation("Invalid file format", "FileType");
+    public static Error FileNotFound => Error.Create("NOT_FOUND", "File not found", "Path", "Errors.System.FileNotFound");
+    public static Error FileAccessDenied => Error.Create("FORBIDDEN", "File access denied", null, "Errors.System.FileAccessDenied");
+    public static Error FileTooLarge => Error.Create("VALIDATION_ERROR", "File size exceeds maximum allowed", "FileSize", "Errors.System.FileTooLarge");
+    public static Error InvalidFileFormat => Error.Create("VALIDATION_ERROR", "Invalid file format", "FileType", "Errors.System.InvalidFileFormat");
 
     // Performance errors
-    public static Error OperationTimeout => Error.Internal("Operation timed out");
-    public static Error ResourceExhausted => Error.Internal("System resources exhausted");
-    public static Error TooManyRequests => Error.Forbidden("Too many requests");
+    public static Error OperationTimeout => Error.Create("INTERNAL_ERROR", "Operation timed out", null, "Errors.System.OperationTimeout");
+    public static Error ResourceExhausted => Error.Create("INTERNAL_ERROR", "System resources exhausted", null, "Errors.System.ResourceExhausted");
+    public static Error TooManyRequests => Error.Create("FORBIDDEN", "Too many requests", null, "Errors.System.TooManyRequests");
 
     // Maintenance errors
-    public static Error SystemMaintenance => Error.Internal("System is under maintenance");
-    public static Error FeatureDisabled => Error.Forbidden("Feature is currently disabled");
-    public static Error ServiceDeprecated => Error.Forbidden("Service is deprecated");
+    public static Error SystemMaintenance => Error.Create("INTERNAL_ERROR", "System is under maintenance", null, "Errors.System.SystemMaintenance");
+    public static Error FeatureDisabled => Error.Create("FORBIDDEN", "Feature is currently disabled", null, "Errors.System.FeatureDisabled");
+    public static Error ServiceDeprecated => Error.Create("FORBIDDEN", "Service is deprecated", null, "Errors.System.ServiceDeprecated");
 
     public static Error RequiredFieldMissing(string fieldName)
     {
-        return Error.Validation($"Required field '{fieldName}' is missing", fieldName);
+        return Error.Create("VALIDATION_ERROR", $"Required field '{fieldName}' is missing", fieldName, "Errors.System.RequiredFieldMissing");
     }
 
     public static Error InvalidFormat(string fieldName)
     {
-        return Error.Validation($"Invalid format for field '{fieldName}'", fieldName);
+        return Error.Create("VALIDATION_ERROR", $"Invalid format for field '{fieldName}'", fieldName, "Errors.System.InvalidFormat");
     }
 
     public static Error ValueTooLong(string fieldName, int maxLength)
     {
-        return Error.Validation($"Field '{fieldName}' cannot exceed {maxLength} characters", fieldName);
+        return Error.Create("VALIDATION_ERROR", $"Field '{fieldName}' cannot exceed {maxLength} characters", fieldName, "Errors.System.ValueTooLong");
     }
 
     public static Error ValueTooShort(string fieldName, int minLength)
     {
-        return Error.Validation($"Field '{fieldName}' must be at least {minLength} characters", fieldName);
+        return Error.Create("VALIDATION_ERROR", $"Field '{fieldName}' must be at least {minLength} characters", fieldName, "Errors.System.ValueTooShort");
     }
 
     // Configuration errors
     public static Error ConfigurationMissing(string configKey)
     {
-        return Error.Internal($"Configuration '{configKey}' is missing");
+        return Error.Create("INTERNAL_ERROR", $"Configuration '{configKey}' is missing", null, "Errors.System.ConfigurationMissing");
     }
 
     public static Error InvalidConfiguration(string configKey)
     {
-        return Error.Internal($"Invalid configuration for '{configKey}'");
+        return Error.Create("INTERNAL_ERROR", $"Invalid configuration for '{configKey}'", null, "Errors.System.InvalidConfiguration");
     }
 
     public static Error EnvironmentVariableMissing(string variableName)
     {
-        return Error.Internal($"Environment variable '{variableName}' is missing");
+        return Error.Create("INTERNAL_ERROR", $"Environment variable '{variableName}' is missing", null, "Errors.System.EnvironmentVariableMissing");
     }
 }
