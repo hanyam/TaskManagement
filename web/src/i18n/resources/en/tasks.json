@@ -94,8 +94,12 @@
       "accept": "Accept Progress",
       "acceptSuccess": "Progress update accepted successfully",
       "acceptError": "Failed to accept progress update",
+      "reject": "Reject Progress",
+      "rejectSuccess": "Progress update rejected successfully",
+      "rejectError": "Failed to reject progress update",
       "pending": "Pending Approval",
       "acceptedBy": "Accepted by",
+      "rejectedBy": "Rejected by",
       "fields": {
         "progressPercentage": "Progress (%)",
         "notes": "Notes"

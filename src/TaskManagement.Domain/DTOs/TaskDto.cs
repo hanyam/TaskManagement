@@ -187,6 +187,14 @@ public record AcceptTaskProgressRequest
 }
 
 /// <summary>
+///     Request DTO for rejecting task progress.
+/// </summary>
+public record RejectTaskProgressRequest
+{
+    public Guid ProgressHistoryId { get; init; }
+}
+
+/// <summary>
 ///     Request DTO for rejecting a task.
 /// </summary>
 public record RejectTaskRequest

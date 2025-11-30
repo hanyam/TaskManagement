@@ -94,8 +94,12 @@
       "accept": "قبول التقدم",
       "acceptSuccess": "تم قبول تحديث التقدم بنجاح",
       "acceptError": "فشل قبول تحديث التقدم",
+      "reject": "رفض التقدم",
+      "rejectSuccess": "تم رفض تحديث التقدم بنجاح",
+      "rejectError": "فشل رفض تحديث التقدم",
       "pending": "في انتظار الموافقة",
       "acceptedBy": "تم القبول من قبل",
+      "rejectedBy": "تم الرفض من قبل",
       "fields": {
         "progressPercentage": "نسبة التقدم (%)",
         "notes": "ملاحظات"

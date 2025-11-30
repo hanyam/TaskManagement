@@ -12,6 +12,7 @@ import {
   useAssignTaskMutation,
   useReassignTaskMutation,
   useAcceptTaskProgressMutation,
+  useRejectTaskProgressMutation,
   useAcceptTaskMutation,
   useRejectTaskMutation,
   downloadAttachment
@@ -80,30 +81,66 @@ export function TaskDetailsViewManager({ taskId }: TaskDetailsViewManagerProps) 
     cancelTaskMutation
   } = useTaskDetails(taskId);
 
-  // Check if accept-progress link is available
+  // Check if accept-progress and reject-progress links are available
   const hasAcceptProgressLink = links?.some((link) => link.rel === "accept-progress");
+  const hasRejectProgressLink = links?.some((link) => link.rel === "reject-progress");
   
-  // Find pending progress entry
-  const pendingProgress = task?.recentProgressHistory?.find((p) => p.status === "Pending");
+  // Show buttons when links are available (following HATEOAS pattern)
+  // If pendingProgress is not found, we'll handle it in the click handler
+  const canShowAcceptProgress = hasAcceptProgressLink;
+  const canShowRejectProgress = hasRejectProgressLink;
   
-  // Accept progress mutation
+  // Progress mutations
   const acceptProgressMutation = useAcceptTaskProgressMutation(taskId);
+  const rejectProgressMutation = useRejectTaskProgressMutation(taskId);
   
-  // Accept/Reject task mutations (for UnderReview status)
+  // Accept/Reject task mutations (for UnderReview status when NOT progress approval task)
   const acceptTaskMutation = useAcceptTaskMutation(taskId);
   const rejectTaskMutation = useRejectTaskMutation(taskId);
   
   const handleAcceptProgress = async () => {
-    if (!pendingProgress) return;
+    // Find pending progress - refresh from task data in case it wasn't loaded initially
+    // Status 0 = Pending (numeric enum from backend)
+    const currentPendingProgress = task?.recentProgressHistory?.find((p) => p.status === 0);
+    
+    if (!currentPendingProgress) {
+      toast.error(t("tasks:forms.progress.acceptError") || "No pending progress update found. Please refresh the page.");
+      // Try to refetch to get the latest data
+      await refetch();
+      return;
+    }
     
     try {
       await acceptProgressMutation.mutateAsync({
-        progressHistoryId: pendingProgress.id
+        progressHistoryId: currentPendingProgress.id
       });
-      toast.success(t("tasks:progress.acceptSuccess"));
+      toast.success(t("tasks:forms.progress.acceptSuccess"));
       await refetch();
     } catch (error) {
-      displayApiError(error, t("tasks:progress.acceptError"));
+      displayApiError(error, t("tasks:forms.progress.acceptError"));
+    }
+  };
+
+  const handleRejectProgress = async () => {
+    // Find pending progress - refresh from task data in case it wasn't loaded initially
+    // Status 0 = Pending (numeric enum from backend)
+    const currentPendingProgress = task?.recentProgressHistory?.find((p) => p.status === 0);
+    
+    if (!currentPendingProgress) {
+      toast.error(t("tasks:forms.progress.rejectError") || "No pending progress update found. Please refresh the page.");
+      // Try to refetch to get the latest data
+      await refetch();
+      return;
+    }
+    
+    try {
+      await rejectProgressMutation.mutateAsync({
+        progressHistoryId: currentPendingProgress.id
+      });
+      toast.success(t("tasks:forms.progress.rejectSuccess"));
+      await refetch();
+    } catch (error) {
+      displayApiError(error, t("tasks:forms.progress.rejectError"));
     }
   };
 
@@ -330,7 +367,31 @@ export function TaskDetailsViewManager({ taskId }: TaskDetailsViewManagerProps) 
               </Button>
             )}
 
-            {!isEditMode && hasLink("accept") && !isFinalReviewedState && !isCancelled && (
+            {/* Accept/Reject Progress buttons - shown when progress approval links are available AND pending progress exists */}
+            {!isEditMode && canShowAcceptProgress && !isFinalReviewedState && !isCancelled && (
+              <Button 
+                variant="primary" 
+                onClick={handleAcceptProgress}
+                disabled={acceptProgressMutation.isPending || rejectProgressMutation.isPending}
+                icon={<CheckIcon />}
+              >
+                {acceptProgressMutation.isPending ? t("common:actions.loading") : t("tasks:forms.progress.accept")}
+              </Button>
+            )}
+
+            {!isEditMode && canShowRejectProgress && !isFinalReviewedState && !isCancelled && (
+              <Button 
+                variant="destructive" 
+                onClick={handleRejectProgress}
+                disabled={acceptProgressMutation.isPending || rejectProgressMutation.isPending}
+                icon={<XMarkIcon />}
+              >
+                {rejectProgressMutation.isPending ? t("common:actions.loading") : t("tasks:forms.progress.reject")}
+              </Button>
+            )}
+
+            {/* Only show accept/reject task buttons if NOT a progress approval task in UnderReview status */}
+            {!isEditMode && hasLink("accept") && !hasAcceptProgressLink && !isFinalReviewedState && !isCancelled && (
               <Button 
                 variant="primary" 
                 onClick={handleAcceptTask}
@@ -341,7 +402,7 @@ export function TaskDetailsViewManager({ taskId }: TaskDetailsViewManagerProps) 
               </Button>
             )}
 
-            {!isEditMode && hasLink("reject") && !isFinalReviewedState && !isCancelled && (
+            {!isEditMode && hasLink("reject") && !hasRejectProgressLink && !isFinalReviewedState && !isCancelled && (
               <Button 
                 variant="destructive" 
                 onClick={handleRejectTask}
@@ -411,8 +472,9 @@ export function TaskDetailsViewManager({ taskId }: TaskDetailsViewManagerProps) 
           <div className="space-y-3 rounded-lg border border-border bg-muted/20 p-3">
             {task.recentProgressHistory?.length ? (
               task.recentProgressHistory.map((progress) => {
-                const isPending = progress.status === "Pending";
+                const isPending = progress.status === 0; // 0 = Pending (numeric enum from backend)
                 const canAccept = isPending && hasAcceptProgressLink;
+                const canReject = isPending && hasRejectProgressLink;
                 
                 return (
                   <div key={progress.id} className="flex flex-col gap-2 rounded-md border border-border/80 bg-background px-3 py-2">
@@ -425,37 +487,66 @@ export function TaskDetailsViewManager({ taskId }: TaskDetailsViewManagerProps) 
                         <div className="text-sm text-foreground">
                           {progress.progressPercentage}% — {progress.notes ?? t("common:states.empty")}
                         </div>
-                        {progress.status === "Pending" && (
+                        {progress.status === 0 && ( // 0 = Pending (numeric enum from backend)
                           <span className="inline-flex items-center gap-1 mt-1 text-xs px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-600 dark:text-yellow-400">
                             <span className="h-1.5 w-1.5 rounded-full bg-yellow-500"></span>
-                            {t("tasks:progress.pending")}
+                            {t("tasks:forms.progress.pending")}
                           </span>
                         )}
-                        {progress.status === "Accepted" && progress.acceptedAt && (
+                        {progress.status === 1 && progress.acceptedAt && ( // 1 = Accepted (numeric enum from backend)
                           <div className="mt-1 text-xs text-muted-foreground">
-                            {t("tasks:progress.acceptedBy")} {progress.acceptedByEmail ?? progress.acceptedById} — {formatDate(progress.acceptedAt)}
+                            {t("tasks:forms.progress.acceptedBy")} {progress.acceptedByEmail ?? progress.acceptedById} — {formatDate(progress.acceptedAt)}
+                          </div>
+                        )}
+                        {progress.status === 2 && progress.acceptedAt && ( // 2 = Rejected (numeric enum from backend)
+                          <div className="mt-1 text-xs text-muted-foreground">
+                            {t("tasks:forms.progress.rejectedBy")} {progress.acceptedByEmail ?? progress.acceptedById} — {formatDate(progress.acceptedAt)}
                           </div>
                         )}
                       </div>
-                      {canAccept && (
-                        <Button
-                          onClick={handleAcceptProgress}
-                          disabled={acceptProgressMutation.isPending}
-                          size="sm"
-                          className="flex-shrink-0"
-                        >
-                          {acceptProgressMutation.isPending ? (
-                            <>
-                              <Spinner className="h-4 w-4" />
-                              {t("common:actions.loading")}
-                            </>
-                          ) : (
-                            <>
-                              <CheckIcon className="h-4 w-4" />
-                              {t("tasks:progress.accept")}
-                            </>
+                      {(canAccept || canReject) && (
+                        <div className="flex gap-2 flex-shrink-0">
+                          {canAccept && (
+                            <Button
+                              onClick={handleAcceptProgress}
+                              disabled={acceptProgressMutation.isPending || rejectProgressMutation.isPending}
+                              size="sm"
+                              variant="primary"
+                            >
+                              {acceptProgressMutation.isPending ? (
+                                <>
+                                  <Spinner className="h-4 w-4" />
+                                  {t("common:actions.loading")}
+                                </>
+                              ) : (
+                                <>
+                                  <CheckIcon className="h-4 w-4" />
+                                  {t("tasks:forms.progress.accept")}
+                                </>
+                              )}
+                            </Button>
                           )}
-                        </Button>
+                          {canReject && (
+                            <Button
+                              onClick={handleRejectProgress}
+                              disabled={acceptProgressMutation.isPending || rejectProgressMutation.isPending}
+                              size="sm"
+                              variant="destructive"
+                            >
+                              {rejectProgressMutation.isPending ? (
+                                <>
+                                  <Spinner className="h-4 w-4" />
+                                  {t("common:actions.loading")}
+                                </>
+                              ) : (
+                                <>
+                                  <XMarkIcon className="h-4 w-4" />
+                                  {t("tasks:forms.progress.reject")}
+                                </>
+                              )}
+                            </Button>
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>

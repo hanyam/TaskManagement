@@ -157,34 +157,44 @@ public class TaskActionService : ITaskActionService
                 break;
 
             case TaskStatus.UnderReview:
-                // Managers/Admins can accept
-                if (isManager)
-                    links.Add(new ApiActionLink
-                    {
-                        Rel = "accept",
-                        Href = $"/tasks/{task.Id}/accept",
-                        Method = "POST"
-                    });
-
-                // Managers/Admins can reject
-                if (isManager)
-                    links.Add(new ApiActionLink
-                    {
-                        Rel = "reject",
-                        Href = $"/tasks/{task.Id}/reject",
-                        Method = "POST"
-                    });
-
-                // For tasks with progress approval, managers can accept progress updates
-                // The frontend will determine which progress entry is pending and use its ID
-                if (isManager && task.Type == TaskType.WithAcceptedProgress)
+                // For tasks with progress approval (WithAcceptedProgress), only the task creator should see
+                // progress-specific actions (accept-progress, reject-progress), not task-level actions (accept, reject)
+                if (isCreator && task.Type == TaskType.WithAcceptedProgress)
                 {
+                    // Task creator can accept progress updates
                     links.Add(new ApiActionLink
                     {
                         Rel = "accept-progress",
                         Href = $"/tasks/{task.Id}/progress/accept",
                         Method = "POST"
                     });
+
+                    // Task creator can reject progress updates
+                    links.Add(new ApiActionLink
+                    {
+                        Rel = "reject-progress",
+                        Href = $"/tasks/{task.Id}/progress/reject",
+                        Method = "POST"
+                    });
+                }
+                else
+                {
+                    // For non-progress-approval tasks, managers can accept/reject the task itself
+                    if (isManager)
+                        links.Add(new ApiActionLink
+                        {
+                            Rel = "accept",
+                            Href = $"/tasks/{task.Id}/accept",
+                            Method = "POST"
+                        });
+
+                    if (isManager)
+                        links.Add(new ApiActionLink
+                        {
+                            Rel = "reject",
+                            Href = $"/tasks/{task.Id}/reject",
+                            Method = "POST"
+                        });
                 }
 
                 // Managers/Admins can cancel

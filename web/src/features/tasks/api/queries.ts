@@ -218,6 +218,26 @@ export function useAcceptTaskProgressMutation(taskId: string) {
   });
 }
 
+export function useRejectTaskProgressMutation(taskId: string) {
+  const locale = useCurrentLocale();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: { progressHistoryId: string }) => {
+      await apiClient.request<void>({
+        path: `/tasks/${taskId}/progress/reject`,
+        method: "POST",
+        body: payload,
+        locale
+      });
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: taskKeys.detail(taskId) });
+      await queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
+    }
+  });
+}
+
 export function useCancelTaskMutation(taskId: string) {
   const locale = useCurrentLocale();
   const queryClient = useQueryClient();

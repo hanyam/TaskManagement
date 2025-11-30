@@ -55,6 +55,14 @@ public class GetTaskByIdQueryHandler(TaskDapperRepository taskRepository) : IReq
         // Set CurrentUserId property: current user's ID from backend (supports impersonation)
         taskDto.CurrentUserId = request.UserId;
 
+        // Populate RecentProgressHistory - get the most recent 10 entries (includes pending entries needed for progress approval)
+        var progressHistory = await _taskRepository.GetTaskProgressHistoryAsync(
+            request.Id,
+            page: 1,
+            pageSize: 10,
+            cancellationToken);
+        taskDto.RecentProgressHistory = progressHistory.ToList();
+
         return Result<TaskDto>.Success(taskDto);
     }
 }

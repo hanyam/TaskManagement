@@ -1,4 +1,4 @@
-import type { TaskStatus, TaskPriority, ReminderLevel, ExtensionRequestStatus, ProgressStatus } from "@/features/tasks/value-objects";
+import type { TaskStatus, TaskPriority, ReminderLevel, ExtensionRequestStatus } from "@/features/tasks/value-objects";
 
 // API response types (backend sends numeric enums)
 export interface TaskDto {
@@ -45,7 +45,7 @@ export interface TaskProgressDto {
   updatedByEmail?: string | null;
   progressPercentage: number;
   notes?: string | null;
-  status: ProgressStatus;
+  status: number; // Numeric enum from backend (0=Pending, 1=Accepted, 2=Rejected)
   acceptedById?: string | null;
   acceptedByEmail?: string | null;
   acceptedAt?: string | null;

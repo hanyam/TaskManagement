@@ -171,6 +171,24 @@ public class Task : BaseEntity
             throw new InvalidOperationException("Task must be under review to accept progress");
 
         Status = TaskStatus.Accepted;
+        // ProgressPercentage is already set to the new value by UpdateProgress, so we keep it
+    }
+
+    /// <summary>
+    ///     Sets the progress percentage to a specific value (used when rejecting progress to revert to last approved value).
+    /// </summary>
+    public void SetProgressPercentage(int? percentage)
+    {
+        if (percentage.HasValue && (percentage.Value < 0 || percentage.Value > 100))
+            throw new ArgumentException("Progress percentage must be between 0 and 100", nameof(percentage));
+
+        if (Type == TaskType.Simple && percentage.HasValue && percentage.Value > 0)
+            throw new InvalidOperationException("Simple tasks cannot have progress tracking");
+
+        if (Type != TaskType.WithProgress && Type != TaskType.WithAcceptedProgress && percentage.HasValue && percentage.Value > 0)
+            throw new InvalidOperationException("This task type does not support progress tracking");
+
+        ProgressPercentage = percentage;
     }
 
     public void UpdateReminderLevel(ReminderLevel level)

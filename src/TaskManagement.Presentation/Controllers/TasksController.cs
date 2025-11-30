@@ -9,6 +9,7 @@ using TaskManagement.Presentation.Attributes;
 using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Application.Tasks.Commands.AcceptTask;
 using TaskManagement.Application.Tasks.Commands.AcceptTaskProgress;
+using TaskManagement.Application.Tasks.Commands.RejectTaskProgress;
 using TaskManagement.Application.Tasks.Commands.ApproveExtensionRequest;
 using TaskManagement.Application.Tasks.Commands.AssignTask;
 using TaskManagement.Application.Tasks.Commands.CreateTask;
@@ -359,6 +360,39 @@ public class TasksController(
             TaskId = id,
             ProgressHistoryId = request.ProgressHistoryId,
             AcceptedById = userId
+        };
+
+        var result = await _commandMediator.Send(command);
+        return HandleResult(result);
+    }
+
+    /// <summary>
+    ///     Rejects a task progress update (manager).
+    /// </summary>
+    /// <param name="id">The task ID.</param>
+    /// <param name="request">The progress rejection request.</param>
+    /// <returns>Success response.</returns>
+    [HttpPost("{id}/progress/reject")]
+    [SwaggerOperation(
+        Summary = "Reject Task Progress Update",
+        Description = "Rejects a pending task progress update. Only Managers can reject progress updates. Used for tasks with 'WithAcceptedProgress' type where progress updates require manager approval. Updates the progress history entry status to 'Rejected' and returns the task to 'Accepted' status so the employee can update progress again."
+    )]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [Authorize(Roles = Manager)]
+    [EnsureUserId]
+    public async Task<IActionResult> RejectTaskProgress(Guid id, [FromBody] RejectTaskProgressRequest request)
+    {
+        var userId = GetRequiredUserId();
+
+        var command = new RejectTaskProgressCommand
+        {
+            TaskId = id,
+            ProgressHistoryId = request.ProgressHistoryId,
+            RejectedById = userId
         };
 
         var result = await _commandMediator.Send(command);

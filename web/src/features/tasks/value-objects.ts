@@ -107,6 +107,15 @@ export function getAttachmentTypeString(type: number): AttachmentType {
   return map[type] ?? "ManagerUploaded";
 }
 
+export function getProgressStatusString(status: number): ProgressStatus {
+  const map: Record<number, ProgressStatus> = {
+    0: "Pending",
+    1: "Accepted",
+    2: "Rejected"
+  };
+  return map[status] ?? "Pending";
+}
+
 // HATEOAS link helper functions
 export function hasActionLink(links: Array<{ rel: string; href: string; method: string}> | undefined, rel: string): boolean {
   return links?.some(link => link.rel === rel) ?? false;
