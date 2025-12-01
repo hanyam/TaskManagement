@@ -11,16 +11,32 @@ public interface IAuditLogService
 {
     void LogTaskCreated(Guid taskId, string userId, string userEmail, string? correlationId = null);
     void LogTaskUpdated(Guid taskId, string userId, string userEmail, string? correlationId = null);
-    void LogTaskAssigned(Guid taskId, Guid assignedUserId, string userId, string userEmail, string? correlationId = null);
+
+    void LogTaskAssigned(Guid taskId, Guid assignedUserId, string userId, string userEmail,
+        string? correlationId = null);
+
     void LogTaskCompleted(Guid taskId, string userId, string userEmail, string? correlationId = null);
-    void LogTaskStatusChanged(Guid taskId, string oldStatus, string newStatus, string userId, string userEmail, string? correlationId = null);
-    void LogFileUploaded(Guid taskId, Guid attachmentId, string fileName, string userId, string userEmail, string? correlationId = null);
-    void LogFileDownloaded(Guid taskId, Guid attachmentId, string userId, string userEmail, string? correlationId = null);
-    void LogExtensionRequestApproved(Guid taskId, Guid extensionRequestId, string userId, string userEmail, string? correlationId = null);
-    void LogExtensionRequestRejected(Guid taskId, Guid extensionRequestId, string userId, string userEmail, string? correlationId = null);
+
+    void LogTaskStatusChanged(Guid taskId, string oldStatus, string newStatus, string userId, string userEmail,
+        string? correlationId = null);
+
+    void LogFileUploaded(Guid taskId, Guid attachmentId, string fileName, string userId, string userEmail,
+        string? correlationId = null);
+
+    void LogFileDownloaded(Guid taskId, Guid attachmentId, string userId, string userEmail,
+        string? correlationId = null);
+
+    void LogExtensionRequestApproved(Guid taskId, Guid extensionRequestId, string userId, string userEmail,
+        string? correlationId = null);
+
+    void LogExtensionRequestRejected(Guid taskId, Guid extensionRequestId, string userId, string userEmail,
+        string? correlationId = null);
+
     void LogAuthenticationSuccess(string userId, string userEmail, string? correlationId = null);
     void LogAuthenticationFailure(string userEmail, string reason, string? correlationId = null);
-    void LogTaskReassigned(Guid taskId, Guid oldUserId, Guid newUserId, string userId, string userEmail, string? correlationId = null);
+
+    void LogTaskReassigned(Guid taskId, Guid oldUserId, Guid newUserId, string userId, string userEmail,
+        string? correlationId = null);
 }
 
 /// <summary>
@@ -28,8 +44,8 @@ public interface IAuditLogService
 /// </summary>
 public class AuditLogService : IAuditLogService
 {
-    private readonly ILogger<AuditLogService> _logger;
     private readonly ICurrentUserService? _currentUserService;
+    private readonly ILogger<AuditLogService> _logger;
 
     public AuditLogService(ILogger<AuditLogService> logger, ICurrentUserService? currentUserService = null)
     {
@@ -47,7 +63,8 @@ public class AuditLogService : IAuditLogService
         _logger.LogAudit("TaskUpdated", "Task", taskId.ToString(), userId, userEmail, correlationId);
     }
 
-    public void LogTaskAssigned(Guid taskId, Guid assignedUserId, string userId, string userEmail, string? correlationId = null)
+    public void LogTaskAssigned(Guid taskId, Guid assignedUserId, string userId, string userEmail,
+        string? correlationId = null)
     {
         _logger.LogAudit(
             "TaskAssigned",
@@ -64,7 +81,8 @@ public class AuditLogService : IAuditLogService
         _logger.LogAudit("TaskCompleted", "Task", taskId.ToString(), userId, userEmail, correlationId);
     }
 
-    public void LogTaskStatusChanged(Guid taskId, string oldStatus, string newStatus, string userId, string userEmail, string? correlationId = null)
+    public void LogTaskStatusChanged(Guid taskId, string oldStatus, string newStatus, string userId, string userEmail,
+        string? correlationId = null)
     {
         _logger.LogAudit(
             "TaskStatusChanged",
@@ -80,7 +98,8 @@ public class AuditLogService : IAuditLogService
             });
     }
 
-    public void LogFileUploaded(Guid taskId, Guid attachmentId, string fileName, string userId, string userEmail, string? correlationId = null)
+    public void LogFileUploaded(Guid taskId, Guid attachmentId, string fileName, string userId, string userEmail,
+        string? correlationId = null)
     {
         _logger.LogAudit(
             "FileUploaded",
@@ -96,7 +115,8 @@ public class AuditLogService : IAuditLogService
             });
     }
 
-    public void LogFileDownloaded(Guid taskId, Guid attachmentId, string userId, string userEmail, string? correlationId = null)
+    public void LogFileDownloaded(Guid taskId, Guid attachmentId, string userId, string userEmail,
+        string? correlationId = null)
     {
         _logger.LogAudit(
             "FileDownloaded",
@@ -108,7 +128,8 @@ public class AuditLogService : IAuditLogService
             new Dictionary<string, object> { { "TaskId", taskId } });
     }
 
-    public void LogExtensionRequestApproved(Guid taskId, Guid extensionRequestId, string userId, string userEmail, string? correlationId = null)
+    public void LogExtensionRequestApproved(Guid taskId, Guid extensionRequestId, string userId, string userEmail,
+        string? correlationId = null)
     {
         _logger.LogAudit(
             "ExtensionRequestApproved",
@@ -120,7 +141,8 @@ public class AuditLogService : IAuditLogService
             new Dictionary<string, object> { { "TaskId", taskId } });
     }
 
-    public void LogExtensionRequestRejected(Guid taskId, Guid extensionRequestId, string userId, string userEmail, string? correlationId = null)
+    public void LogExtensionRequestRejected(Guid taskId, Guid extensionRequestId, string userId, string userEmail,
+        string? correlationId = null)
     {
         _logger.LogAudit(
             "ExtensionRequestRejected",
@@ -149,7 +171,8 @@ public class AuditLogService : IAuditLogService
             new Dictionary<string, object> { { "Reason", reason } });
     }
 
-    public void LogTaskReassigned(Guid taskId, Guid oldUserId, Guid newUserId, string userId, string userEmail, string? correlationId = null)
+    public void LogTaskReassigned(Guid taskId, Guid oldUserId, Guid newUserId, string userId, string userEmail,
+        string? correlationId = null)
     {
         _logger.LogAudit(
             "TaskReassigned",
@@ -165,4 +188,3 @@ public class AuditLogService : IAuditLogService
             });
     }
 }
-

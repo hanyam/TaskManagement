@@ -13,12 +13,3 @@ public interface ICommandRepository<T> where T : BaseEntity
     Task DeleteAsync(T entity, CancellationToken cancellationToken = default);
     Task DeleteByIdAsync(Guid id, CancellationToken cancellationToken = default);
 }
-
-
-
-
-
-
-
-
-

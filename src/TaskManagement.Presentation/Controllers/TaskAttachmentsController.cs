@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -8,7 +9,6 @@ using TaskManagement.Application.Tasks.Commands.UploadTaskAttachment;
 using TaskManagement.Application.Tasks.Queries.DownloadTaskAttachment;
 using TaskManagement.Application.Tasks.Queries.GetTaskAttachments;
 using TaskManagement.Domain.Common;
-using TaskManagement.Domain.Constants;
 using TaskManagement.Domain.DTOs;
 using TaskManagement.Domain.Entities;
 using TaskManagement.Presentation.Attributes;
@@ -26,7 +26,7 @@ public class TaskAttachmentsController(
     ICommandMediator commandMediator,
     IRequestMediator requestMediator,
     ICurrentUserService currentUserService,
-    Application.Common.Interfaces.ILocalizationService localizationService)
+    ILocalizationService localizationService)
     : BaseController(commandMediator, requestMediator, currentUserService, localizationService)
 {
     /// <summary>
@@ -39,7 +39,8 @@ public class TaskAttachmentsController(
     [HttpPost]
     [SwaggerOperation(
         Summary = "Upload Task Attachment",
-        Description = "Uploads a file attachment to a task. Managers and Admins can upload ManagerUploaded attachments, while Employees can upload EmployeeUploaded attachments. The attachment type is automatically determined based on user role if not specified. File size and type validations apply. Returns the uploaded attachment information with file metadata."
+        Description =
+            "Uploads a file attachment to a task. Managers and Admins can upload ManagerUploaded attachments, while Employees can upload EmployeeUploaded attachments. The attachment type is automatically determined based on user role if not specified. File size and type validations apply. Returns the uploaded attachment information with file metadata."
     )]
     [ProducesResponseType(typeof(ApiResponse<TaskAttachmentDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -53,32 +54,22 @@ public class TaskAttachmentsController(
         [FromForm] AttachmentType type)
     {
         if (file == null || file.Length == 0)
-        {
             return BadRequest(ApiResponse<TaskAttachmentDto>.ErrorResponse(
                 new List<Error> { Error.Validation("File is required", "File") },
                 HttpContext.TraceIdentifier));
-        }
 
         var userId = GetRequiredUserId();
         var userEmail = GetCurrentUserEmail() ?? string.Empty;
 
         // Determine attachment type based on user role if not provided
         // Managers upload ManagerUploaded, Employees upload EmployeeUploaded
-        var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? string.Empty;
-        if (type == 0 && userRole != RoleNames.Manager && userRole != RoleNames.Admin)
-        {
+        var userRole = User.FindFirst(ClaimTypes.Role)?.Value ?? string.Empty;
+        if (type == 0 && userRole != Manager && userRole != Admin)
             type = AttachmentType.EmployeeUploaded;
-        }
-        else if (type == 0)
-        {
-            type = AttachmentType.ManagerUploaded;
-        }
+        else if (type == 0) type = AttachmentType.ManagerUploaded;
 
         // Check authorization based on type
-        if (type == AttachmentType.ManagerUploaded && userRole != RoleNames.Manager && userRole != RoleNames.Admin)
-        {
-            return Forbid();
-        }
+        if (type == AttachmentType.ManagerUploaded && userRole != Manager && userRole != Admin) return Forbid();
 
         using var fileStream = file.OpenReadStream();
         var command = new UploadTaskAttachmentCommand
@@ -105,7 +96,8 @@ public class TaskAttachmentsController(
     [HttpGet]
     [SwaggerOperation(
         Summary = "Get Task Attachments",
-        Description = "Retrieves all attachments for a task with role-based access control. Managers and Admins can view all attachments regardless of task status. Employees can only view attachments when the task is in 'Accepted' or later status. Returns a filtered list of attachments the user has permission to access."
+        Description =
+            "Retrieves all attachments for a task with role-based access control. Managers and Admins can view all attachments regardless of task status. Employees can only view attachments when the task is in 'Accepted' or later status. Returns a filtered list of attachments the user has permission to access."
     )]
     [ProducesResponseType(typeof(ApiResponse<List<TaskAttachmentDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -137,7 +129,8 @@ public class TaskAttachmentsController(
     [HttpGet("{attachmentId}/download")]
     [SwaggerOperation(
         Summary = "Download Task Attachment",
-        Description = "Downloads a task attachment file. Managers and Admins can download any attachment regardless of task status. Employees can only download attachments when the task is in 'Accepted' or later status. Returns the file stream with appropriate content type and filename headers."
+        Description =
+            "Downloads a task attachment file. Managers and Admins can download any attachment regardless of task status. Employees can only download attachments when the task is in 'Accepted' or later status. Returns the file stream with appropriate content type and filename headers."
     )]
     [ProducesResponseType(typeof(FileResult), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -159,10 +152,7 @@ public class TaskAttachmentsController(
 
         var result = await _requestMediator.Send(query);
 
-        if (!result.IsSuccess)
-        {
-            return HandleResult(result);
-        }
+        if (!result.IsSuccess) return HandleResult(result);
 
         var response = result.Value!;
         return File(response.FileStream, response.ContentType, response.FileName);
@@ -177,7 +167,8 @@ public class TaskAttachmentsController(
     [HttpDelete("{attachmentId}")]
     [SwaggerOperation(
         Summary = "Delete Task Attachment",
-        Description = "Deletes a task attachment. Users can only delete attachments they uploaded themselves, unless they are Managers or Admins who can delete any attachment. The file is permanently removed from storage. Returns a success response upon successful deletion."
+        Description =
+            "Deletes a task attachment. Users can only delete attachments they uploaded themselves, unless they are Managers or Admins who can delete any attachment. The file is permanently removed from storage. Returns a success response upon successful deletion."
     )]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -201,4 +192,3 @@ public class TaskAttachmentsController(
         return HandleResult(result);
     }
 }
-

@@ -2,12 +2,10 @@ using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Swashbuckle.AspNetCore.Annotations;
 using TaskManagement.Application.Authentication.Commands.AuthenticateUser;
 using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Domain.Common;
-using TaskManagement.Domain.DTOs;
 
 namespace TaskManagement.Presentation.Controllers;
 
@@ -16,7 +14,11 @@ namespace TaskManagement.Presentation.Controllers;
 /// </summary>
 [ApiController]
 [Route("authentication")]
-public class AuthenticationController(ICommandMediator commandMediator, IRequestMediator requestMediator, ICurrentUserService currentUserService, Application.Common.Interfaces.ILocalizationService localizationService)
+public class AuthenticationController(
+    ICommandMediator commandMediator,
+    IRequestMediator requestMediator,
+    ICurrentUserService currentUserService,
+    ILocalizationService localizationService)
     : BaseController(commandMediator, requestMediator, currentUserService, localizationService)
 {
     /// <summary>
@@ -27,7 +29,8 @@ public class AuthenticationController(ICommandMediator commandMediator, IRequest
     [HttpPost("authenticate")]
     [SwaggerOperation(
         Summary = "Authenticate User",
-        Description = "Authenticates a user using an Azure AD token and returns a JWT token for subsequent API requests. Validates the Azure AD token, creates or updates the user in the database, and generates a JWT token with user claims including role, email, and user ID. This endpoint is publicly accessible (no authentication required)."
+        Description =
+            "Authenticates a user using an Azure AD token and returns a JWT token for subsequent API requests. Validates the Azure AD token, creates or updates the user in the database, and generates a JWT token with user claims including role, email, and user ID. This endpoint is publicly accessible (no authentication required)."
     )]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -50,6 +53,5 @@ public class AuthenticationController(ICommandMediator commandMediator, IRequest
 /// </summary>
 public class AuthenticateUserRequest
 {
-    [JsonPropertyName("azureAdToken")]
-    public string AzureAdToken { get; set; } = string.Empty;
+    [JsonPropertyName("azureAdToken")] public string AzureAdToken { get; set; } = string.Empty;
 }

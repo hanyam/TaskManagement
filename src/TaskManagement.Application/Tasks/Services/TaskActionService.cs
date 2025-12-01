@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Domain.Common;
-using TaskManagement.Domain.Constants;
 using TaskManagement.Domain.Entities;
 using TaskManagement.Infrastructure.Data;
 using DomainTask = TaskManagement.Domain.Entities.Task;
@@ -16,8 +15,8 @@ namespace TaskManagement.Application.Tasks.Services;
 /// </summary>
 public class TaskActionService : ITaskActionService
 {
-    private readonly ICurrentDateService _currentDateService;
     private readonly TaskManagementDbContext _context;
+    private readonly ICurrentDateService _currentDateService;
 
     public TaskActionService(ICurrentDateService currentDateService, TaskManagementDbContext context)
     {
@@ -60,15 +59,16 @@ public class TaskActionService : ITaskActionService
                 // Assigned user can accept or reject the task
                 // Employees can accept/reject if assigned, regardless of task type
                 // For progress-tracked tasks, also check that due date hasn't passed
-                var isProgressTrackedTask = task.Type == TaskType.WithProgress || task.Type == TaskType.WithAcceptedProgress;
+                var isProgressTrackedTask =
+                    task.Type == TaskType.WithProgress || task.Type == TaskType.WithAcceptedProgress;
                 var dueDateNotPassed = !task.DueDate.HasValue || task.DueDate.Value > _currentDateService.UtcNow;
-                
+
                 // Show accept/reject to:
                 // 1. Non-employees (managers/admins/creators) if assigned
                 // 2. Employees if assigned AND (not progress-tracked OR due date not passed)
-                var canShowAcceptReject = isAssignedUser && 
-                    (!isEmployee || !isProgressTrackedTask || dueDateNotPassed);
-                
+                var canShowAcceptReject = isAssignedUser &&
+                                          (!isEmployee || !isProgressTrackedTask || dueDateNotPassed);
+
                 if (canShowAcceptReject)
                 {
                     links.Add(new ApiActionLink
@@ -246,7 +246,7 @@ public class TaskActionService : ITaskActionService
                 // Check if task is in "Accepted by Manager" state (Accepted status with ManagerRating set)
                 // If accepted by manager, this is a terminal state - no more actions allowed
                 var isAcceptedByManager = task.ManagerRating.HasValue;
-                
+
                 if (!isAcceptedByManager)
                 {
                     // Assigned user can update progress (only if not accepted by manager)

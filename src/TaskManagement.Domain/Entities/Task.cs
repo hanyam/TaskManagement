@@ -156,10 +156,7 @@ public class Task : BaseEntity
 
         // For tasks with accepted progress, if acceptance is required, move to UnderReview status
         // so manager can review and accept the progress update
-        if (requiresAcceptance && Type == TaskType.WithAcceptedProgress)
-        {
-            SetUnderReview();
-        }
+        if (requiresAcceptance && Type == TaskType.WithAcceptedProgress) SetUnderReview();
     }
 
     public void AcceptProgress()
@@ -185,7 +182,8 @@ public class Task : BaseEntity
         if (Type == TaskType.Simple && percentage.HasValue && percentage.Value > 0)
             throw new InvalidOperationException("Simple tasks cannot have progress tracking");
 
-        if (Type != TaskType.WithProgress && Type != TaskType.WithAcceptedProgress && percentage.HasValue && percentage.Value > 0)
+        if (Type != TaskType.WithProgress && Type != TaskType.WithAcceptedProgress && percentage.HasValue &&
+            percentage.Value > 0)
             throw new InvalidOperationException("This task type does not support progress tracking");
 
         ProgressPercentage = percentage;
@@ -256,16 +254,17 @@ public class Task : BaseEntity
         {
             Status = TaskStatus.Assigned;
             // Reset progress to 0 when sending back for rework if task type supports progress tracking
-            if (Type == TaskType.WithProgress || Type == TaskType.WithAcceptedProgress)
-            {
-                ProgressPercentage = 0;
-            }
+            if (Type == TaskType.WithProgress || Type == TaskType.WithAcceptedProgress) ProgressPercentage = 0;
         }
         else if (accepted)
+        {
             Status = TaskStatus.Accepted;
+        }
         else
             // When manager rejects, return to Accepted status since user already accepted the task
+        {
             Status = TaskStatus.Accepted;
+        }
     }
 }
 

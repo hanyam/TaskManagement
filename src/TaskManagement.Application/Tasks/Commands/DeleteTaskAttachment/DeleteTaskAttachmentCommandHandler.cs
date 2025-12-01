@@ -5,6 +5,8 @@ using TaskManagement.Domain.Entities;
 using TaskManagement.Domain.Errors.Tasks;
 using TaskManagement.Domain.Interfaces;
 using TaskManagement.Infrastructure.Data;
+using Task = TaskManagement.Domain.Entities.Task;
+using TaskStatus = TaskManagement.Domain.Entities.TaskStatus;
 
 namespace TaskManagement.Application.Tasks.Commands.DeleteTaskAttachment;
 
@@ -31,7 +33,8 @@ public class DeleteTaskAttachmentCommandHandler(
         var errors = new List<Error>();
 
         // Find attachment
-        var attachment = await _context.Set<TaskAttachment>().FindAsync(new object[] { request.AttachmentId }, cancellationToken);
+        var attachment = await _context.Set<TaskAttachment>()
+            .FindAsync(new object[] { request.AttachmentId }, cancellationToken);
         if (attachment == null)
         {
             _logger.LogWarning("Attachment {AttachmentId} not found for deletion", request.AttachmentId);
@@ -51,7 +54,7 @@ public class DeleteTaskAttachmentCommandHandler(
         }
 
         // Verify task exists
-        var task = await _context.Set<Domain.Entities.Task>().FindAsync(new object[] { request.TaskId }, cancellationToken);
+        var task = await _context.Set<Task>().FindAsync(new object[] { request.TaskId }, cancellationToken);
         if (task == null)
         {
             _logger.LogWarning("Task {TaskId} not found for attachment deletion", request.TaskId);
@@ -82,7 +85,7 @@ public class DeleteTaskAttachmentCommandHandler(
                     request.TaskId);
                 errors.Add(TaskErrors.UnauthorizedFileAccess);
             }
-            
+
             // Employee must be the uploader
             if (attachment.UploadedById != request.RequestedById)
             {
@@ -92,17 +95,17 @@ public class DeleteTaskAttachmentCommandHandler(
                     request.AttachmentId);
                 errors.Add(TaskErrors.UnauthorizedFileAccess);
             }
-            
+
             // Employees can delete their own attachments when task is Assigned, Accepted (employee accepted, no ManagerRating), or UnderReview.
             // Employees cannot delete attachments once the task is pending manager review, completed, or accepted by manager
             // Check if task is in "Accepted by Manager" state (Accepted status with ManagerRating set)
-            var isAcceptedByManager = task.Status == Domain.Entities.TaskStatus.Accepted && task.ManagerRating.HasValue;
-            
+            var isAcceptedByManager = task.Status == TaskStatus.Accepted && task.ManagerRating.HasValue;
+
             // Allow deletion in: Assigned, Accepted (employee accepted, no ManagerRating), UnderReview
-            var canDelete = task.Status == Domain.Entities.TaskStatus.Assigned ||
-                            (task.Status == Domain.Entities.TaskStatus.Accepted && !isAcceptedByManager) ||
-                            task.Status == Domain.Entities.TaskStatus.UnderReview;
-            
+            var canDelete = task.Status == TaskStatus.Assigned ||
+                            (task.Status == TaskStatus.Accepted && !isAcceptedByManager) ||
+                            task.Status == TaskStatus.UnderReview;
+
             if (!canDelete)
             {
                 _logger.LogWarning(
@@ -128,10 +131,7 @@ public class DeleteTaskAttachmentCommandHandler(
         }
 
         // Check all errors once before database operations
-        if (errors.Any())
-        {
-            return Result.Failure(errors);
-        }
+        if (errors.Any()) return Result.Failure(errors);
 
         try
         {
@@ -161,4 +161,3 @@ public class DeleteTaskAttachmentCommandHandler(
         }
     }
 }
-

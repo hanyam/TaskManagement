@@ -1,10 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using TaskManagement.Application.Common.Interfaces;
-using TaskManagement.Infrastructure.Data.Repositories;
 using TaskManagement.Domain.Common;
 using TaskManagement.Domain.Entities;
 using TaskManagement.Domain.Errors.Tasks;
 using TaskManagement.Infrastructure.Data;
+using TaskManagement.Infrastructure.Data.Repositories;
 using Task = TaskManagement.Domain.Entities.Task;
 
 namespace TaskManagement.Application.Tasks.Commands.ApproveExtensionRequest;
@@ -38,14 +38,14 @@ public class ApproveExtensionRequestCommandHandler(
 
         if (extensionRequest == null)
         {
-            errors.Add(Error.NotFound("Extension request", "ExtensionRequestId", "Errors.Tasks.ExtensionRequestNotFound"));
+            errors.Add(Error.NotFound("Extension request", "ExtensionRequestId",
+                "Errors.Tasks.ExtensionRequestNotFound"));
             return Result.Failure(errors);
         }
 
         if (extensionRequest.Status != ExtensionRequestStatus.Pending)
-        {
-            errors.Add(Error.Validation("Extension request has already been processed", "Status", "Errors.Tasks.ExtensionRequestAlreadyProcessed"));
-        }
+            errors.Add(Error.Validation("Extension request has already been processed", "Status",
+                "Errors.Tasks.ExtensionRequestAlreadyProcessed"));
 
         // Approve extension request (may throw exceptions)
         try
@@ -63,10 +63,7 @@ public class ApproveExtensionRequestCommandHandler(
         }
 
         // Check all errors once before database operations
-        if (errors.Any())
-        {
-            return Result.Failure(errors);
-        }
+        if (errors.Any()) return Result.Failure(errors);
 
         _context.Set<DeadlineExtensionRequest>().Update(extensionRequest);
         await _taskCommandRepository.UpdateAsync(task, cancellationToken);

@@ -1,5 +1,4 @@
 using FluentValidation;
-using TaskManagement.Application.Tasks.Commands.UpdateTask;
 
 namespace TaskManagement.Application.Tasks.Commands.UpdateTask;
 
@@ -43,4 +42,3 @@ public class UpdateTaskCommandValidator : AbstractValidator<UpdateTaskCommand>
             .WithMessage("Updated by user email is required");
     }
 }
-

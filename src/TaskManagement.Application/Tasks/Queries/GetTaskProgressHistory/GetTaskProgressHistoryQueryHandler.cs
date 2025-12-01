@@ -1,8 +1,8 @@
 using TaskManagement.Application.Common.Interfaces;
-using TaskManagement.Infrastructure.Data.Repositories;
 using TaskManagement.Domain.Common;
 using TaskManagement.Domain.DTOs;
 using TaskManagement.Domain.Errors.Tasks;
+using TaskManagement.Infrastructure.Data.Repositories;
 
 namespace TaskManagement.Application.Tasks.Queries.GetTaskProgressHistory;
 
@@ -10,7 +10,8 @@ namespace TaskManagement.Application.Tasks.Queries.GetTaskProgressHistory;
 ///     Handler for getting task progress history.
 ///     Follows CQRS pattern: Queries use Dapper only (no EF Core).
 /// </summary>
-public class GetTaskProgressHistoryQueryHandler(TaskDapperRepository taskRepository) : IRequestHandler<GetTaskProgressHistoryQuery, List<TaskProgressDto>>
+public class GetTaskProgressHistoryQueryHandler(TaskDapperRepository taskRepository)
+    : IRequestHandler<GetTaskProgressHistoryQuery, List<TaskProgressDto>>
 {
     private readonly TaskDapperRepository _taskRepository = taskRepository;
 

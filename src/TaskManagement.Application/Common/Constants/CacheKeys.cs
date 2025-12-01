@@ -21,4 +21,3 @@ public static class CacheKeys
     /// </summary>
     public const string UserSettingsOverride = "UserSettings_Override";
 }
-

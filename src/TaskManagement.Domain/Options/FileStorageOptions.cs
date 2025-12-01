@@ -43,4 +43,3 @@ public class AzureBlobStorageOptions
     /// </summary>
     public string ContainerName { get; set; } = "task-attachments";
 }
-

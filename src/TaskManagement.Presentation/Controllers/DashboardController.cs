@@ -1,13 +1,12 @@
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
-using TaskManagement.Presentation.Attributes;
 using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Application.Tasks.Queries.GetDashboardStats;
 using TaskManagement.Domain.Common;
 using TaskManagement.Domain.DTOs;
+using TaskManagement.Presentation.Attributes;
 
 namespace TaskManagement.Presentation.Controllers;
 
@@ -17,7 +16,11 @@ namespace TaskManagement.Presentation.Controllers;
 [ApiController]
 [Route("dashboard")]
 [Authorize]
-public class DashboardController(ICommandMediator commandMediator, IRequestMediator requestMediator, ICurrentUserService currentUserService, Application.Common.Interfaces.ILocalizationService localizationService)
+public class DashboardController(
+    ICommandMediator commandMediator,
+    IRequestMediator requestMediator,
+    ICurrentUserService currentUserService,
+    ILocalizationService localizationService)
     : BaseController(commandMediator, requestMediator, currentUserService, localizationService)
 {
     /// <summary>
@@ -27,7 +30,8 @@ public class DashboardController(ICommandMediator commandMediator, IRequestMedia
     [HttpGet("stats")]
     [SwaggerOperation(
         Summary = "Get Dashboard Statistics",
-        Description = "Retrieves comprehensive dashboard statistics for the current authenticated user. Returns counts of tasks created by the user, tasks completed, tasks near due date, delayed tasks, tasks in progress, tasks under review, and tasks pending acceptance. Statistics are calculated based on the user's role and assigned/created tasks."
+        Description =
+            "Retrieves comprehensive dashboard statistics for the current authenticated user. Returns counts of tasks created by the user, tasks completed, tasks near due date, delayed tasks, tasks in progress, tasks under review, and tasks pending acceptance. Statistics are calculated based on the user's role and assigned/created tasks."
     )]
     [ProducesResponseType(typeof(ApiResponse<DashboardStatsDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]

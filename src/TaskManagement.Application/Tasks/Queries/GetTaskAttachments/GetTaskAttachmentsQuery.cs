@@ -11,4 +11,3 @@ public record GetTaskAttachmentsQuery : IQuery<List<TaskAttachmentDto>>
     public Guid TaskId { get; init; }
     public Guid RequestedById { get; init; }
 }
-

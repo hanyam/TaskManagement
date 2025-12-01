@@ -1,7 +1,7 @@
 using TaskManagement.Application.Common.Interfaces;
-using TaskManagement.Infrastructure.Data.Repositories;
 using TaskManagement.Domain.Common;
 using TaskManagement.Domain.DTOs;
+using TaskManagement.Infrastructure.Data.Repositories;
 
 namespace TaskManagement.Application.Tasks.Queries.GetDashboardStats;
 
@@ -10,7 +10,8 @@ namespace TaskManagement.Application.Tasks.Queries.GetDashboardStats;
 ///     Optimized to use a single Dapper query instead of multiple EF Core queries.
 ///     Follows CQRS pattern: Queries use Dapper for performance.
 /// </summary>
-public class GetDashboardStatsQueryHandler(TaskDapperRepository taskRepository) : IRequestHandler<GetDashboardStatsQuery, DashboardStatsDto>
+public class GetDashboardStatsQueryHandler(TaskDapperRepository taskRepository)
+    : IRequestHandler<GetDashboardStatsQuery, DashboardStatsDto>
 {
     private readonly TaskDapperRepository _taskRepository = taskRepository;
 

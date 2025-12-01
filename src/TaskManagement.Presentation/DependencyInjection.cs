@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json;
 using Azure.Identity;
 using Azure.Monitor.OpenTelemetry.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -7,7 +8,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Graph;
-using Microsoft.Graph.Models;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using OpenTelemetry;
@@ -38,7 +38,7 @@ public static class DependencyInjection
         services.AddControllers()
             .AddJsonOptions(options =>
             {
-                options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+                options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
             });
 
         // Configure options
@@ -86,7 +86,8 @@ public static class DependencyInjection
                 Scheme = "Bearer",
                 BearerFormat = "JWT",
                 In = ParameterLocation.Header,
-                Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\""
+                Description =
+                    "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\""
             });
 
             c.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -150,12 +151,12 @@ public static class DependencyInjection
         var openTelemetryBuilder = builder.Services.AddOpenTelemetry()
             .ConfigureResource(resource => resource.AddService(builder.Environment.ApplicationName))
             .WithTracing(tracing => tracing
-                .AddSource("DevHabit.Tracing")
-                .AddHttpClientInstrumentation()
-                .AddAspNetCoreInstrumentation()
-                .AddEntityFrameworkCoreInstrumentation()
+                    .AddSource("DevHabit.Tracing")
+                    .AddHttpClientInstrumentation()
+                    .AddAspNetCoreInstrumentation()
+                    .AddEntityFrameworkCoreInstrumentation()
                 // .AddSqlClientInstrumentation()
-                )
+            )
             .WithMetrics(metrics => metrics
                 .AddMeter(TaskManagementMetrics.MeterName)
                 .AddHttpClientInstrumentation()
@@ -167,13 +168,9 @@ public static class DependencyInjection
         // OpenTelemetry logging can be added via Serilog.Sinks.OpenTelemetry if needed
 
         if (builder.Environment.IsDevelopment())
-        {
             openTelemetryBuilder.UseOtlpExporter();
-        }
         else
-        {
             openTelemetryBuilder.UseAzureMonitor();
-        }
 
         //builder.Services.AddHealthChecks()
         //    .AddNpgSql(builder.Configuration.GetConnectionString("Database")!);
@@ -181,4 +178,3 @@ public static class DependencyInjection
         return builder;
     }
 }
-

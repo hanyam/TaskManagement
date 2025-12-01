@@ -13,7 +13,8 @@ public interface IFileStorageService
     /// <param name="contentType">The content type of the file.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The storage path where the file was saved.</returns>
-    Task<string> UploadFileAsync(Stream fileStream, string fileName, string contentType, CancellationToken cancellationToken);
+    Task<string> UploadFileAsync(Stream fileStream, string fileName, string contentType,
+        CancellationToken cancellationToken);
 
     /// <summary>
     ///     Downloads a file from storage.
@@ -38,4 +39,3 @@ public interface IFileStorageService
     /// <returns>True if the file exists, false otherwise.</returns>
     Task<bool> FileExistsAsync(string storagePath, CancellationToken cancellationToken);
 }
-

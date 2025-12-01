@@ -13,4 +13,3 @@ public interface IUserSettingsService
     /// <returns>The language code (e.g., "en" or "ar"). Defaults to "en".</returns>
     string GetLanguage();
 }
-

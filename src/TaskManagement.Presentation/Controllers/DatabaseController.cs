@@ -1,12 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Application.DatabaseSeeding.Commands.SeedDatabase;
 using TaskManagement.Domain.Common;
-using TaskManagement.Domain.Constants;
 using TaskManagement.Domain.DTOs;
 using static TaskManagement.Domain.Constants.RoleNames;
 
@@ -18,10 +16,13 @@ namespace TaskManagement.Presentation.Controllers;
 [ApiController]
 [Route("database")]
 [Authorize(Roles = Admin)]
-public class DatabaseController(ICommandMediator commandMediator, IRequestMediator requestMediator, ICurrentUserService currentUserService, Application.Common.Interfaces.ILocalizationService localizationService)
+public class DatabaseController(
+    ICommandMediator commandMediator,
+    IRequestMediator requestMediator,
+    ICurrentUserService currentUserService,
+    ILocalizationService localizationService)
     : BaseController(commandMediator, requestMediator, currentUserService, localizationService)
 {
-
     /// <summary>
     ///     Seeds the database with initial data from SQL script files in the scripts/Seeding folder.
     ///     Scripts are executed in alphabetical order by filename.
@@ -31,7 +32,8 @@ public class DatabaseController(ICommandMediator commandMediator, IRequestMediat
     [HttpPost("seed")]
     [SwaggerOperation(
         Summary = "Seed Database",
-        Description = "Seeds the database with initial data from SQL script files located in the scripts/Seeding folder. Scripts are executed in alphabetical order by filename. Can execute all scripts or specific scripts by providing script names in the request. Only Admins can execute this operation. Returns detailed execution results for each script including success status, execution time, and any errors."
+        Description =
+            "Seeds the database with initial data from SQL script files located in the scripts/Seeding folder. Scripts are executed in alphabetical order by filename. Can execute all scripts or specific scripts by providing script names in the request. Only Admins can execute this operation. Returns detailed execution results for each script including success status, execution time, and any errors."
     )]
     [ProducesResponseType(typeof(ApiResponse<SeedDatabaseResultDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -55,7 +57,8 @@ public class DatabaseController(ICommandMediator commandMediator, IRequestMediat
     [HttpGet("seed/scripts")]
     [SwaggerOperation(
         Summary = "Get Available Seeding Scripts",
-        Description = "Retrieves a list of all available SQL seeding scripts in the scripts/Seeding folder. Scripts are returned in alphabetical order. Only Admins can access this endpoint. Useful for discovering which scripts are available before executing the seed operation."
+        Description =
+            "Retrieves a list of all available SQL seeding scripts in the scripts/Seeding folder. Scripts are returned in alphabetical order. Only Admins can access this endpoint. Useful for discovering which scripts are available before executing the seed operation."
     )]
     [ProducesResponseType(typeof(ApiResponse<List<string>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -70,11 +73,9 @@ public class DatabaseController(ICommandMediator commandMediator, IRequestMediat
             var seedingFolderPath = Path.Combine(projectRoot, "scripts", "Seeding");
 
             if (!Directory.Exists(seedingFolderPath))
-            {
                 return NotFound(ApiResponse<object>.ErrorResponse(
                     $"Seeding folder not found at: {seedingFolderPath}",
                     HttpContext.TraceIdentifier));
-            }
 
             var scripts = Directory.GetFiles(seedingFolderPath, "*.sql")
                 .Select(Path.GetFileName)
@@ -100,10 +101,7 @@ public class DatabaseController(ICommandMediator commandMediator, IRequestMediat
 
         while (directory != null)
         {
-            if (directory.GetFiles("*.sln").Any())
-            {
-                return directory.FullName;
-            }
+            if (directory.GetFiles("*.sln").Any()) return directory.FullName;
             directory = directory.Parent;
         }
 
@@ -122,4 +120,3 @@ public class SeedDatabaseRequest
     /// <example>["00-SeedEmployees.sql", "01-Add Employees.sql"]</example>
     public List<string>? ScriptNames { get; set; }
 }
-

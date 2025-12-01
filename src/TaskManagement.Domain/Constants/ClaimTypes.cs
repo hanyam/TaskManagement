@@ -25,4 +25,3 @@ public static class CustomClaimTypes
     /// </summary>
     public const string Role = "role";
 }
-

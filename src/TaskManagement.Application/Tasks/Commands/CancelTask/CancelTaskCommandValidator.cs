@@ -3,7 +3,7 @@ using FluentValidation;
 namespace TaskManagement.Application.Tasks.Commands.CancelTask;
 
 /// <summary>
-///     Validator for <see cref="CancelTaskCommand"/>.
+///     Validator for <see cref="CancelTaskCommand" />.
 /// </summary>
 public class CancelTaskCommandValidator : AbstractValidator<CancelTaskCommand>
 {
@@ -22,5 +22,3 @@ public class CancelTaskCommandValidator : AbstractValidator<CancelTaskCommand>
             .WithMessage("RequestedByRole is required.");
     }
 }
-
-

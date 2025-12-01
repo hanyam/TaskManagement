@@ -8,12 +8,3 @@ namespace TaskManagement.Domain.Interfaces;
 public interface IUserEfCommandRepository : ICommandRepository<User>
 {
 }
-
-
-
-
-
-
-
-
-

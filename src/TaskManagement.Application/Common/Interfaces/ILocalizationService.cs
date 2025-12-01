@@ -14,4 +14,3 @@ public interface ILocalizationService
     /// <returns>The localized string, or default value, or key if not found.</returns>
     string GetString(string key, string? defaultValue = null, params object[] args);
 }
-

@@ -49,5 +49,3 @@ public class TaskHistoryConfiguration : IEntityTypeConfiguration<TaskHistory>
         builder.HasIndex(e => e.CreatedAt);
     }
 }
-
-

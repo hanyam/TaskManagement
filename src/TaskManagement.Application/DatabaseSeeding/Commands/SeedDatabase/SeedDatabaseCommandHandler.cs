@@ -16,9 +16,9 @@ public class SeedDatabaseCommandHandler(
     TaskManagementDbContext context,
     ILogger<SeedDatabaseCommandHandler> logger) : ICommandHandler<SeedDatabaseCommand, SeedDatabaseResultDto>
 {
+    private const string SeedingFolderPath = "scripts/Seeding";
     private readonly TaskManagementDbContext _context = context;
     private readonly ILogger<SeedDatabaseCommandHandler> _logger = logger;
-    private const string SeedingFolderPath = "scripts/Seeding";
 
     public async Task<Result<SeedDatabaseResultDto>> Handle(
         SeedDatabaseCommand request,
@@ -51,11 +51,9 @@ public class SeedDatabaseCommandHandler(
 
             // Filter by specific script names if provided
             if (request.ScriptNames?.Any() == true)
-            {
                 sqlFiles = sqlFiles
                     .Where(f => request.ScriptNames.Contains(Path.GetFileName(f)))
                     .ToList();
-            }
 
             result.TotalScripts = sqlFiles.Count;
 
@@ -127,16 +125,13 @@ public class SeedDatabaseCommandHandler(
             // Read the SQL script
             var sqlScript = await File.ReadAllTextAsync(scriptPath, cancellationToken);
 
-            if (string.IsNullOrWhiteSpace(sqlScript))
-            {
-                throw new InvalidOperationException("Script file is empty");
-            }
+            if (string.IsNullOrWhiteSpace(sqlScript)) throw new InvalidOperationException("Script file is empty");
 
             // Execute the script using raw SQL
             // Split by GO statements (if any) and execute each batch
             var batches = SplitSqlBatches(sqlScript);
 
-            int totalRowsAffected = 0;
+            var totalRowsAffected = 0;
 
             foreach (var batch in batches)
             {
@@ -220,10 +215,7 @@ public class SeedDatabaseCommandHandler(
         }
 
         // Add remaining batch
-        if (currentBatch.Any())
-        {
-            batches.Add(string.Join(Environment.NewLine, currentBatch));
-        }
+        if (currentBatch.Any()) batches.Add(string.Join(Environment.NewLine, currentBatch));
 
         return batches;
     }
@@ -241,10 +233,7 @@ public class SeedDatabaseCommandHandler(
         while (directory != null)
         {
             // Check if this directory contains a .sln file
-            if (directory.GetFiles("*.sln").Any())
-            {
-                return directory.FullName;
-            }
+            if (directory.GetFiles("*.sln").Any()) return directory.FullName;
 
             directory = directory.Parent;
         }
@@ -257,4 +246,3 @@ public class SeedDatabaseCommandHandler(
         return currentDirectory;
     }
 }
-

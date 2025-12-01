@@ -16,11 +16,3 @@ public interface ITaskEfCommandRepository : ICommandRepository<Task>
     /// <returns>The last accepted progress history entry, or null if none exists.</returns>
     Task<TaskProgressHistory?> GetLastAcceptedProgressAsync(Guid taskId, CancellationToken cancellationToken = default);
 }
-
-
-
-
-
-
-
-

@@ -16,5 +16,3 @@ public class TaskHistoryDto
     public string? Notes { get; set; }
     public DateTime CreatedAt { get; set; }
 }
-
-

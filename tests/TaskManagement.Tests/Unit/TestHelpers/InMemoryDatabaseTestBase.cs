@@ -20,7 +20,7 @@ public abstract class InMemoryDatabaseTestBase : IDisposable
     protected InMemoryDatabaseTestBase()
     {
         var options = new DbContextOptionsBuilder<TaskManagementDbContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
 
         Context = new TaskManagementDbContext(options);
@@ -30,6 +30,11 @@ public abstract class InMemoryDatabaseTestBase : IDisposable
     }
 
     protected TaskManagementDbContext Context { get; }
+
+    public void Dispose()
+    {
+        Context.Dispose();
+    }
 
     private void SeedTestData()
     {
@@ -53,7 +58,7 @@ public abstract class InMemoryDatabaseTestBase : IDisposable
             new Guid("55555555-5555-5555-5555-555555555555") // charlie.davis@example.com
         };
 
-        for (int i = 0; i < testUsers.Length; i++)
+        for (var i = 0; i < testUsers.Length; i++)
         {
             typeof(User).BaseType!.GetProperty("Id")!.SetValue(testUsers[i], userIds[i]);
             testUsers[i].SetCreatedBy("test@example.com");
@@ -71,7 +76,7 @@ public abstract class InMemoryDatabaseTestBase : IDisposable
                 "Write comprehensive documentation for the new API endpoints",
                 TaskPriority.High,
                 DateTime.UtcNow.AddDays(7),
-                (Guid?)userIds[0], // John Doe - cast to nullable
+                userIds[0], // John Doe - cast to nullable
                 TaskType.WithProgress,
                 userIds[0] // Created by John Doe
             ),
@@ -80,7 +85,7 @@ public abstract class InMemoryDatabaseTestBase : IDisposable
                 "Review the latest pull requests and provide feedback",
                 TaskPriority.Medium,
                 DateTime.UtcNow.AddDays(3),
-                (Guid?)userIds[1], // Jane Smith - cast to nullable
+                userIds[1], // Jane Smith - cast to nullable
                 TaskType.Simple,
                 userIds[0] // Created by John Doe
             ),
@@ -89,7 +94,7 @@ public abstract class InMemoryDatabaseTestBase : IDisposable
                 "Update all project dependencies to latest versions",
                 TaskPriority.Low,
                 DateTime.UtcNow.AddDays(14),
-                (Guid?)userIds[2], // Bob Wilson - cast to nullable
+                userIds[2], // Bob Wilson - cast to nullable
                 TaskType.WithDueDate,
                 userIds[1] // Created by Jane Smith
             )
@@ -103,7 +108,7 @@ public abstract class InMemoryDatabaseTestBase : IDisposable
             new Guid("cccccccc-cccc-cccc-cccc-cccccccccccc")
         };
 
-        for (int i = 0; i < testTasks.Length; i++)
+        for (var i = 0; i < testTasks.Length; i++)
         {
             typeof(Task).BaseType!.GetProperty("Id")!.SetValue(testTasks[i], taskIds[i]);
             TestTaskIds.Add(taskIds[i]);
@@ -259,10 +264,5 @@ public abstract class InMemoryDatabaseTestBase : IDisposable
         Context.Set<ManagerEmployee>().Add(relationship);
         Context.SaveChanges();
         return relationship;
-    }
-
-    public void Dispose()
-    {
-        Context.Dispose();
     }
 }

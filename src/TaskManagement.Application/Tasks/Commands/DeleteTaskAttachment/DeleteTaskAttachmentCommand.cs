@@ -11,4 +11,3 @@ public record DeleteTaskAttachmentCommand : ICommand
     public Guid AttachmentId { get; init; }
     public Guid RequestedById { get; init; }
 }
-

@@ -1,39 +1,35 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Swashbuckle.AspNetCore.Annotations;
-using TaskManagement.Presentation.Attributes;
 using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Application.Tasks.Commands.AcceptTask;
 using TaskManagement.Application.Tasks.Commands.AcceptTaskProgress;
-using TaskManagement.Application.Tasks.Commands.RejectTaskProgress;
 using TaskManagement.Application.Tasks.Commands.ApproveExtensionRequest;
 using TaskManagement.Application.Tasks.Commands.AssignTask;
+using TaskManagement.Application.Tasks.Commands.CancelTask;
 using TaskManagement.Application.Tasks.Commands.CreateTask;
 using TaskManagement.Application.Tasks.Commands.MarkTaskCompleted;
-using TaskManagement.Application.Tasks.Commands.CancelTask;
 using TaskManagement.Application.Tasks.Commands.ReassignTask;
 using TaskManagement.Application.Tasks.Commands.RejectTask;
+using TaskManagement.Application.Tasks.Commands.RejectTaskProgress;
 using TaskManagement.Application.Tasks.Commands.RequestDeadlineExtension;
 using TaskManagement.Application.Tasks.Commands.RequestMoreInfo;
 using TaskManagement.Application.Tasks.Commands.ReviewCompletedTask;
 using TaskManagement.Application.Tasks.Commands.UpdateTask;
 using TaskManagement.Application.Tasks.Commands.UpdateTaskProgress;
 using TaskManagement.Application.Tasks.Queries.GetTaskById;
-using TaskManagement.Application.Tasks.Queries.GetTasks;
 using TaskManagement.Application.Tasks.Queries.GetTaskHistory;
+using TaskManagement.Application.Tasks.Queries.GetTasks;
 using TaskManagement.Application.Tasks.Services;
 using TaskManagement.Domain.Common;
-using TaskManagement.Domain.Constants;
 using TaskManagement.Domain.DTOs;
-using TaskManagement.Domain.Entities;
 using TaskManagement.Infrastructure.Data;
+using TaskManagement.Presentation.Attributes;
 using static TaskManagement.Domain.Constants.RoleNames;
 using Task = TaskManagement.Domain.Entities.Task;
-using TaskStatus = TaskManagement.Domain.Entities.TaskStatus;
 
 namespace TaskManagement.Presentation.Controllers;
 
@@ -49,7 +45,7 @@ public class TasksController(
     ITaskActionService taskActionService,
     TaskManagementDbContext context,
     ICurrentUserService currentUserService,
-    Application.Common.Interfaces.ILocalizationService localizationService)
+    ILocalizationService localizationService)
     : BaseController(commandMediator, requestMediator, currentUserService, localizationService)
 {
     private readonly TaskManagementDbContext _context = context;
@@ -63,7 +59,8 @@ public class TasksController(
     [HttpGet("{id}")]
     [SwaggerOperation(
         Summary = "Get Task by ID",
-        Description = "Retrieves detailed information about a specific task by its unique identifier. Returns task details including status, priority, assignments, progress history, and HATEOAS links for available actions based on user role and task state."
+        Description =
+            "Retrieves detailed information about a specific task by its unique identifier. Returns task details including status, priority, assignments, progress history, and HATEOAS links for available actions based on user role and task state."
     )]
     [ProducesResponseType(typeof(ApiResponse<TaskDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -99,7 +96,8 @@ public class TasksController(
     [HttpGet]
     [SwaggerOperation(
         Summary = "Get Tasks List",
-        Description = "Retrieves a paginated list of tasks with optional filtering by status, priority, assigned user, due date range, and reminder level. Supports filtering by 'created' (tasks created by user) or 'assigned' (tasks assigned to user). Returns pagination metadata including total count, page number, page size, and total pages."
+        Description =
+            "Retrieves a paginated list of tasks with optional filtering by status, priority, assigned user, due date range, and reminder level. Supports filtering by 'created' (tasks created by user) or 'assigned' (tasks assigned to user). Returns pagination metadata including total count, page number, page size, and total pages."
     )]
     [ProducesResponseType(typeof(ApiResponse<GetTasksResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -111,7 +109,7 @@ public class TasksController(
         var userId = GetRequiredUserId();
         var filter = (request.Filter ?? "created").ToLowerInvariant();
 
-        Guid? assignedUserId = request.AssignedUserId;
+        var assignedUserId = request.AssignedUserId;
         Guid? createdById = null;
 
         switch (filter)
@@ -150,7 +148,8 @@ public class TasksController(
     [HttpPost]
     [SwaggerOperation(
         Summary = "Create New Task",
-        Description = "Creates a new task with the specified details. Managers and Admins can create tasks. Tasks can be created as drafts (without assigned user) or assigned immediately. Returns the created task with HATEOAS links for available actions. Requires Manager or Admin role."
+        Description =
+            "Creates a new task with the specified details. Managers and Admins can create tasks. Tasks can be created as drafts (without assigned user) or assigned immediately. Returns the created task with HATEOAS links for available actions. Requires Manager or Admin role."
     )]
     [ProducesResponseType(typeof(ApiResponse<TaskDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -195,7 +194,8 @@ public class TasksController(
     [HttpPut("{id}")]
     [SwaggerOperation(
         Summary = "Update Task",
-        Description = "Updates an existing task's details including title, description, priority, due date, and assigned user. Only Managers and Admins can update tasks. Returns the updated task with refreshed HATEOAS links. Note: Task type cannot be changed after creation."
+        Description =
+            "Updates an existing task's details including title, description, priority, due date, and assigned user. Only Managers and Admins can update tasks. Returns the updated task with refreshed HATEOAS links. Note: Task type cannot be changed after creation."
     )]
     [ProducesResponseType(typeof(ApiResponse<TaskDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -240,7 +240,8 @@ public class TasksController(
     [HttpPost("{id}/assign")]
     [SwaggerOperation(
         Summary = "Assign Task to Users",
-        Description = "Assigns a task to one or multiple users. Only Managers can assign tasks. The task status changes from 'Created' to 'Assigned'. Managers can only assign tasks to employees they manage. Returns the updated task with new HATEOAS links."
+        Description =
+            "Assigns a task to one or multiple users. Only Managers can assign tasks. The task status changes from 'Created' to 'Assigned'. Managers can only assign tasks to employees they manage. Returns the updated task with new HATEOAS links."
     )]
     [ProducesResponseType(typeof(ApiResponse<TaskDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -276,12 +277,12 @@ public class TasksController(
     /// <param name="id">The task ID.</param>
     /// <returns>Success response.</returns>
     [HttpPost("{id}/cancel")]
-    [Authorize(Roles = $"{RoleNames.EmployeeOrManager},{RoleNames.Admin}")]
+    [Authorize(Roles = $"{EmployeeOrManager},{Admin}")]
     [EnsureUserId]
     public async Task<IActionResult> CancelTask(Guid id)
     {
         var userId = GetRequiredUserId();
-        var userRole = User.FindFirst(ClaimTypes.Role)?.Value ?? RoleNames.Default;
+        var userRole = User.FindFirst(ClaimTypes.Role)?.Value ?? Default;
 
         var command = new CancelTaskCommand
         {
@@ -303,7 +304,8 @@ public class TasksController(
     [HttpPost("{id}/progress")]
     [SwaggerOperation(
         Summary = "Update Task Progress",
-        Description = "Updates the progress percentage of a task. Available for Employees and Managers. Progress must be between 0 and 100. Creates a progress history entry. For tasks with 'WithAcceptedProgress' type, progress updates require manager acceptance. Returns the progress update information."
+        Description =
+            "Updates the progress percentage of a task. Available for Employees and Managers. Progress must be between 0 and 100. Creates a progress history entry. For tasks with 'WithAcceptedProgress' type, progress updates require manager acceptance. Returns the progress update information."
     )]
     [ProducesResponseType(typeof(ApiResponse<TaskProgressDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -343,7 +345,8 @@ public class TasksController(
     [HttpPost("{id}/progress/accept")]
     [SwaggerOperation(
         Summary = "Accept Task Progress Update",
-        Description = "Accepts a pending task progress update. Only Managers can accept progress updates. Used for tasks with 'WithAcceptedProgress' type where progress updates require manager approval. Updates the progress history entry status to 'Accepted' and applies the progress to the task."
+        Description =
+            "Accepts a pending task progress update. Only Managers can accept progress updates. Used for tasks with 'WithAcceptedProgress' type where progress updates require manager approval. Updates the progress history entry status to 'Accepted' and applies the progress to the task."
     )]
     [ProducesResponseType(typeof(ApiResponse<TaskProgressDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -376,7 +379,8 @@ public class TasksController(
     [HttpPost("{id}/progress/reject")]
     [SwaggerOperation(
         Summary = "Reject Task Progress Update",
-        Description = "Rejects a pending task progress update. Only Managers can reject progress updates. Used for tasks with 'WithAcceptedProgress' type where progress updates require manager approval. Updates the progress history entry status to 'Rejected' and returns the task to 'Accepted' status so the employee can update progress again."
+        Description =
+            "Rejects a pending task progress update. Only Managers can reject progress updates. Used for tasks with 'WithAcceptedProgress' type where progress updates require manager approval. Updates the progress history entry status to 'Rejected' and returns the task to 'Accepted' status so the employee can update progress again."
     )]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -408,7 +412,8 @@ public class TasksController(
     [HttpPost("{id}/accept")]
     [SwaggerOperation(
         Summary = "Accept Assigned Task",
-        Description = "Accepts an assigned task. Available for Employees and Managers. Changes task status from 'Assigned' to 'Accepted'. The assigned user confirms they will work on the task. Returns the updated task with new HATEOAS links reflecting the new status."
+        Description =
+            "Accepts an assigned task. Available for Employees and Managers. Changes task status from 'Assigned' to 'Accepted'. The assigned user confirms they will work on the task. Returns the updated task with new HATEOAS links reflecting the new status."
     )]
     [ProducesResponseType(typeof(ApiResponse<TaskDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -446,7 +451,8 @@ public class TasksController(
     [HttpPost("{id}/reject")]
     [SwaggerOperation(
         Summary = "Reject Assigned Task",
-        Description = "Rejects an assigned task. Available for Employees and Managers. Changes task status from 'Assigned' to 'Rejected'. An optional rejection reason can be provided. Returns the updated task with new HATEOAS links."
+        Description =
+            "Rejects an assigned task. Available for Employees and Managers. Changes task status from 'Assigned' to 'Rejected'. An optional rejection reason can be provided. Returns the updated task with new HATEOAS links."
     )]
     [ProducesResponseType(typeof(ApiResponse<TaskDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -485,7 +491,8 @@ public class TasksController(
     [HttpPost("{id}/request-info")]
     [SwaggerOperation(
         Summary = "Request More Information",
-        Description = "Requests additional information or clarification about a task. Available for Employees and Managers. Creates an information request that can be viewed by task creators and managers. Returns the updated task with new HATEOAS links."
+        Description =
+            "Requests additional information or clarification about a task. Available for Employees and Managers. Creates an information request that can be viewed by task creators and managers. Returns the updated task with new HATEOAS links."
     )]
     [ProducesResponseType(typeof(ApiResponse<TaskDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -524,7 +531,8 @@ public class TasksController(
     [HttpPut("{id}/reassign")]
     [SwaggerOperation(
         Summary = "Reassign Task",
-        Description = "Reassigns a task to different user(s). Only Managers can reassign tasks. Replaces the current assignment with new user(s). Managers can only reassign to employees they manage. Returns the updated task with new HATEOAS links."
+        Description =
+            "Reassigns a task to different user(s). Only Managers can reassign tasks. Replaces the current assignment with new user(s). Managers can only reassign to employees they manage. Returns the updated task with new HATEOAS links."
     )]
     [ProducesResponseType(typeof(ApiResponse<TaskDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -563,7 +571,8 @@ public class TasksController(
     [HttpPost("{id}/extension-request")]
     [SwaggerOperation(
         Summary = "Request Deadline Extension",
-        Description = "Requests an extension to the task's due date. Available for Employees and Managers. Creates a deadline extension request that requires manager approval. The requested due date must be in the future and later than the current due date. Returns the extension request information."
+        Description =
+            "Requests an extension to the task's due date. Available for Employees and Managers. Creates a deadline extension request that requires manager approval. The requested due date must be in the future and later than the current due date. Returns the extension request information."
     )]
     [ProducesResponseType(typeof(ApiResponse<ExtensionRequestDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -605,7 +614,8 @@ public class TasksController(
     [HttpPost("{id}/extension-request/{requestId}/approve")]
     [SwaggerOperation(
         Summary = "Approve Deadline Extension Request",
-        Description = "Approves a pending deadline extension request. Only Managers can approve extension requests. Updates the task's extended due date and marks the extension request as approved. Optional review notes can be provided. Returns the updated extension request."
+        Description =
+            "Approves a pending deadline extension request. Only Managers can approve extension requests. Updates the task's extended due date and marks the extension request as approved. Optional review notes can be provided. Returns the updated extension request."
     )]
     [ProducesResponseType(typeof(ApiResponse<ExtensionRequestDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -640,7 +650,8 @@ public class TasksController(
     [HttpPost("{id}/complete")]
     [SwaggerOperation(
         Summary = "Mark Task as Completed",
-        Description = "Marks a task as completed by an employee. Changes task status to 'PendingManagerReview' and records a history entry with optional comment. This action is available to employees when the task is in 'Assigned' or 'Accepted' status. Returns the updated task with new HATEOAS links."
+        Description =
+            "Marks a task as completed by an employee. Changes task status to 'PendingManagerReview' and records a history entry with optional comment. This action is available to employees when the task is in 'Assigned' or 'Accepted' status. Returns the updated task with new HATEOAS links."
     )]
     [ProducesResponseType(typeof(ApiResponse<TaskDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -679,7 +690,8 @@ public class TasksController(
     [HttpPost("{id}/review-completed")]
     [SwaggerOperation(
         Summary = "Review Completed Task",
-        Description = "Reviews a completed task with a rating (1-5 stars) and optional feedback. Only Managers and Admins can review tasks. Can accept the completion (status becomes 'Completed'), reject it (status becomes 'RejectedByManager'), or send back for rework (status becomes 'Assigned'). Rating is required if accepting. Returns the updated task with manager rating and feedback."
+        Description =
+            "Reviews a completed task with a rating (1-5 stars) and optional feedback. Only Managers and Admins can review tasks. Can accept the completion (status becomes 'Completed'), reject it (status becomes 'RejectedByManager'), or send back for rework (status becomes 'Assigned'). Rating is required if accepting. Returns the updated task with manager rating and feedback."
     )]
     [ProducesResponseType(typeof(ApiResponse<TaskDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -719,7 +731,8 @@ public class TasksController(
     [HttpGet("{id}/history")]
     [SwaggerOperation(
         Summary = "Get Task History",
-        Description = "Gets the complete history of status changes and actions for a task. Only accessible by task creator, assignee, manager, or admin."
+        Description =
+            "Gets the complete history of status changes and actions for a task. Only accessible by task creator, assignee, manager, or admin."
     )]
     [ProducesResponseType(typeof(ApiResponse<List<TaskHistoryDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
@@ -750,15 +763,11 @@ public class TasksController(
         if (task == null) return null;
 
         // Get user role from ICurrentUserService (supports override) or fallback to claims
-        string userRole = Default;
+        var userRole = Default;
         if (_currentUserService != null)
-        {
             userRole = _currentUserService.GetClaimValue(ClaimTypes.Role) ?? Default;
-        }
         else
-        {
             userRole = User.FindFirst(ClaimTypes.Role)?.Value ?? Default;
-        }
 
         // Generate HATEOAS links using the service
         var links = _taskActionService.GetAvailableActions(task, userId, userRole);

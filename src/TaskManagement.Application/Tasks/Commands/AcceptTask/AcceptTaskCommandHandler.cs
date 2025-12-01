@@ -1,11 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using TaskManagement.Application.Common.Interfaces;
-using TaskManagement.Infrastructure.Data.Repositories;
 using TaskManagement.Domain.Common;
 using TaskManagement.Domain.DTOs;
 using TaskManagement.Domain.Entities;
 using TaskManagement.Domain.Errors.Tasks;
+using TaskManagement.Domain.Interfaces;
 using TaskManagement.Infrastructure.Data;
+using TaskManagement.Infrastructure.Data.Repositories;
 using Task = TaskManagement.Domain.Entities.Task;
 
 namespace TaskManagement.Application.Tasks.Commands.AcceptTask;
@@ -18,13 +19,13 @@ public class AcceptTaskCommandHandler(
     TaskEfCommandRepository taskCommandRepository,
     UserDapperRepository userQueryRepository,
     TaskManagementDbContext context,
-    Domain.Interfaces.ITaskHistoryService taskHistoryService) : ICommandHandler<AcceptTaskCommand, TaskDto>
+    ITaskHistoryService taskHistoryService) : ICommandHandler<AcceptTaskCommand, TaskDto>
 {
     private readonly TaskManagementDbContext _context = context;
-    private readonly TaskEfCommandRepository _taskCommandRepository = taskCommandRepository;
-    private readonly UserDapperRepository _userQueryRepository = userQueryRepository;
     private readonly ICurrentDateService _currentDateService = currentDateService;
-    private readonly Domain.Interfaces.ITaskHistoryService _taskHistoryService = taskHistoryService;
+    private readonly TaskEfCommandRepository _taskCommandRepository = taskCommandRepository;
+    private readonly ITaskHistoryService _taskHistoryService = taskHistoryService;
+    private readonly UserDapperRepository _userQueryRepository = userQueryRepository;
 
     public async Task<Result<TaskDto>> Handle(AcceptTaskCommand request, CancellationToken cancellationToken)
     {
@@ -48,8 +49,8 @@ public class AcceptTaskCommandHandler(
 
         if (!isAssigned)
             errors.Add(Error.Forbidden("User is not assigned to this task", "Errors.Tasks.UserNotAssigned"));
-       
-        if(task.DueDate < _currentDateService.Now)
+
+        if (task.DueDate < _currentDateService.Now)
             errors.Add(TaskErrors.CannotAcceptPassedDueDateTask);
 
         // Accept task (may throw exceptions)
@@ -65,10 +66,7 @@ public class AcceptTaskCommandHandler(
         }
 
         // Check all errors once before database operations
-        if (errors.Any())
-        {
-            return Result<TaskDto>.Failure(errors);
-        }
+        if (errors.Any()) return Result<TaskDto>.Failure(errors);
 
         // Record history: Task accepted
         await _taskHistoryService.RecordStatusChangeAsync(

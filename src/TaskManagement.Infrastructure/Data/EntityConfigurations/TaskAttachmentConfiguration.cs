@@ -58,4 +58,3 @@ public class TaskAttachmentConfiguration : IEntityTypeConfiguration<TaskAttachme
         builder.HasIndex(e => new { e.TaskId, e.Type });
     }
 }
-

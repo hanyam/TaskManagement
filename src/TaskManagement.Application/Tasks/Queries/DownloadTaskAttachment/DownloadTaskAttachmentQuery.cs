@@ -12,4 +12,3 @@ public record DownloadTaskAttachmentQuery : IQuery<DownloadAttachmentResponse>
     public Guid AttachmentId { get; init; }
     public Guid RequestedById { get; init; }
 }
-

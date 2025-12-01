@@ -39,4 +39,3 @@ public static class RoleNames
     /// </summary>
     public const string ManagerOrAdmin = "Manager,Admin";
 }
-

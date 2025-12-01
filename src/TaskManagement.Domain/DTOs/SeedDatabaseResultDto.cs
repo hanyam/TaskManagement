@@ -61,4 +61,3 @@ public class ScriptExecutionDetail
     /// </summary>
     public int? RowsAffected { get; set; }
 }
-

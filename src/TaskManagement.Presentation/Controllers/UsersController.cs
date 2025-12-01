@@ -1,15 +1,15 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Graph;
 using Swashbuckle.AspNetCore.Annotations;
 using TaskManagement.Application.Common.Interfaces;
-using TaskManagement.Infrastructure.Data.Repositories;
 using TaskManagement.Application.Users.Queries.SearchManagedUsers;
 using TaskManagement.Domain.Common;
-using TaskManagement.Domain.Constants;
+using TaskManagement.Domain.Entities;
+using TaskManagement.Infrastructure.Data.Repositories;
 using static TaskManagement.Domain.Constants.CustomClaimTypes;
 
 namespace TaskManagement.Presentation.Controllers;
@@ -27,11 +27,11 @@ public class UsersController(
     UserDapperRepository userRepository,
     ICurrentUserService? currentUserService = null) : ControllerBase
 {
+    private readonly ICurrentUserService? _currentUserService = currentUserService;
     private readonly GraphServiceClient? _graphClient = graphClient;
     private readonly ILogger<UsersController> _logger = logger;
     private readonly IRequestMediator _requestMediator = requestMediator;
     private readonly UserDapperRepository _userRepository = userRepository;
-    private readonly ICurrentUserService? _currentUserService = currentUserService;
 
     /// <summary>
     ///     Searches for users managed by the current user (manager-employee relationship).
@@ -42,7 +42,8 @@ public class UsersController(
     [HttpGet("search")]
     [SwaggerOperation(
         Summary = "Search Managed Users",
-        Description = "Searches for users managed by the current user based on manager-employee relationships. Only searches employees from the Tasks.Users table filtered by the ManagerEmployee relationship table. Requires a minimum of 2 characters in the search query. Returns a list of matching users with their display names, emails, and job titles."
+        Description =
+            "Searches for users managed by the current user based on manager-employee relationships. Only searches employees from the Tasks.Users table filtered by the ManagerEmployee relationship table. Requires a minimum of 2 characters in the search query. Returns a list of matching users with their display names, emails, and job titles."
     )]
     [ProducesResponseType(typeof(ApiResponse<List<UserSearchResult>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -177,7 +178,8 @@ public class UsersController(
     [HttpGet("{id}")]
     [SwaggerOperation(
         Summary = "Get User by ID",
-        Description = "Retrieves detailed information about a specific user by their unique identifier. Uses Azure AD Graph API to fetch user details including display name, email, user principal name, and job title. Returns user information if found."
+        Description =
+            "Retrieves detailed information about a specific user by their unique identifier. Uses Azure AD Graph API to fetch user details including display name, email, user principal name, and job title. Returns user information if found."
     )]
     [ProducesResponseType(typeof(ApiResponse<UserSearchResult>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
@@ -233,7 +235,8 @@ public class UsersController(
     [HttpGet("me")]
     [SwaggerOperation(
         Summary = "Get Current User",
-        Description = "Retrieves information about the currently authenticated user. Respects user override for testing purposes. Fetches user details from the database if available, otherwise returns basic information from JWT claims. Returns user ID, email, display name, and role."
+        Description =
+            "Retrieves information about the currently authenticated user. Respects user override for testing purposes. Fetches user details from the database if available, otherwise returns basic information from JWT claims. Returns user ID, email, display name, and role."
     )]
     [ProducesResponseType(typeof(ApiResponse<CurrentUserDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
@@ -251,14 +254,12 @@ public class UsersController(
                        User.FindFirst(ClaimTypes.Role)?.Value;
 
             if (userId == null && string.IsNullOrEmpty(userEmail))
-            {
                 return Unauthorized(ApiResponse<object>.ErrorResponse(
                     "User not authenticated",
                     HttpContext.TraceIdentifier));
-            }
 
             // If we have userId, fetch full user details from database
-            Domain.Entities.User? user = null;
+            User? user = null;
             if (userId.HasValue)
             {
                 // Try to get user by ID first (if available)
@@ -267,12 +268,9 @@ public class UsersController(
 
             // If we don't have user from ID, try email
             if (user == null && !string.IsNullOrEmpty(userEmail))
-            {
                 user = await _userRepository.GetByEmailAsync(userEmail, CancellationToken.None);
-            }
 
             if (user == null)
-            {
                 // Return basic info from claims/override if user not in database
                 return Ok(ApiResponse<CurrentUserDto>.SuccessResponse(new CurrentUserDto
                 {
@@ -281,7 +279,6 @@ public class UsersController(
                     DisplayName = User.FindFirst("display_name")?.Value ?? userEmail ?? string.Empty,
                     Role = role
                 }));
-            }
 
             // Return full user info from database
             return Ok(ApiResponse<CurrentUserDto>.SuccessResponse(new CurrentUserDto

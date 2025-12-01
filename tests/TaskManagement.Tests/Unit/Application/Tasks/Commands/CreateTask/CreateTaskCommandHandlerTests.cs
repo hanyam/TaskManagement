@@ -77,7 +77,7 @@ public class CreateTaskCommandHandlerTests : InMemoryDatabaseTestBase
         var createdTask = await Context.Tasks.FindAsync(result.Value.Id);
         createdTask.Should().NotBeNull();
         createdTask!.Title.Should().Be(command.Title);
-        createdTask.AssignedUserId.Should().Be((Guid?)employee.Id);
+        createdTask.AssignedUserId.Should().Be(employee.Id);
     }
 
     [Fact]

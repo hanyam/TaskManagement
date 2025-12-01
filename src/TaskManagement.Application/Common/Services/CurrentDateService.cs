@@ -17,10 +17,8 @@ public class CurrentDateService(IMemoryCache memoryCache) : ICurrentDateService
         get
         {
             // Check for override first (for testing)
-            if (_memoryCache.TryGetValue(CacheKeys.CurrentDateOverride, out DateTime? overrideValue) && overrideValue.HasValue)
-            {
-                return overrideValue.Value;
-            }
+            if (_memoryCache.TryGetValue(CacheKeys.CurrentDateOverride, out DateTime? overrideValue) &&
+                overrideValue.HasValue) return overrideValue.Value;
 
             // Fall back to actual current time
             return DateTime.UtcNow;
@@ -32,15 +30,13 @@ public class CurrentDateService(IMemoryCache memoryCache) : ICurrentDateService
         get
         {
             // Check for override first (for testing)
-            if (_memoryCache.TryGetValue(CacheKeys.CurrentDateOverride, out DateTime? overrideValue) && overrideValue.HasValue)
-            {
+            if (_memoryCache.TryGetValue(CacheKeys.CurrentDateOverride, out DateTime? overrideValue) &&
+                overrideValue.HasValue)
                 // Convert UTC override to local time
                 return overrideValue.Value.ToLocalTime();
-            }
 
             // Fall back to actual current time
             return DateTime.Now;
         }
     }
 }
-

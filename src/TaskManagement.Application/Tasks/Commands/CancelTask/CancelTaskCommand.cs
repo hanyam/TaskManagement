@@ -11,5 +11,3 @@ public record CancelTaskCommand : ICommand
     public Guid RequestedById { get; init; }
     public string RequestedByRole { get; init; } = string.Empty;
 }
-
-

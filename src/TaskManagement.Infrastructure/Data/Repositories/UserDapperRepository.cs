@@ -1,6 +1,5 @@
 using Dapper;
 using Microsoft.Extensions.Configuration;
-using TaskManagement.Domain.Interfaces;
 using TaskManagement.Domain.Entities;
 
 namespace TaskManagement.Infrastructure.Data.Repositories;
@@ -10,7 +9,6 @@ namespace TaskManagement.Infrastructure.Data.Repositories;
 /// </summary>
 public class UserDapperRepository(IConfiguration configuration) : DapperQueryRepository<User>(configuration)
 {
-
     /// <summary>
     ///     Gets a user by email.
     /// </summary>
@@ -80,4 +78,3 @@ public class UserDapperRepository(IConfiguration configuration) : DapperQueryRep
             cancellationToken: cancellationToken));
     }
 }
-

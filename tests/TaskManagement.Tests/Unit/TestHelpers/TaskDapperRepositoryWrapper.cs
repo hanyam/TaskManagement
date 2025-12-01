@@ -18,8 +18,8 @@ namespace TaskManagement.Tests.Unit.TestHelpers;
 /// </summary>
 public class TaskDapperRepositoryWrapper : TaskDapperRepository
 {
-    private readonly TaskEfQueryRepository _efRepository;
     private readonly TaskManagementDbContext _context;
+    private readonly TaskEfQueryRepository _efRepository;
 
     public TaskDapperRepositoryWrapper(TaskEfQueryRepository efRepository, TaskManagementDbContext context)
         : base(new ConfigurationBuilder()
@@ -126,7 +126,8 @@ public class TaskDapperRepositoryWrapper : TaskDapperRepository
         return (pagedTasks, totalCount);
     }
 
-    public override async Task<DashboardStatsDto> GetDashboardStatsAsync(Guid userId, CancellationToken cancellationToken = default)
+    public override async Task<DashboardStatsDto> GetDashboardStatsAsync(Guid userId,
+        CancellationToken cancellationToken = default)
     {
         var now = DateTime.UtcNow;
         var nearDueDateThreshold = now.AddDays(3);
@@ -138,7 +139,8 @@ public class TaskDapperRepositoryWrapper : TaskDapperRepository
         var tasksCompleted = await _context.Tasks
             .CountAsync(t => t.Status == DomainTaskStatus.Completed &&
                              (t.AssignedUserId == userId || t.CreatedById == userId ||
-                              _context.Set<TaskAssignment>().Any(a => a.TaskId == t.Id && a.UserId == userId)), cancellationToken);
+                              _context.Set<TaskAssignment>().Any(a => a.TaskId == t.Id && a.UserId == userId)),
+                cancellationToken);
 
         var tasksNearDueDate = await _context.Tasks
             .CountAsync(t => t.DueDate.HasValue &&
@@ -147,7 +149,8 @@ public class TaskDapperRepositoryWrapper : TaskDapperRepository
                              t.Status != DomainTaskStatus.Completed &&
                              t.Status != DomainTaskStatus.Cancelled &&
                              (t.AssignedUserId == userId || t.CreatedById == userId ||
-                              _context.Set<TaskAssignment>().Any(a => a.TaskId == t.Id && a.UserId == userId)), cancellationToken);
+                              _context.Set<TaskAssignment>().Any(a => a.TaskId == t.Id && a.UserId == userId)),
+                cancellationToken);
 
         var tasksDelayed = await _context.Tasks
             .CountAsync(t => t.DueDate.HasValue &&
@@ -155,23 +158,27 @@ public class TaskDapperRepositoryWrapper : TaskDapperRepository
                              t.Status != DomainTaskStatus.Completed &&
                              t.Status != DomainTaskStatus.Cancelled &&
                              (t.AssignedUserId == userId || t.CreatedById == userId ||
-                              _context.Set<TaskAssignment>().Any(a => a.TaskId == t.Id && a.UserId == userId)), cancellationToken);
+                              _context.Set<TaskAssignment>().Any(a => a.TaskId == t.Id && a.UserId == userId)),
+                cancellationToken);
 
         var tasksInProgress = await _context.Tasks
             .CountAsync(t => (t.Status == DomainTaskStatus.Assigned || t.Status == DomainTaskStatus.Accepted) &&
                              (t.AssignedUserId == userId ||
-                              _context.Set<TaskAssignment>().Any(a => a.TaskId == t.Id && a.UserId == userId)), cancellationToken);
+                              _context.Set<TaskAssignment>().Any(a => a.TaskId == t.Id && a.UserId == userId)),
+                cancellationToken);
 
         var tasksUnderReview = await _context.Tasks
-            .CountAsync(t => (t.Status == DomainTaskStatus.UnderReview || t.Status == DomainTaskStatus.PendingManagerReview) &&
-                             (t.AssignedUserId == userId ||
-                              _context.Set<TaskAssignment>().Any(a => a.TaskId == t.Id && a.UserId == userId) ||
-                              t.CreatedById == userId), cancellationToken);
+            .CountAsync(t =>
+                (t.Status == DomainTaskStatus.UnderReview || t.Status == DomainTaskStatus.PendingManagerReview) &&
+                (t.AssignedUserId == userId ||
+                 _context.Set<TaskAssignment>().Any(a => a.TaskId == t.Id && a.UserId == userId) ||
+                 t.CreatedById == userId), cancellationToken);
 
         var tasksPendingAcceptance = await _context.Tasks
             .CountAsync(t => t.Status == DomainTaskStatus.Created &&
                              (t.AssignedUserId == userId ||
-                              _context.Set<TaskAssignment>().Any(a => a.TaskId == t.Id && a.UserId == userId)), cancellationToken);
+                              _context.Set<TaskAssignment>().Any(a => a.TaskId == t.Id && a.UserId == userId)),
+                cancellationToken);
 
         return new DashboardStatsDto
         {
@@ -185,7 +192,8 @@ public class TaskDapperRepositoryWrapper : TaskDapperRepository
         };
     }
 
-    public override async Task<bool> HasUserAccessToTaskAsync(Guid taskId, Guid userId, CancellationToken cancellationToken = default)
+    public override async Task<bool> HasUserAccessToTaskAsync(Guid taskId, Guid userId,
+        CancellationToken cancellationToken = default)
     {
         // Use EF Core for testing purposes
         var task = await _efRepository.GetByIdAsync(taskId, cancellationToken);
@@ -340,11 +348,12 @@ public class TaskDapperRepositoryWrapper : TaskDapperRepository
 
         if (userId.HasValue)
             query = query.Where(t => t.AssignedUserId == userId.Value ||
-                                   t.CreatedById == userId.Value ||
-                                   t.Assignments.Any(a => a.UserId == userId.Value));
+                                     t.CreatedById == userId.Value ||
+                                     t.Assignments.Any(a => a.UserId == userId.Value));
 
         var tasks = await query
-            .Where(t => t.DueDate.HasValue && t.Status != DomainTaskStatus.Completed && t.Status != DomainTaskStatus.Cancelled)
+            .Where(t => t.DueDate.HasValue && t.Status != DomainTaskStatus.Completed &&
+                        t.Status != DomainTaskStatus.Cancelled)
             .Select(t => new TaskDto
             {
                 Id = t.Id,

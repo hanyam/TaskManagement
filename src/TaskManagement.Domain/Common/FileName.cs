@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Metrics;
-using System.Text;
 
 namespace TaskManagement.Domain.Common;
+
 public sealed class TaskManagementMetrics
 {
     public const string MeterName = "TaskManagement.Metrics";
@@ -19,7 +17,7 @@ public sealed class TaskManagementMetrics
         Justification = "All Meter objects are managed by IMeterFactory")]
     public TaskManagementMetrics(IMeterFactory meterFactory)
     {
-        Meter meter = meterFactory.Create(MeterName);
+        var meter = meterFactory.Create(MeterName);
         _habitRequestCounter = meter.CreateCounter<long>("taskManagement.api.habit_requests.count");
         _newUserRegistrationsCounter = meter.CreateCounter<long>("taskManagement.api.user_registrations.count");
     }

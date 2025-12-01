@@ -1,10 +1,10 @@
 using Serilog;
-using TaskManagement.Presentation;
-using TaskManagement.Presentation.Extensions;
-using TaskManagement.Presentation.Middleware;
 using TaskManagement.Application;
 using TaskManagement.Infrastructure;
 using TaskManagement.Infrastructure.Data;
+using TaskManagement.Presentation;
+using TaskManagement.Presentation.Extensions;
+using TaskManagement.Presentation.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 

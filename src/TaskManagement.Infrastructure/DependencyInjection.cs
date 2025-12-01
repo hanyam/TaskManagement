@@ -2,11 +2,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using TaskManagement.Domain.Interfaces;
-using TaskManagement.Domain.Options;
 using TaskManagement.Infrastructure.Authentication;
 using TaskManagement.Infrastructure.Data;
 using TaskManagement.Infrastructure.Data.Repositories;
 using TaskManagement.Infrastructure.FileStorage;
+using TaskManagement.Infrastructure.Services;
 
 namespace TaskManagement.Infrastructure;
 
@@ -51,21 +51,17 @@ public static class DependencyInjection
         // Register file storage service based on configuration
         // Note: FileStorageOptions is already registered in Application layer
         var fileStorageProvider = configuration["FileStorage:Provider"] ?? "Local";
-        
+
         if (string.Equals(fileStorageProvider, "AzureBlob", StringComparison.OrdinalIgnoreCase))
-        {
             services.AddScoped<IFileStorageService, AzureBlobStorageService>();
-        }
         else
-        {
             services.AddScoped<IFileStorageService, LocalFileStorageService>();
-        }
 
         // Register authentication service
         services.AddScoped<IAuthenticationService, AuthenticationService>();
 
         // Register task history service
-        services.AddScoped<Domain.Interfaces.ITaskHistoryService, Services.TaskHistoryService>();
+        services.AddScoped<ITaskHistoryService, TaskHistoryService>();
 
         return services;
     }

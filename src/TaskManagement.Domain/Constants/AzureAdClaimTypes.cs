@@ -25,4 +25,3 @@ public static class AzureAdClaimTypes
     /// </summary>
     public const string FamilyName = "family_name";
 }
-

@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Domain.Common;
-using TaskManagement.Domain.Constants;
 using static TaskManagement.Domain.Constants.CustomClaimTypes;
 
 namespace TaskManagement.Presentation.Attributes;
@@ -12,7 +11,7 @@ namespace TaskManagement.Presentation.Attributes;
 ///     Returns BadRequest if user ID is not found.
 ///     Works with ICurrentUserService override mechanism for testing.
 /// </summary>
-[AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = false)]
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
 public class EnsureUserIdAttribute : Attribute, IAuthorizationFilter
 {
     /// <summary>
@@ -22,7 +21,8 @@ public class EnsureUserIdAttribute : Attribute, IAuthorizationFilter
     public void OnAuthorization(AuthorizationFilterContext context)
     {
         // Get ICurrentUserService from DI
-        var currentUserService = context.HttpContext.RequestServices.GetService(typeof(ICurrentUserService)) as ICurrentUserService;
+        var currentUserService =
+            context.HttpContext.RequestServices.GetService(typeof(ICurrentUserService)) as ICurrentUserService;
 
         Guid? userId;
 
@@ -36,28 +36,19 @@ public class EnsureUserIdAttribute : Attribute, IAuthorizationFilter
             // Fallback to HttpContext.User for backward compatibility
             var userIdClaim = context.HttpContext.User.FindFirst(UserId)?.Value;
             if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var parsedUserId))
-            {
                 userId = null;
-            }
             else
-            {
                 userId = parsedUserId;
-            }
         }
 
         // If user ID is not found, return BadRequest
         if (!userId.HasValue)
-        {
             context.Result = new BadRequestObjectResult(
                 ApiResponse<object>.ErrorResponse(
                     "User ID not found in token",
                     context.HttpContext.TraceIdentifier));
-        }
         else
-        {
             // Store userId in HttpContext.Items for easy access in controllers
             context.HttpContext.Items["CurrentUserId"] = userId.Value;
-        }
     }
 }
-

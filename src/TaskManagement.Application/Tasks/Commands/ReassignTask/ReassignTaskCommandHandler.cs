@@ -1,11 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using TaskManagement.Application.Common.Interfaces;
-using TaskManagement.Infrastructure.Data.Repositories;
 using TaskManagement.Domain.Common;
 using TaskManagement.Domain.DTOs;
 using TaskManagement.Domain.Entities;
 using TaskManagement.Domain.Errors.Tasks;
 using TaskManagement.Infrastructure.Data;
+using TaskManagement.Infrastructure.Data.Repositories;
 using Task = TaskManagement.Domain.Entities.Task;
 
 namespace TaskManagement.Application.Tasks.Commands.ReassignTask;
@@ -36,9 +36,8 @@ public class ReassignTaskCommandHandler(
 
         // Validate user IDs
         if (!request.NewUserIds.Any())
-        {
-            errors.Add(Error.Validation("At least one user must be assigned", "NewUserIds", "Errors.Tasks.AtLeastOneUserRequired"));
-        }
+            errors.Add(Error.Validation("At least one user must be assigned", "NewUserIds",
+                "Errors.Tasks.AtLeastOneUserRequired"));
 
         // Validate that all users exist
         foreach (var userId in request.NewUserIds)
@@ -50,18 +49,12 @@ public class ReassignTaskCommandHandler(
             }
             else
             {
-                if (!user.IsActive)
-                {
-                    errors.Add(TaskErrors.AssignedUserInactive);
-                }
+                if (!user.IsActive) errors.Add(TaskErrors.AssignedUserInactive);
             }
         }
 
         // Check all errors once before database operations
-        if (errors.Any())
-        {
-            return Result<TaskDto>.Failure(errors);
-        }
+        if (errors.Any()) return Result<TaskDto>.Failure(errors);
 
         // Clear existing assignments
         var existingAssignments = await _context.Set<TaskAssignment>()

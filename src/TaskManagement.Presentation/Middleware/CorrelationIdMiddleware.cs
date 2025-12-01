@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Http;
 using Serilog.Context;
-using System.Diagnostics;
 
 namespace TaskManagement.Presentation.Middleware;
 
@@ -21,8 +20,8 @@ public class CorrelationIdMiddleware
     public async Task InvokeAsync(HttpContext context)
     {
         // Try to get correlation ID from request header, otherwise generate a new one
-        var correlationId = context.Request.Headers[CorrelationIdHeaderName].FirstOrDefault() 
-                             ?? Guid.NewGuid().ToString();
+        var correlationId = context.Request.Headers[CorrelationIdHeaderName].FirstOrDefault()
+                            ?? Guid.NewGuid().ToString();
 
         // Store in HttpContext.Items for access throughout the request pipeline
         context.Items[CorrelationIdItemName] = correlationId;
@@ -45,4 +44,3 @@ public class CorrelationIdMiddleware
         return context.Items[CorrelationIdItemName]?.ToString();
     }
 }
-

@@ -1,8 +1,8 @@
 using Dapper;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
-using TaskManagement.Domain.Interfaces;
 using TaskManagement.Domain.Common;
+using TaskManagement.Domain.Interfaces;
 
 namespace TaskManagement.Infrastructure.Data.Repositories;
 
@@ -13,7 +13,8 @@ namespace TaskManagement.Infrastructure.Data.Repositories;
 public class DapperQueryRepository<T>(IConfiguration configuration) : IQueryRepository<T> where T : BaseEntity
 {
     private readonly string _connectionString = configuration.GetConnectionString("DefaultConnection")
-                                                ?? throw new InvalidOperationException("DefaultConnection is not configured.");
+                                                ?? throw new InvalidOperationException(
+                                                    "DefaultConnection is not configured.");
 
     public virtual async Task<T?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
@@ -58,4 +59,3 @@ public class DapperQueryRepository<T>(IConfiguration configuration) : IQueryRepo
         return new SqlConnection(_connectionString);
     }
 }
-

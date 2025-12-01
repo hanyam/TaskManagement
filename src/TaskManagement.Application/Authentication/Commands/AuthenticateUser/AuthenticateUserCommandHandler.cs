@@ -2,14 +2,13 @@ using System.Security.Claims;
 using Microsoft.Extensions.Logging;
 using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Application.Common.Services;
-using TaskManagement.Infrastructure.Data.Repositories;
 using TaskManagement.Domain.Common;
-using TaskManagement.Domain.Constants;
 using TaskManagement.Domain.DTOs;
 using TaskManagement.Domain.Entities;
 using TaskManagement.Domain.Errors.Authentication;
 using TaskManagement.Domain.Interfaces;
 using TaskManagement.Infrastructure.Data;
+using TaskManagement.Infrastructure.Data.Repositories;
 using static TaskManagement.Domain.Constants.CustomClaimTypes;
 using static TaskManagement.Domain.Constants.AzureAdClaimTypes;
 
@@ -26,12 +25,12 @@ public class AuthenticateUserCommandHandler(
     ILogger<AuthenticateUserCommandHandler> logger,
     IAuditLogService auditLogService) : ICommandHandler<AuthenticateUserCommand, AuthenticationResponse>
 {
+    private readonly IAuditLogService _auditLogService = auditLogService;
     private readonly IAuthenticationService _authenticationService = authenticationService;
     private readonly TaskManagementDbContext _context = context;
+    private readonly ILogger<AuthenticateUserCommandHandler> _logger = logger;
     private readonly UserEfCommandRepository _userCommandRepository = userCommandRepository;
     private readonly UserDapperRepository _userQueryRepository = userQueryRepository;
-    private readonly ILogger<AuthenticateUserCommandHandler> _logger = logger;
-    private readonly IAuditLogService _auditLogService = auditLogService;
 
     public async Task<Result<AuthenticationResponse>> Handle(AuthenticateUserCommand request,
         CancellationToken cancellationToken)
@@ -135,7 +134,8 @@ public class AuthenticateUserCommandHandler(
             return Result<AuthenticationResponse>.Failure(errors);
         }
 
-        _logger.LogInformation("Successfully authenticated user {UserId} with email {Email} and role {Role}", user.Id, email, user.Role);
+        _logger.LogInformation("Successfully authenticated user {UserId} with email {Email} and role {Role}", user.Id,
+            email, user.Role);
         _auditLogService.LogAuthenticationSuccess(user.Id.ToString(), email);
 
         return new AuthenticationResponse

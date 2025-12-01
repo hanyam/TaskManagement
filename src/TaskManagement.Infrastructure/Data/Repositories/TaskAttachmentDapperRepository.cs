@@ -2,14 +2,14 @@ using Dapper;
 using Microsoft.Extensions.Configuration;
 using TaskManagement.Domain.DTOs;
 using TaskManagement.Domain.Entities;
-using TaskManagement.Domain.Interfaces;
 
 namespace TaskManagement.Infrastructure.Data.Repositories;
 
 /// <summary>
 ///     Dapper-based repository for TaskAttachment read operations.
 /// </summary>
-public class TaskAttachmentDapperRepository(IConfiguration configuration) : DapperQueryRepository<TaskAttachment>(configuration)
+public class TaskAttachmentDapperRepository(IConfiguration configuration)
+    : DapperQueryRepository<TaskAttachment>(configuration)
 {
     /// <summary>
     ///     Gets all attachments for a task with user information.
@@ -34,4 +34,3 @@ public class TaskAttachmentDapperRepository(IConfiguration configuration) : Dapp
             new CommandDefinition(sql, new { TaskId = taskId }, cancellationToken: cancellationToken));
     }
 }
-

@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
-using TaskManagement.Domain.Interfaces;
 using TaskManagement.Domain.Common;
-using TaskManagement.Infrastructure.Data;
+using TaskManagement.Domain.Interfaces;
 
 namespace TaskManagement.Infrastructure.Data.Repositories;
 
@@ -39,4 +38,3 @@ public class EfCommandRepository<T>(TaskManagementDbContext context) : ICommandR
         await Task.CompletedTask; // EF Core tracks changes, SaveChangesAsync will persist them
     }
 }
-

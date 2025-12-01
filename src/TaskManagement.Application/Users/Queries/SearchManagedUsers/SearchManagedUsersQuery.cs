@@ -10,4 +10,3 @@ public record SearchManagedUsersQuery : IQuery<List<UserSearchResultDto>>
     public Guid ManagerId { get; init; }
     public string SearchQuery { get; init; } = string.Empty;
 }
-

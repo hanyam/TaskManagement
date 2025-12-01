@@ -1,10 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using TaskManagement.Application.Common.Interfaces;
-using TaskManagement.Infrastructure.Data.Repositories;
 using TaskManagement.Domain.Common;
 using TaskManagement.Domain.Entities;
 using TaskManagement.Domain.Errors.Tasks;
 using TaskManagement.Infrastructure.Data;
+using TaskManagement.Infrastructure.Data.Repositories;
 using Task = TaskManagement.Domain.Entities.Task;
 using TaskStatus = TaskManagement.Domain.Entities.TaskStatus;
 
@@ -39,33 +39,30 @@ public class RejectTaskProgressCommandHandler(
 
         if (progressHistory == null)
         {
-            errors.Add(Error.NotFound("Progress history entry", "ProgressHistoryId", "Errors.Tasks.ProgressHistoryNotFound"));
+            errors.Add(Error.NotFound("Progress history entry", "ProgressHistoryId",
+                "Errors.Tasks.ProgressHistoryNotFound"));
             return Result.Failure(errors);
         }
 
         // Validate user is the task creator
         if (task.CreatedById != request.RejectedById)
-        {
-            errors.Add(Error.Forbidden("Only the task creator can reject progress updates", "Errors.Tasks.OnlyCreatorCanRejectProgress"));
-        }
+            errors.Add(Error.Forbidden("Only the task creator can reject progress updates",
+                "Errors.Tasks.OnlyCreatorCanRejectProgress"));
 
         // Validate task is in UnderReview status
         if (task.Status != TaskStatus.UnderReview)
-        {
-            errors.Add(Error.Validation("Task must be under review to reject progress", "Status", "Errors.Tasks.TaskMustBeUnderReviewToReject"));
-        }
+            errors.Add(Error.Validation("Task must be under review to reject progress", "Status",
+                "Errors.Tasks.TaskMustBeUnderReviewToReject"));
 
         // Validate task type supports progress approval
         if (task.Type != TaskType.WithAcceptedProgress)
-        {
-            errors.Add(Error.Validation("This task type does not require progress acceptance", "Type", "Errors.Tasks.TaskTypeNoProgressAcceptance"));
-        }
+            errors.Add(Error.Validation("This task type does not require progress acceptance", "Type",
+                "Errors.Tasks.TaskTypeNoProgressAcceptance"));
 
         // Validate progress history is pending
         if (progressHistory.Status != ProgressStatus.Pending)
-        {
-            errors.Add(Error.Validation("Progress history entry is not pending", "ProgressHistoryId", "Errors.Tasks.ProgressHistoryNotPending"));
-        }
+            errors.Add(Error.Validation("Progress history entry is not pending", "ProgressHistoryId",
+                "Errors.Tasks.ProgressHistoryNotPending"));
 
         // Reject progress (may throw exceptions)
         try
@@ -79,12 +76,12 @@ public class RejectTaskProgressCommandHandler(
             // Reject the progress history entry
             progressHistory.Reject(request.RejectedById);
             progressHistory.SetUpdatedBy(request.RejectedById.ToString());
-            
+
             // Revert progress percentage to the last accepted value (or 0 if none exists)
             // This must be done BEFORE changing status, as AcceptProgress() validates status is UnderReview
             var revertToPercentage = lastAcceptedProgress?.ProgressPercentage ?? 0;
             task.SetProgressPercentage(revertToPercentage);
-            
+
             // Change status back to Accepted (task remains accepted, only progress was rejected)
             // AcceptProgress() changes status from UnderReview to Accepted
             task.AcceptProgress();
@@ -96,10 +93,7 @@ public class RejectTaskProgressCommandHandler(
         }
 
         // Check all errors once before database operations
-        if (errors.Any())
-        {
-            return Result.Failure(errors);
-        }
+        if (errors.Any()) return Result.Failure(errors);
 
 
         _context.Set<TaskProgressHistory>().Update(progressHistory);
@@ -109,4 +103,3 @@ public class RejectTaskProgressCommandHandler(
         return Result.Success();
     }
 }
-

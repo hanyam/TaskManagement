@@ -24,7 +24,8 @@ public class CancelTaskCommandHandlerTests : InMemoryDatabaseTestBase
         var repository = new TaskEfCommandRepository(Context);
         var logger = Mock.Of<ILogger<CancelTaskCommandHandler>>();
         var taskHistoryService = new Mock<ITaskHistoryService>().Object;
-        _handler = new CancelTaskCommandHandler(Context, repository, _fileStorageServiceMock.Object, logger, taskHistoryService);
+        _handler = new CancelTaskCommandHandler(Context, repository, _fileStorageServiceMock.Object, logger,
+            taskHistoryService);
     }
 
     [Fact]
@@ -133,5 +134,3 @@ public class CancelTaskCommandHandlerTests : InMemoryDatabaseTestBase
         result.ShouldContainError(TaskErrors.CannotCancelReviewedTask);
     }
 }
-
-

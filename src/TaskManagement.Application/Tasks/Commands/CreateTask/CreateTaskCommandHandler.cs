@@ -1,13 +1,15 @@
 using Microsoft.Extensions.Logging;
 using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Application.Common.Services;
-using TaskManagement.Infrastructure.Data.Repositories;
 using TaskManagement.Domain.Common;
 using TaskManagement.Domain.DTOs;
 using TaskManagement.Domain.Entities;
 using TaskManagement.Domain.Errors.Tasks;
+using TaskManagement.Domain.Interfaces;
 using TaskManagement.Infrastructure.Data;
+using TaskManagement.Infrastructure.Data.Repositories;
 using Task = TaskManagement.Domain.Entities.Task;
+using TaskStatus = TaskManagement.Domain.Entities.TaskStatus;
 
 namespace TaskManagement.Application.Tasks.Commands.CreateTask;
 
@@ -20,14 +22,14 @@ public class CreateTaskCommandHandler(
     TaskManagementDbContext context,
     ILogger<CreateTaskCommandHandler> logger,
     IAuditLogService auditLogService,
-    Domain.Interfaces.ITaskHistoryService taskHistoryService) : ICommandHandler<CreateTaskCommand, TaskDto>
+    ITaskHistoryService taskHistoryService) : ICommandHandler<CreateTaskCommand, TaskDto>
 {
-    private readonly TaskManagementDbContext _context = context;
-    private readonly TaskEfCommandRepository _taskCommandRepository = taskCommandRepository;
-    private readonly UserDapperRepository _userQueryRepository = userQueryRepository;
-    private readonly ILogger<CreateTaskCommandHandler> _logger = logger;
     private readonly IAuditLogService _auditLogService = auditLogService;
-    private readonly Domain.Interfaces.ITaskHistoryService _taskHistoryService = taskHistoryService;
+    private readonly TaskManagementDbContext _context = context;
+    private readonly ILogger<CreateTaskCommandHandler> _logger = logger;
+    private readonly TaskEfCommandRepository _taskCommandRepository = taskCommandRepository;
+    private readonly ITaskHistoryService _taskHistoryService = taskHistoryService;
+    private readonly UserDapperRepository _userQueryRepository = userQueryRepository;
 
     public async Task<Result<TaskDto>> Handle(CreateTaskCommand request, CancellationToken cancellationToken)
     {
@@ -67,10 +69,7 @@ public class CreateTaskCommandHandler(
                             request.CreatedById,
                             request.AssignedUserId.Value,
                             cancellationToken);
-                        if (!isManager)
-                        {
-                            errors.Add(TaskErrors.AssignerMustBeManagerOfAssignee);
-                        }
+                        if (!isManager) errors.Add(TaskErrors.AssignerMustBeManagerOfAssignee);
                     }
                     else
                     {
@@ -82,15 +81,9 @@ public class CreateTaskCommandHandler(
         }
 
         // Additional validations can be added here
-        if (string.IsNullOrWhiteSpace(request.Title))
-        {
-            errors.Add(TaskErrors.TitleRequired);
-        }
+        if (string.IsNullOrWhiteSpace(request.Title)) errors.Add(TaskErrors.TitleRequired);
 
-        if (request.DueDate < DateTime.UtcNow)
-        {
-            errors.Add(TaskErrors.DueDateInPast);
-        }
+        if (request.DueDate < DateTime.UtcNow) errors.Add(TaskErrors.DueDateInPast);
 
         // If there are any validation errors, return them all
         if (errors.Any())
@@ -116,17 +109,17 @@ public class CreateTaskCommandHandler(
 
         // Add to repository using EF Core (for change tracking and complex operations)
         await _taskCommandRepository.AddAsync(task, cancellationToken);
-        
+
         // Record history: Task created
         await _taskHistoryService.RecordStatusChangeAsync(
             task.Id,
-            Domain.Entities.TaskStatus.Created,
-            Domain.Entities.TaskStatus.Created,
+            TaskStatus.Created,
+            TaskStatus.Created,
             "Created",
             request.CreatedById,
             request.AssignedUserId.HasValue ? $"Assigned to {assignedUser?.Email}" : "Draft task",
             cancellationToken);
-        
+
         await _context.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation(

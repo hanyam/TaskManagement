@@ -12,10 +12,11 @@ public class LocalFileStorageService(
     IOptions<FileStorageOptions> options,
     ILogger<LocalFileStorageService> logger) : IFileStorageService
 {
-    private readonly FileStorageOptions _options = options.Value;
     private readonly ILogger<LocalFileStorageService> _logger = logger;
+    private readonly FileStorageOptions _options = options.Value;
 
-    public async Task<string> UploadFileAsync(Stream fileStream, string fileName, string contentType, CancellationToken cancellationToken)
+    public async Task<string> UploadFileAsync(Stream fileStream, string fileName, string contentType,
+        CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(_options.LocalPath))
             throw new InvalidOperationException("Local file storage path is not configured");
@@ -33,7 +34,8 @@ public class LocalFileStorageService(
 
         try
         {
-            await using var fileStreamWriter = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None);
+            await using var fileStreamWriter =
+                new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None);
             await fileStream.CopyToAsync(fileStreamWriter, cancellationToken);
             await fileStreamWriter.FlushAsync(cancellationToken);
 
@@ -81,19 +83,14 @@ public class LocalFileStorageService(
             // Try to delete the parent directory if it's empty
             var directoryPath = Path.GetDirectoryName(filePath);
             if (!string.IsNullOrEmpty(directoryPath) && Directory.Exists(directoryPath))
-            {
                 try
                 {
-                    if (!Directory.EnumerateFileSystemEntries(directoryPath).Any())
-                    {
-                        Directory.Delete(directoryPath);
-                    }
+                    if (!Directory.EnumerateFileSystemEntries(directoryPath).Any()) Directory.Delete(directoryPath);
                 }
                 catch (Exception ex)
                 {
                     _logger.LogWarning(ex, "Failed to delete empty directory: {DirectoryPath}", directoryPath);
                 }
-            }
 
             _logger.LogInformation("File deleted successfully from local storage: {StoragePath}", storagePath);
         }
@@ -115,4 +112,3 @@ public class LocalFileStorageService(
         return Task.FromResult(File.Exists(filePath));
     }
 }
-

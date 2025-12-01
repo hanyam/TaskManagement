@@ -6,7 +6,6 @@ using TaskManagement.Application.Common;
 using TaskManagement.Application.Common.Behaviors;
 using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Application.Common.Services;
-using TaskManagement.Infrastructure.Data.Repositories;
 using TaskManagement.Application.Tasks.Services;
 using TaskManagement.Domain.Options;
 
@@ -71,7 +70,7 @@ public static class DependencyInjection
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<ICurrentDateService, CurrentDateService>();
         services.AddScoped<IUserSettingsService, UserSettingsService>();
-        
+
         // Register localization services
         services.AddScoped<ILocalizationService, LocalizationService>();
         services.AddScoped<LocalizedErrorFactory>();

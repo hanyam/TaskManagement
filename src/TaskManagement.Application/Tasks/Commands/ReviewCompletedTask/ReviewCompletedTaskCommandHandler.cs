@@ -3,6 +3,7 @@ using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Domain.Common;
 using TaskManagement.Domain.DTOs;
 using TaskManagement.Domain.Errors.Tasks;
+using TaskManagement.Domain.Interfaces;
 using TaskManagement.Infrastructure.Data;
 using Task = TaskManagement.Domain.Entities.Task;
 using TaskStatus = TaskManagement.Domain.Entities.TaskStatus;
@@ -14,12 +15,12 @@ namespace TaskManagement.Application.Tasks.Commands.ReviewCompletedTask;
 /// </summary>
 public class ReviewCompletedTaskCommandHandler(
     TaskManagementDbContext context,
-    Domain.Interfaces.ITaskHistoryService taskHistoryService,
+    ITaskHistoryService taskHistoryService,
     ICurrentUserService currentUserService) : ICommandHandler<ReviewCompletedTaskCommand, TaskDto>
 {
     private readonly TaskManagementDbContext _context = context;
-    private readonly Domain.Interfaces.ITaskHistoryService _taskHistoryService = taskHistoryService;
     private readonly ICurrentUserService _currentUserService = currentUserService;
+    private readonly ITaskHistoryService _taskHistoryService = taskHistoryService;
 
     public async Task<Result<TaskDto>> Handle(ReviewCompletedTaskCommand request, CancellationToken cancellationToken)
     {
@@ -39,14 +40,13 @@ public class ReviewCompletedTaskCommandHandler(
 
         // Verify task is in PendingManagerReview status
         if (task.Status != TaskStatus.PendingManagerReview)
-        {
-            errors.Add(Error.Validation("Task must be in PendingManagerReview status to be reviewed", "Status", "Errors.Tasks.TaskMustBePendingManagerReview"));
-        }
+            errors.Add(Error.Validation("Task must be in PendingManagerReview status to be reviewed", "Status",
+                "Errors.Tasks.TaskMustBePendingManagerReview"));
 
         // Review the task (may throw exceptions)
         var previousStatus = task.Status;
         var performedById = _currentUserService.GetUserId() ?? Guid.Empty;
-        
+
         try
         {
             task.ReviewByManager(request.Accepted, request.Rating, request.Feedback, request.SendBackForRework);
@@ -55,7 +55,7 @@ public class ReviewCompletedTaskCommandHandler(
             // Record history based on review decision
             string action;
             string? notes = null;
-            
+
             if (request.SendBackForRework)
             {
                 action = "Sent Back for Rework";
@@ -64,15 +64,17 @@ public class ReviewCompletedTaskCommandHandler(
             else if (request.Accepted)
             {
                 action = "Reviewed and Accepted";
-                notes = request.Rating > 0 
-                    ? $"Rating: {request.Rating}/5" + (request.Feedback != null ? $", Feedback: {request.Feedback}" : "")
+                notes = request.Rating > 0
+                    ? $"Rating: {request.Rating}/5" +
+                      (request.Feedback != null ? $", Feedback: {request.Feedback}" : "")
                     : request.Feedback;
             }
             else
             {
                 action = "Reviewed and Returned";
-                notes = request.Rating > 0 
-                    ? $"Rating: {request.Rating}/5" + (request.Feedback != null ? $", Feedback: {request.Feedback}" : "")
+                notes = request.Rating > 0
+                    ? $"Rating: {request.Rating}/5" +
+                      (request.Feedback != null ? $", Feedback: {request.Feedback}" : "")
                     : request.Feedback;
             }
 
@@ -95,10 +97,7 @@ public class ReviewCompletedTaskCommandHandler(
         }
 
         // Check all errors once before database operations
-        if (errors.Any())
-        {
-            return Result<TaskDto>.Failure(errors);
-        }
+        if (errors.Any()) return Result<TaskDto>.Failure(errors);
 
         // All validations passed - proceed with database operations
         await _context.SaveChangesAsync(cancellationToken);

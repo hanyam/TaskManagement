@@ -1,10 +1,10 @@
 using TaskManagement.Application.Common.Interfaces;
-using TaskManagement.Infrastructure.Data.Repositories;
 using TaskManagement.Domain.Common;
 using TaskManagement.Domain.DTOs;
 using TaskManagement.Domain.Entities;
 using TaskManagement.Domain.Errors.Tasks;
 using TaskManagement.Infrastructure.Data;
+using TaskManagement.Infrastructure.Data.Repositories;
 using Task = TaskManagement.Domain.Entities.Task;
 
 namespace TaskManagement.Application.Tasks.Commands.UpdateTaskProgress;
@@ -36,19 +36,18 @@ public class UpdateTaskProgressCommandHandler(
 
         // Validate progress percentage
         if (request.ProgressPercentage < 0 || request.ProgressPercentage > 100)
-        {
-            errors.Add(Error.Validation("Progress percentage must be between 0 and 100", "ProgressPercentage", "Errors.Tasks.ProgressPercentageInvalid"));
-        }
+            errors.Add(Error.Validation("Progress percentage must be between 0 and 100", "ProgressPercentage",
+                "Errors.Tasks.ProgressPercentageInvalid"));
 
         // Check if task type supports progress
         if (task.Type == TaskType.Simple && request.ProgressPercentage > 0)
-        {
-            errors.Add(Error.Validation("Simple tasks cannot have progress tracking", "Type", "Errors.Tasks.SimpleTaskNoProgress"));
-        }
+            errors.Add(Error.Validation("Simple tasks cannot have progress tracking", "Type",
+                "Errors.Tasks.SimpleTaskNoProgress"));
 
         // Validate that new progress is not less than the last approved progress
         // Get the most recent accepted progress entry using repository
-        var lastAcceptedProgress = await _taskCommandRepository.GetLastAcceptedProgressAsync(request.TaskId, cancellationToken);
+        var lastAcceptedProgress =
+            await _taskCommandRepository.GetLastAcceptedProgressAsync(request.TaskId, cancellationToken);
 
         // Determine the minimum allowed progress
         // If there's a last accepted progress, use that; otherwise use current task progress or 0
@@ -56,11 +55,9 @@ public class UpdateTaskProgressCommandHandler(
 
         // Validate that new progress is not less than the minimum allowed
         if (request.ProgressPercentage < minAllowedProgress)
-        {
             errors.Add(Error.Validation(
                 $"Progress must be at least {minAllowedProgress}% (last approved progress). You can only increase the progress.",
                 "ProgressPercentage", "Errors.Tasks.ProgressMinNotMet"));
-        }
 
         // Determine if progress requires acceptance
         var requiresAcceptance = task.Type == TaskType.WithAcceptedProgress;
@@ -77,10 +74,7 @@ public class UpdateTaskProgressCommandHandler(
         }
 
         // Check all errors once before any database operations
-        if (errors.Any())
-        {
-            return Result<TaskProgressDto>.Failure(errors);
-        }
+        if (errors.Any()) return Result<TaskProgressDto>.Failure(errors);
 
         // All validations passed - proceed with database operations
         // Create progress history entry
@@ -91,13 +85,10 @@ public class UpdateTaskProgressCommandHandler(
             request.Notes);
 
         progressHistory.SetCreatedBy(request.UpdatedById.ToString());
-        
+
         // If progress doesn't require approval, automatically accept it
-        if (!requiresAcceptance)
-        {
-            progressHistory.Accept(request.UpdatedById);
-        }
-        
+        if (!requiresAcceptance) progressHistory.Accept(request.UpdatedById);
+
         await _context.Set<TaskProgressHistory>().AddAsync(progressHistory, cancellationToken);
 
         await _taskCommandRepository.UpdateAsync(task, cancellationToken);

@@ -39,22 +39,18 @@ public class LoggingBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, 
                 stopwatch.Stop();
 
                 if (result.IsSuccess)
-                {
                     _logger.LogPerformance(
                         requestName,
                         stopwatch.ElapsedMilliseconds,
                         null,
                         null,
                         new Dictionary<string, object> { { "Success", true } });
-                }
                 else
-                {
                     _logger.LogWarning(
                         "Failed to process request {RequestName} in {ElapsedMilliseconds}ms. Error: {Error}",
                         requestName,
                         stopwatch.ElapsedMilliseconds,
                         result.Error);
-                }
 
                 return result;
             }
@@ -102,22 +98,18 @@ public class LoggingBehavior<TRequest> : IPipelineBehavior<TRequest>
                 stopwatch.Stop();
 
                 if (result.IsSuccess)
-                {
                     _logger.LogPerformance(
                         requestName,
                         stopwatch.ElapsedMilliseconds,
                         null,
                         null,
                         new Dictionary<string, object> { { "Success", true } });
-                }
                 else
-                {
                     _logger.LogWarning(
                         "Failed to process request {RequestName} in {ElapsedMilliseconds}ms. Error: {Error}",
                         requestName,
                         stopwatch.ElapsedMilliseconds,
                         result.Error);
-                }
 
                 return result;
             }

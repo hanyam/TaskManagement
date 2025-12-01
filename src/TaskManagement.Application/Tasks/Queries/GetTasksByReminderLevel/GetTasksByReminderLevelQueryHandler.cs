@@ -1,11 +1,9 @@
 using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Application.Common.Services;
-using TaskManagement.Infrastructure.Data.Repositories;
 using TaskManagement.Application.Tasks.Queries.GetTasks;
 using TaskManagement.Domain.Common;
-using TaskManagement.Domain.DTOs;
 using TaskManagement.Domain.Errors.Tasks;
-using TaskStatus = TaskManagement.Domain.Entities.TaskStatus;
+using TaskManagement.Infrastructure.Data.Repositories;
 
 namespace TaskManagement.Application.Tasks.Queries.GetTasksByReminderLevel;
 
@@ -16,10 +14,11 @@ namespace TaskManagement.Application.Tasks.Queries.GetTasksByReminderLevel;
 /// </summary>
 public class GetTasksByReminderLevelQueryHandler(
     TaskDapperRepository taskRepository,
-    IReminderCalculationService reminderCalculationService) : IRequestHandler<GetTasksByReminderLevelQuery, GetTasksResponse>
+    IReminderCalculationService reminderCalculationService)
+    : IRequestHandler<GetTasksByReminderLevelQuery, GetTasksResponse>
 {
-    private readonly TaskDapperRepository _taskRepository = taskRepository;
     private readonly IReminderCalculationService _reminderCalculationService = reminderCalculationService;
+    private readonly TaskDapperRepository _taskRepository = taskRepository;
 
     public async Task<Result<GetTasksResponse>> Handle(GetTasksByReminderLevelQuery request,
         CancellationToken cancellationToken)

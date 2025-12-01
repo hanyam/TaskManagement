@@ -3,13 +3,14 @@ using Microsoft.Extensions.Logging;
 using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Application.Common.Services;
 using TaskManagement.Domain.Common;
-using TaskManagement.Domain.Constants;
 using TaskManagement.Domain.DTOs;
 using TaskManagement.Domain.Entities;
 using TaskManagement.Domain.Errors.Tasks;
 using TaskManagement.Domain.Interfaces;
 using TaskManagement.Infrastructure.Data;
 using static TaskManagement.Domain.Constants.RoleNames;
+using Task = TaskManagement.Domain.Entities.Task;
+using TaskStatus = TaskManagement.Domain.Entities.TaskStatus;
 
 namespace TaskManagement.Application.Tasks.Queries.DownloadTaskAttachment;
 
@@ -23,13 +24,14 @@ public class DownloadTaskAttachmentQueryHandler(
     ILogger<DownloadTaskAttachmentQueryHandler> logger,
     IAuditLogService auditLogService) : IRequestHandler<DownloadTaskAttachmentQuery, DownloadAttachmentResponse>
 {
-    private readonly TaskManagementDbContext _context = context;
-    private readonly IFileStorageService _fileStorageService = fileStorageService;
-    private readonly ICurrentUserService _currentUserService = currentUserService;
-    private readonly ILogger<DownloadTaskAttachmentQueryHandler> _logger = logger;
     private readonly IAuditLogService _auditLogService = auditLogService;
+    private readonly TaskManagementDbContext _context = context;
+    private readonly ICurrentUserService _currentUserService = currentUserService;
+    private readonly IFileStorageService _fileStorageService = fileStorageService;
+    private readonly ILogger<DownloadTaskAttachmentQueryHandler> _logger = logger;
 
-    public async Task<Result<DownloadAttachmentResponse>> Handle(DownloadTaskAttachmentQuery request, CancellationToken cancellationToken)
+    public async Task<Result<DownloadAttachmentResponse>> Handle(DownloadTaskAttachmentQuery request,
+        CancellationToken cancellationToken)
     {
         _logger.LogInformation(
             "Starting file download for attachment {AttachmentId} in task {TaskId} by user {UserId}",
@@ -38,7 +40,8 @@ public class DownloadTaskAttachmentQueryHandler(
             request.RequestedById);
 
         // Find attachment
-        var attachment = await _context.Set<TaskAttachment>().FindAsync(new object[] { request.AttachmentId }, cancellationToken);
+        var attachment = await _context.Set<TaskAttachment>()
+            .FindAsync(new object[] { request.AttachmentId }, cancellationToken);
         if (attachment == null)
         {
             _logger.LogWarning("Attachment {AttachmentId} not found for download", request.AttachmentId);
@@ -56,7 +59,7 @@ public class DownloadTaskAttachmentQueryHandler(
         }
 
         // Verify task exists
-        var task = await _context.Set<Domain.Entities.Task>().FindAsync(new object[] { request.TaskId }, cancellationToken);
+        var task = await _context.Set<Task>().FindAsync(new object[] { request.TaskId }, cancellationToken);
         if (task == null)
         {
             _logger.LogWarning("Task {TaskId} not found for attachment download", request.TaskId);
@@ -69,40 +72,36 @@ public class DownloadTaskAttachmentQueryHandler(
         var isAdmin = userRole == Admin;
 
         // Check if task is in "Accepted by Manager" state (Accepted status with ManagerRating set)
-        var isAcceptedByManager = task.Status == Domain.Entities.TaskStatus.Accepted && task.ManagerRating.HasValue;
+        var isAcceptedByManager = task.Status == TaskStatus.Accepted && task.ManagerRating.HasValue;
 
-        bool canAccess = false;
+        var canAccess = false;
 
         if (attachment.Type == AttachmentType.ManagerUploaded)
-        {
             // Manager-uploaded files:
             // - Admins and Managers can always download
             // - Employees can download when task is Assigned, Accepted (employee accepted) or later, but NOT in Created status
             canAccess = isAdmin || isManager ||
-                        (task.Status != Domain.Entities.TaskStatus.Created &&
-                         (task.Status == Domain.Entities.TaskStatus.Assigned ||
-                          task.Status == Domain.Entities.TaskStatus.Accepted ||
-                          task.Status == Domain.Entities.TaskStatus.UnderReview ||
-                          task.Status == Domain.Entities.TaskStatus.PendingManagerReview ||
-                          task.Status == Domain.Entities.TaskStatus.Completed));
-        }
+                        (task.Status != TaskStatus.Created &&
+                         (task.Status == TaskStatus.Assigned ||
+                          task.Status == TaskStatus.Accepted ||
+                          task.Status == TaskStatus.UnderReview ||
+                          task.Status == TaskStatus.PendingManagerReview ||
+                          task.Status == TaskStatus.Completed));
         else if (attachment.Type == AttachmentType.EmployeeUploaded)
-        {
             // Employee-uploaded files:
             // - Admins can always download
             // - Managers can download during review phase (PendingManagerReview) and after manager accepts (Accepted with ManagerRating)
             // - Employees can download when task is Assigned, Accepted (employee accepted, no ManagerRating) or later
             canAccess = isAdmin ||
-                        (isManager && (task.Status == Domain.Entities.TaskStatus.PendingManagerReview ||
+                        (isManager && (task.Status == TaskStatus.PendingManagerReview ||
                                        isAcceptedByManager)) ||
                         (!isManager && !isAdmin &&
-                         (task.Status == Domain.Entities.TaskStatus.Assigned ||
-                          task.Status == Domain.Entities.TaskStatus.Accepted ||
-                          task.Status == Domain.Entities.TaskStatus.UnderReview ||
-                          task.Status == Domain.Entities.TaskStatus.PendingManagerReview ||
-                          task.Status == Domain.Entities.TaskStatus.Completed ||
+                         (task.Status == TaskStatus.Assigned ||
+                          task.Status == TaskStatus.Accepted ||
+                          task.Status == TaskStatus.UnderReview ||
+                          task.Status == TaskStatus.PendingManagerReview ||
+                          task.Status == TaskStatus.Completed ||
                           isAcceptedByManager));
-        }
 
         if (!canAccess)
         {
@@ -165,4 +164,3 @@ public class DownloadTaskAttachmentQueryHandler(
         }
     }
 }
-

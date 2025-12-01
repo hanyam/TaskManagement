@@ -10,6 +10,8 @@ using TaskManagement.Domain.Interfaces;
 using TaskManagement.Domain.Options;
 using TaskManagement.Infrastructure.Data;
 using TaskManagement.Infrastructure.Data.Repositories;
+using Task = TaskManagement.Domain.Entities.Task;
+using TaskStatus = TaskManagement.Domain.Entities.TaskStatus;
 
 namespace TaskManagement.Application.Tasks.Commands.UploadTaskAttachment;
 
@@ -25,15 +27,16 @@ public class UploadTaskAttachmentCommandHandler(
     ILogger<UploadTaskAttachmentCommandHandler> logger,
     IAuditLogService auditLogService) : ICommandHandler<UploadTaskAttachmentCommand, TaskAttachmentDto>
 {
+    private readonly IAuditLogService _auditLogService = auditLogService;
     private readonly TaskManagementDbContext _context = context;
     private readonly FileStorageOptions _fileStorageOptions = fileStorageOptions.Value;
     private readonly IFileStorageService _fileStorageService = fileStorageService;
+    private readonly ILogger<UploadTaskAttachmentCommandHandler> _logger = logger;
     private readonly TaskEfCommandRepository _taskRepository = taskRepository;
     private readonly UserDapperRepository _userRepository = userRepository;
-    private readonly ILogger<UploadTaskAttachmentCommandHandler> _logger = logger;
-    private readonly IAuditLogService _auditLogService = auditLogService;
 
-    public async Task<Result<TaskAttachmentDto>> Handle(UploadTaskAttachmentCommand request, CancellationToken cancellationToken)
+    public async Task<Result<TaskAttachmentDto>> Handle(UploadTaskAttachmentCommand request,
+        CancellationToken cancellationToken)
     {
         _logger.LogInformation(
             "Starting file upload for task {TaskId} by user {UserId}. File: {FileName}, Size: {FileSize} bytes",
@@ -45,7 +48,7 @@ public class UploadTaskAttachmentCommandHandler(
         var errors = new List<Error>();
 
         // Validate task exists
-        var task = await _context.Set<Domain.Entities.Task>().FindAsync(new object[] { request.TaskId }, cancellationToken);
+        var task = await _context.Set<Task>().FindAsync(new object[] { request.TaskId }, cancellationToken);
         if (task == null)
         {
             _logger.LogWarning("Task {TaskId} not found for file upload", request.TaskId);
@@ -68,7 +71,7 @@ public class UploadTaskAttachmentCommandHandler(
             if (user.Role == UserRole.Employee)
             {
                 // Explicitly exclude Created status
-                if (task.Status == Domain.Entities.TaskStatus.Created)
+                if (task.Status == TaskStatus.Created)
                 {
                     _logger.LogWarning(
                         "Employee {UserId} attempted to upload attachment for task {TaskId} in status {Status}",
@@ -80,13 +83,13 @@ public class UploadTaskAttachmentCommandHandler(
                 else
                 {
                     // Check if task is in "Accepted by Manager" state (Accepted status with ManagerRating set)
-                    var isAcceptedByManager = task.Status == Domain.Entities.TaskStatus.Accepted && task.ManagerRating.HasValue;
-                    
+                    var isAcceptedByManager = task.Status == TaskStatus.Accepted && task.ManagerRating.HasValue;
+
                     // Allow if: Assigned, Accepted (employee accepted, no ManagerRating) or UnderReview
-                    var canUpload = task.Status == Domain.Entities.TaskStatus.Assigned ||
-                                    (task.Status == Domain.Entities.TaskStatus.Accepted && !isAcceptedByManager) ||
-                                    task.Status == Domain.Entities.TaskStatus.UnderReview;
-                    
+                    var canUpload = task.Status == TaskStatus.Assigned ||
+                                    (task.Status == TaskStatus.Accepted && !isAcceptedByManager) ||
+                                    task.Status == TaskStatus.UnderReview;
+
                     if (!canUpload)
                     {
                         _logger.LogWarning(
@@ -119,10 +122,7 @@ public class UploadTaskAttachmentCommandHandler(
             errors.Add(TaskErrors.InvalidFileName);
         }
 
-        if (errors.Any())
-        {
-            return Result<TaskAttachmentDto>.Failure(errors);
-        }
+        if (errors.Any()) return Result<TaskAttachmentDto>.Failure(errors);
 
         // Generate unique file name to avoid conflicts
         var fileExtension = Path.GetExtension(request.FileName);
@@ -198,4 +198,3 @@ public class UploadTaskAttachmentCommandHandler(
         }
     }
 }
-

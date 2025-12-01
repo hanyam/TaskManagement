@@ -18,4 +18,3 @@ public interface ICurrentDateService
     /// <returns>The current local DateTime.</returns>
     DateTime Now { get; }
 }
-

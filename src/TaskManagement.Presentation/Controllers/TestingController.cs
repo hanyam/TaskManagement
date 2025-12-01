@@ -1,15 +1,13 @@
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using TaskManagement.Application.Common.Constants;
 using TaskManagement.Application.Common.Services;
-using TaskManagement.Infrastructure.Data.Repositories;
 using TaskManagement.Domain.Common;
 using TaskManagement.Domain.Errors.Authentication;
 using TaskManagement.Domain.Errors.Users;
 using TaskManagement.Domain.Interfaces;
+using TaskManagement.Infrastructure.Data.Repositories;
 using static TaskManagement.Domain.Constants.CustomClaimTypes;
 
 namespace TaskManagement.Presentation.Controllers;
@@ -25,9 +23,9 @@ public class TestingController(
     UserDapperRepository userRepository,
     IAuthenticationService authenticationService) : ControllerBase
 {
+    private readonly IAuthenticationService _authenticationService = authenticationService;
     private readonly IMemoryCache _memoryCache = memoryCache;
     private readonly UserDapperRepository _userRepository = userRepository;
-    private readonly IAuthenticationService _authenticationService = authenticationService;
 
     /// <summary>
     ///     Sets the current user override for testing purposes.
@@ -44,28 +42,22 @@ public class TestingController(
     public async Task<IActionResult> SetCurrentUserOverride([FromBody] SetCurrentUserOverrideRequest request)
     {
         if (!IsTestingEnvironment())
-        {
             return StatusCode(403, ApiResponse<object>.ErrorResponse(
                 "Testing endpoints are only available in Development or Test environments.",
                 HttpContext.TraceIdentifier));
-        }
 
         if (string.IsNullOrWhiteSpace(request.UserEmail))
-        {
             return BadRequest(ApiResponse<object>.ErrorResponse(
                 new List<Error> { UserErrors.EmailRequired },
                 HttpContext.TraceIdentifier));
-        }
 
         // Query user from database by email
         var user = await _userRepository.GetByEmailAsync(request.UserEmail, CancellationToken.None);
 
         if (user == null)
-        {
             return NotFound(ApiResponse<object>.ErrorResponse(
                 new List<Error> { UserErrors.NotFoundByEmail(request.UserEmail) },
                 HttpContext.TraceIdentifier));
-        }
 
         // Create override value with data from database
         var overrideValue = new CurrentUserOverride
@@ -98,21 +90,17 @@ public class TestingController(
     public IActionResult GetCurrentUserOverride()
     {
         if (!IsTestingEnvironment())
-        {
             return StatusCode(403, ApiResponse<object>.ErrorResponse(
                 "Testing endpoints are only available in Development or Test environments.",
                 HttpContext.TraceIdentifier));
-        }
 
         if (_memoryCache.TryGetValue(CacheKeys.CurrentUserOverride, out CurrentUserOverride? overrideValue))
-        {
             return Ok(ApiResponse<object>.SuccessResponse(new
             {
                 userId = overrideValue?.UserId,
                 userEmail = overrideValue?.UserEmail,
                 role = overrideValue?.Role
             }));
-        }
 
         return Ok(ApiResponse<object>.SuccessResponse(new
         {
@@ -131,11 +119,9 @@ public class TestingController(
     public IActionResult RemoveCurrentUserOverride()
     {
         if (!IsTestingEnvironment())
-        {
             return StatusCode(403, ApiResponse<object>.ErrorResponse(
                 "Testing endpoints are only available in Development or Test environments.",
                 HttpContext.TraceIdentifier));
-        }
 
         _memoryCache.Remove(CacheKeys.CurrentUserOverride);
 
@@ -158,11 +144,9 @@ public class TestingController(
     public IActionResult SetCurrentDateOverride([FromBody] SetCurrentDateOverrideRequest request)
     {
         if (!IsTestingEnvironment())
-        {
             return StatusCode(403, ApiResponse<object>.ErrorResponse(
                 "Testing endpoints are only available in Development or Test environments.",
                 HttpContext.TraceIdentifier));
-        }
 
         // Ensure the date is UTC
         var utcDate = request.UtcDate.Kind == DateTimeKind.Unspecified
@@ -175,7 +159,7 @@ public class TestingController(
         return Ok(ApiResponse<object>.SuccessResponse(new
         {
             message = "Current date override set successfully",
-            utcDate = utcDate,
+            utcDate,
             localDate = utcDate.ToLocalTime()
         }));
     }
@@ -191,20 +175,16 @@ public class TestingController(
     public IActionResult GetCurrentDateOverride()
     {
         if (!IsTestingEnvironment())
-        {
             return StatusCode(403, ApiResponse<object>.ErrorResponse(
                 "Testing endpoints are only available in Development or Test environments.",
                 HttpContext.TraceIdentifier));
-        }
 
         if (_memoryCache.TryGetValue(CacheKeys.CurrentDateOverride, out DateTime? overrideValue))
-        {
             return Ok(ApiResponse<object>.SuccessResponse(new
             {
                 utcDate = overrideValue,
                 localDate = overrideValue?.ToLocalTime()
             }));
-        }
 
         return Ok(ApiResponse<object>.SuccessResponse(new
         {
@@ -225,11 +205,9 @@ public class TestingController(
     public IActionResult RemoveCurrentDateOverride()
     {
         if (!IsTestingEnvironment())
-        {
             return StatusCode(403, ApiResponse<object>.ErrorResponse(
                 "Testing endpoints are only available in Development or Test environments.",
                 HttpContext.TraceIdentifier));
-        }
 
         _memoryCache.Remove(CacheKeys.CurrentDateOverride);
 
@@ -260,26 +238,20 @@ public class TestingController(
         CancellationToken cancellationToken)
     {
         if (!IsTestingEnvironment())
-        {
             return StatusCode(403, ApiResponse<object>.ErrorResponse(
                 "Testing endpoints are only available in Development or Test environments.",
                 HttpContext.TraceIdentifier));
-        }
 
         if (string.IsNullOrWhiteSpace(request.UserEmail))
-        {
             return BadRequest(ApiResponse<object>.ErrorResponse(
                 new List<Error> { UserErrors.EmailRequired },
                 HttpContext.TraceIdentifier));
-        }
 
         var user = await _userRepository.GetByEmailAsync(request.UserEmail, cancellationToken);
         if (user == null)
-        {
             return NotFound(ApiResponse<object>.ErrorResponse(
                 new List<Error> { UserErrors.NotFoundByEmail(request.UserEmail) },
                 HttpContext.TraceIdentifier));
-        }
 
         var additionalClaims = new Dictionary<string, string>
         {
@@ -296,11 +268,9 @@ public class TestingController(
             cancellationToken);
 
         if (tokenResult.IsFailure)
-        {
             return StatusCode(500, ApiResponse<object>.ErrorResponse(
                 new List<Error> { tokenResult.Error ?? AuthenticationErrors.JwtTokenGenerationFailed },
                 HttpContext.TraceIdentifier));
-        }
 
         return Ok(ApiResponse<object>.SuccessResponse(new
         {
@@ -343,5 +313,3 @@ public class GenerateJwtTokenRequest
     /// </summary>
     public string UserEmail { get; set; } = string.Empty;
 }
-
-

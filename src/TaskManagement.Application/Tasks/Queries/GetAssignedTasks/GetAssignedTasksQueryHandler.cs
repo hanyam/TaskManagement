@@ -1,8 +1,8 @@
 using TaskManagement.Application.Common.Interfaces;
-using TaskManagement.Infrastructure.Data.Repositories;
 using TaskManagement.Application.Tasks.Queries.GetTasks;
 using TaskManagement.Domain.Common;
 using TaskManagement.Domain.Errors.Tasks;
+using TaskManagement.Infrastructure.Data.Repositories;
 
 namespace TaskManagement.Application.Tasks.Queries.GetAssignedTasks;
 
@@ -10,7 +10,8 @@ namespace TaskManagement.Application.Tasks.Queries.GetAssignedTasks;
 ///     Handler for getting tasks assigned to a user.
 ///     Follows CQRS pattern: Queries use Dapper only (no EF Core).
 /// </summary>
-public class GetAssignedTasksQueryHandler(TaskDapperRepository taskRepository) : IRequestHandler<GetAssignedTasksQuery, GetTasksResponse>
+public class GetAssignedTasksQueryHandler(TaskDapperRepository taskRepository)
+    : IRequestHandler<GetAssignedTasksQuery, GetTasksResponse>
 {
     private readonly TaskDapperRepository _taskRepository = taskRepository;
 

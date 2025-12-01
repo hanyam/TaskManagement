@@ -1,12 +1,10 @@
 using Dapper;
 using Microsoft.Extensions.Configuration;
-using TaskManagement.Domain.Interfaces;
 using TaskManagement.Domain.DTOs;
 using TaskManagement.Domain.Entities;
 using Task = TaskManagement.Domain.Entities.Task;
 using TaskStatus = TaskManagement.Domain.Entities.TaskStatus;
 using ExtensionRequestStatus = TaskManagement.Domain.Entities.ExtensionRequestStatus;
-using ProgressStatus = TaskManagement.Domain.Entities.ProgressStatus;
 
 namespace TaskManagement.Infrastructure.Data.Repositories;
 
@@ -15,7 +13,6 @@ namespace TaskManagement.Infrastructure.Data.Repositories;
 /// </summary>
 public class TaskDapperRepository(IConfiguration configuration) : DapperQueryRepository<Task>(configuration)
 {
-
     /// <summary>
     ///     Gets a task by ID with assigned user information.
     /// </summary>
@@ -132,7 +129,8 @@ public class TaskDapperRepository(IConfiguration configuration) : DapperQueryRep
     ///     Gets dashboard statistics for a user using a single optimized SQL query.
     ///     Calculates all 7 counts in one database round trip using conditional aggregation.
     /// </summary>
-    public virtual async Task<DashboardStatsDto> GetDashboardStatsAsync(Guid userId, CancellationToken cancellationToken = default)
+    public virtual async Task<DashboardStatsDto> GetDashboardStatsAsync(Guid userId,
+        CancellationToken cancellationToken = default)
     {
         var now = DateTime.UtcNow;
         var nearDueDateThreshold = now.AddDays(3);
@@ -230,8 +228,8 @@ public class TaskDapperRepository(IConfiguration configuration) : DapperQueryRep
 
         using var connection = CreateConnection();
         return await connection.QueryFirstOrDefaultAsync<DashboardStatsDto>(
-            new CommandDefinition(sql, parameters, cancellationToken: cancellationToken)) 
-            ?? new DashboardStatsDto();
+                   new CommandDefinition(sql, parameters, cancellationToken: cancellationToken))
+               ?? new DashboardStatsDto();
     }
 
     /// <summary>
@@ -241,7 +239,8 @@ public class TaskDapperRepository(IConfiguration configuration) : DapperQueryRep
     ///     2. User is assigned to the task (AssignedUserId)
     ///     3. User is in the assignment chain (TaskAssignments)
     /// </summary>
-    public virtual async Task<bool> HasUserAccessToTaskAsync(Guid taskId, Guid userId, CancellationToken cancellationToken = default)
+    public virtual async Task<bool> HasUserAccessToTaskAsync(Guid taskId, Guid userId,
+        CancellationToken cancellationToken = default)
     {
         var sql = @"
             SELECT CASE 
@@ -264,7 +263,7 @@ public class TaskDapperRepository(IConfiguration configuration) : DapperQueryRep
         using var connection = CreateConnection();
         var hasAccess = await connection.ExecuteScalarAsync<int>(
             new CommandDefinition(sql, new { TaskId = taskId, UserId = userId }, cancellationToken: cancellationToken));
-        
+
         return hasAccess == 1;
     }
 
@@ -278,7 +277,10 @@ public class TaskDapperRepository(IConfiguration configuration) : DapperQueryRep
         int pageSize = 10,
         CancellationToken cancellationToken = default)
     {
-        var conditions = new List<string> { "(T.AssignedUserId = @UserId OR EXISTS (SELECT 1 FROM [Tasks].[TaskAssignments] TA WHERE TA.TaskId = T.Id AND TA.UserId = @UserId))" };
+        var conditions = new List<string>
+        {
+            "(T.AssignedUserId = @UserId OR EXISTS (SELECT 1 FROM [Tasks].[TaskAssignments] TA WHERE TA.TaskId = T.Id AND TA.UserId = @UserId))"
+        };
         var parameters = new DynamicParameters();
         parameters.Add("UserId", userId);
 
@@ -445,12 +447,14 @@ public class TaskDapperRepository(IConfiguration configuration) : DapperQueryRep
         Guid? userId = null,
         CancellationToken cancellationToken = default)
     {
-        var conditions = new List<string> { "T.DueDate IS NOT NULL", "T.Status NOT IN (5, 6)" }; // Not Completed or Cancelled
+        var conditions = new List<string>
+            { "T.DueDate IS NOT NULL", "T.Status NOT IN (5, 6)" }; // Not Completed or Cancelled
         var parameters = new DynamicParameters();
 
         if (userId.HasValue)
         {
-            conditions.Add("(T.AssignedUserId = @UserId OR T.CreatedById = @UserId OR EXISTS (SELECT 1 FROM [Tasks].[TaskAssignments] TA WHERE TA.TaskId = T.Id AND TA.UserId = @UserId))");
+            conditions.Add(
+                "(T.AssignedUserId = @UserId OR T.CreatedById = @UserId OR EXISTS (SELECT 1 FROM [Tasks].[TaskAssignments] TA WHERE TA.TaskId = T.Id AND TA.UserId = @UserId))");
             parameters.Add("UserId", userId.Value);
         }
 
@@ -472,4 +476,3 @@ public class TaskDapperRepository(IConfiguration configuration) : DapperQueryRep
             new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
     }
 }
-

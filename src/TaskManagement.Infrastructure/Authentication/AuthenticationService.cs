@@ -23,29 +23,13 @@ public class AuthenticationService(
     ILogger<AuthenticationService> logger) : IAuthenticationService
 {
     private readonly AzureAdOptions _azureAdOptions = azureAdOptions.Value;
-    private readonly ConfigurationManager<OpenIdConnectConfiguration> _configurationManager = InitializeConfigurationManager(azureAdOptions.Value, logger);
+
+    private readonly ConfigurationManager<OpenIdConnectConfiguration> _configurationManager =
+        InitializeConfigurationManager(azureAdOptions.Value, logger);
+
     private readonly JwtOptions _jwtOptions = jwtOptions.Value;
     private readonly ILogger<AuthenticationService> _logger = logger;
     private readonly JwtSecurityTokenHandler _tokenHandler = new();
-
-    private static ConfigurationManager<OpenIdConnectConfiguration> InitializeConfigurationManager(
-        AzureAdOptions azureAdOptions,
-        ILogger<AuthenticationService> logger)
-    {
-        // Initialize OpenID Connect configuration manager for Azure AD metadata
-        if (string.IsNullOrWhiteSpace(azureAdOptions.TenantId))
-        {
-            logger.LogWarning("Azure AD TenantId is not configured. Token validation may fail.");
-            return null!;
-        }
-
-        var metadataAddress =
-            $"https://login.microsoftonline.com/{azureAdOptions.TenantId}/v2.0/.well-known/openid-configuration";
-        return new ConfigurationManager<OpenIdConnectConfiguration>(
-            metadataAddress,
-            new OpenIdConnectConfigurationRetriever(),
-            new HttpDocumentRetriever { RequireHttps = true });
-    }
 
     public async Task<Result<ClaimsPrincipal>> ValidateAzureAdTokenAsync(string token,
         CancellationToken cancellationToken = default)
@@ -192,5 +176,24 @@ public class AuthenticationService(
             _logger.LogError(ex, "Unexpected error during JWT token validation");
             return Task.FromResult(Result<ClaimsPrincipal>.Failure(AuthenticationErrors.TokenValidationServiceError));
         }
+    }
+
+    private static ConfigurationManager<OpenIdConnectConfiguration> InitializeConfigurationManager(
+        AzureAdOptions azureAdOptions,
+        ILogger<AuthenticationService> logger)
+    {
+        // Initialize OpenID Connect configuration manager for Azure AD metadata
+        if (string.IsNullOrWhiteSpace(azureAdOptions.TenantId))
+        {
+            logger.LogWarning("Azure AD TenantId is not configured. Token validation may fail.");
+            return null!;
+        }
+
+        var metadataAddress =
+            $"https://login.microsoftonline.com/{azureAdOptions.TenantId}/v2.0/.well-known/openid-configuration";
+        return new ConfigurationManager<OpenIdConnectConfiguration>(
+            metadataAddress,
+            new OpenIdConnectConfigurationRetriever(),
+            new HttpDocumentRetriever { RequireHttps = true });
     }
 }

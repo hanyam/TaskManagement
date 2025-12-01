@@ -30,7 +30,10 @@ public class TaskHistory : BaseEntity
     public Guid TaskId { get; private set; }
     public TaskStatus FromStatus { get; private set; }
     public TaskStatus ToStatus { get; private set; }
-    public string Action { get; private set; } = string.Empty; // e.g., "Created", "Assigned", "Accepted", "Rejected", "Completed", "Reviewed"
+
+    public string Action { get; private set; } =
+        string.Empty; // e.g., "Created", "Assigned", "Accepted", "Rejected", "Completed", "Reviewed"
+
     public Guid PerformedById { get; private set; }
     public string? Notes { get; private set; } // Optional notes about the action
 
@@ -38,5 +41,3 @@ public class TaskHistory : BaseEntity
     public Task? Task { get; private set; }
     public User? PerformedByUser { get; private set; }
 }
-
-

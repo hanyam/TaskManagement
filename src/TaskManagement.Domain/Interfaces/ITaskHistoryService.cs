@@ -1,4 +1,3 @@
-using TaskManagement.Domain.Entities;
 using TaskStatus = TaskManagement.Domain.Entities.TaskStatus;
 
 namespace TaskManagement.Domain.Interfaces;
@@ -18,7 +17,7 @@ public interface ITaskHistoryService
     /// <param name="performedById">User who performed the action</param>
     /// <param name="notes">Optional notes about the action</param>
     /// <param name="cancellationToken">Cancellation token</param>
-    System.Threading.Tasks.Task RecordStatusChangeAsync(
+    Task RecordStatusChangeAsync(
         Guid taskId,
         TaskStatus fromStatus,
         TaskStatus toStatus,
@@ -27,4 +26,3 @@ public interface ITaskHistoryService
         string? notes = null,
         CancellationToken cancellationToken = default);
 }
-

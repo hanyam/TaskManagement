@@ -1,14 +1,15 @@
 using TaskManagement.Application.Common.Interfaces;
-using TaskManagement.Infrastructure.Data.Repositories;
 using TaskManagement.Domain.Common;
 using TaskManagement.Domain.Errors.Tasks;
+using TaskManagement.Infrastructure.Data.Repositories;
 
 namespace TaskManagement.Application.Tasks.Queries.GetTasks;
 
 /// <summary>
 ///     Handler for getting a list of tasks with filtering and pagination using Dapper for optimized querying.
 /// </summary>
-public class GetTasksQueryHandler(TaskDapperRepository taskRepository) : IRequestHandler<GetTasksQuery, GetTasksResponse>
+public class GetTasksQueryHandler(TaskDapperRepository taskRepository)
+    : IRequestHandler<GetTasksQuery, GetTasksResponse>
 {
     private readonly TaskDapperRepository _taskRepository = taskRepository;
 

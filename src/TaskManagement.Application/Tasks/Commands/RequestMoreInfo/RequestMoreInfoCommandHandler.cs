@@ -1,14 +1,13 @@
 using Microsoft.EntityFrameworkCore;
 using TaskManagement.Application.Common.Interfaces;
-using TaskManagement.Domain.Interfaces;
-using TaskManagement.Infrastructure.Data.Repositories;
 using TaskManagement.Domain.Common;
 using TaskManagement.Domain.DTOs;
 using TaskManagement.Domain.Entities;
 using TaskManagement.Domain.Errors.Tasks;
+using TaskManagement.Domain.Interfaces;
 using TaskManagement.Infrastructure.Data;
+using TaskManagement.Infrastructure.Data.Repositories;
 using Task = TaskManagement.Domain.Entities.Task;
-using TaskStatus = TaskManagement.Domain.Entities.TaskStatus;
 
 namespace TaskManagement.Application.Tasks.Commands.RequestMoreInfo;
 
@@ -23,8 +22,8 @@ public class RequestMoreInfoCommandHandler(
 {
     private readonly TaskManagementDbContext _context = context;
     private readonly TaskEfCommandRepository _taskCommandRepository = taskCommandRepository;
-    private readonly UserDapperRepository _userQueryRepository = userQueryRepository;
     private readonly ITaskHistoryService _taskHistoryService = taskHistoryService;
+    private readonly UserDapperRepository _userQueryRepository = userQueryRepository;
 
     public async Task<Result<TaskDto>> Handle(RequestMoreInfoCommand request, CancellationToken cancellationToken)
     {
@@ -47,9 +46,7 @@ public class RequestMoreInfoCommandHandler(
                          assignments.Any(a => a.UserId == request.RequestedById);
 
         if (!isAssigned)
-        {
             errors.Add(Error.Forbidden("User is not assigned to this task", "Errors.Tasks.UserNotAssigned"));
-        }
 
         // Store previous status for history
         var previousStatus = task.Status;
@@ -66,10 +63,7 @@ public class RequestMoreInfoCommandHandler(
         }
 
         // Check all errors once before database operations
-        if (errors.Any())
-        {
-            return Result<TaskDto>.Failure(errors);
-        }
+        if (errors.Any()) return Result<TaskDto>.Failure(errors);
 
         await _taskCommandRepository.UpdateAsync(task, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);

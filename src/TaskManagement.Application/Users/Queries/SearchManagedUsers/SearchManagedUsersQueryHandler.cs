@@ -1,13 +1,14 @@
 using TaskManagement.Application.Common.Interfaces;
-using TaskManagement.Infrastructure.Data.Repositories;
 using TaskManagement.Domain.Common;
+using TaskManagement.Infrastructure.Data.Repositories;
 
 namespace TaskManagement.Application.Users.Queries.SearchManagedUsers;
 
 /// <summary>
 ///     Handler for searching users managed by the current user using Dapper for optimized querying.
 /// </summary>
-public class SearchManagedUsersQueryHandler(UserDapperRepository userRepository) : IRequestHandler<SearchManagedUsersQuery, List<UserSearchResultDto>>
+public class SearchManagedUsersQueryHandler(UserDapperRepository userRepository)
+    : IRequestHandler<SearchManagedUsersQuery, List<UserSearchResultDto>>
 {
     private readonly UserDapperRepository _userRepository = userRepository;
 

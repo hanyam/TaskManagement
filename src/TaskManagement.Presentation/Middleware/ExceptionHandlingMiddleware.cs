@@ -1,4 +1,5 @@
 using System.Net;
+using System.Security.Claims;
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -30,7 +31,7 @@ public class ExceptionHandlingMiddleware
         catch (Exception ex)
         {
             var correlationId = CorrelationIdMiddleware.GetCorrelationId(context);
-            var userId = context.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "Anonymous";
+            var userId = context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "Anonymous";
             var requestPath = context.Request.Path.Value ?? string.Empty;
             var requestMethod = context.Request.Method;
 
@@ -50,13 +51,11 @@ public class ExceptionHandlingMiddleware
 
                 // Log inner exception if present
                 if (ex.InnerException != null)
-                {
                     _logger.LogError(
                         ex.InnerException,
                         "Inner exception: {InnerExceptionType} - {InnerExceptionMessage}",
                         ex.InnerException.GetType().Name,
                         ex.InnerException.Message);
-                }
             }
 
             await HandleExceptionAsync(context, ex);

@@ -6,4 +6,3 @@ namespace TaskManagement.Application.Tasks.Queries.GetTaskHistory;
 ///     Query to get task history.
 /// </summary>
 public record GetTaskHistoryQuery(Guid TaskId, Guid UserId) : IRequest<List<TaskHistoryDto>>;
-

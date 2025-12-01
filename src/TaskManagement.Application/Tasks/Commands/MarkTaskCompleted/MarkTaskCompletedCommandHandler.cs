@@ -1,11 +1,11 @@
 using TaskManagement.Application.Common.Interfaces;
-using TaskManagement.Infrastructure.Data.Repositories;
 using TaskManagement.Domain.Common;
 using TaskManagement.Domain.DTOs;
 using TaskManagement.Domain.Entities;
 using TaskManagement.Domain.Errors.Tasks;
 using TaskManagement.Domain.Interfaces;
 using TaskManagement.Infrastructure.Data;
+using TaskManagement.Infrastructure.Data.Repositories;
 using Task = TaskManagement.Domain.Entities.Task;
 using TaskStatus = TaskManagement.Domain.Entities.TaskStatus;
 
@@ -22,8 +22,8 @@ public class MarkTaskCompletedCommandHandler(
 {
     private readonly TaskManagementDbContext _context = context;
     private readonly TaskEfCommandRepository _taskCommandRepository = taskCommandRepository;
-    private readonly UserDapperRepository _userQueryRepository = userQueryRepository;
     private readonly ITaskHistoryService _taskHistoryService = taskHistoryService;
+    private readonly UserDapperRepository _userQueryRepository = userQueryRepository;
 
     public async Task<Result<TaskDto>> Handle(MarkTaskCompletedCommand request, CancellationToken cancellationToken)
     {
@@ -39,29 +39,23 @@ public class MarkTaskCompletedCommandHandler(
 
         // Check if task is already accepted by manager (terminal state - no more actions allowed)
         var isAcceptedByManager = task.Status == TaskStatus.Accepted && task.ManagerRating.HasValue;
-        if (isAcceptedByManager)
-        {
-            errors.Add(TaskErrors.TaskAlreadyAcceptedByManager);
-        }
-        
+        if (isAcceptedByManager) errors.Add(TaskErrors.TaskAlreadyAcceptedByManager);
+
         // Check if task is rejected by manager (terminal state - no more actions allowed)
-        if (task.Status == TaskStatus.RejectedByManager)
-        {
-            errors.Add(TaskErrors.TaskRejectedByManager);
-        }
-        
+        if (task.Status == TaskStatus.RejectedByManager) errors.Add(TaskErrors.TaskRejectedByManager);
+
         // Mark task as completed by employee (moves to PendingManagerReview) - may throw exceptions
         var previousStatus = task.Status;
         try
         {
             task.MarkCompletedByEmployee();
             task.SetUpdatedBy(request.CompletedById.ToString());
-            
+
             // Record history: Task marked as completed
-            var notes = string.IsNullOrWhiteSpace(request.Comment) 
-                ? "Task marked as completed" 
+            var notes = string.IsNullOrWhiteSpace(request.Comment)
+                ? "Task marked as completed"
                 : request.Comment;
-            
+
             await _taskHistoryService.RecordStatusChangeAsync(
                 task.Id,
                 previousStatus,
@@ -77,10 +71,7 @@ public class MarkTaskCompletedCommandHandler(
         }
 
         // Check all errors once before database operations
-        if (errors.Any())
-        {
-            return Result<TaskDto>.Failure(errors);
-        }
+        if (errors.Any()) return Result<TaskDto>.Failure(errors);
 
         await _taskCommandRepository.UpdateAsync(task, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);

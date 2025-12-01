@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
 using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Domain.Common;
@@ -13,13 +14,13 @@ public abstract class BaseController(
     ICommandMediator commandMediator,
     IRequestMediator requestMediator,
     ICurrentUserService currentUserService,
-    Application.Common.Interfaces.ILocalizationService localizationService)
+    ILocalizationService localizationService)
     : ControllerBase
 {
     protected readonly ICommandMediator _commandMediator = commandMediator;
-    protected readonly IRequestMediator _requestMediator = requestMediator;
     protected readonly ICurrentUserService _currentUserService = currentUserService;
-    protected readonly Application.Common.Interfaces.ILocalizationService _localizationService = localizationService;
+    protected readonly ILocalizationService _localizationService = localizationService;
+    protected readonly IRequestMediator _requestMediator = requestMediator;
 
     /// <summary>
     ///     Gets the current user ID from ICurrentUserService (with override support for testing).
@@ -40,9 +41,7 @@ public abstract class BaseController(
     {
         var userId = GetCurrentUserId();
         if (!userId.HasValue)
-        {
             throw new InvalidOperationException("User ID not found. Ensure EnsureUserIdAttribute is applied.");
-        }
 
         return userId.Value;
     }
@@ -77,7 +76,9 @@ public abstract class BaseController(
 
         return allErrors.Any()
             ? BadRequest(ApiResponse<T>.ErrorResponse(localizedErrors, HttpContext.TraceIdentifier))
-            : BadRequest(ApiResponse<T>.ErrorResponse(_localizationService.GetString("Errors.System.InternalServerError", "An error occurred"), HttpContext.TraceIdentifier));
+            : BadRequest(ApiResponse<T>.ErrorResponse(
+                _localizationService.GetString("Errors.System.InternalServerError", "An error occurred"),
+                HttpContext.TraceIdentifier));
     }
 
     /// <summary>
@@ -100,7 +101,9 @@ public abstract class BaseController(
 
         return allErrors.Any()
             ? BadRequest(ApiResponse.ErrorResponse(localizedErrors, HttpContext.TraceIdentifier))
-            : BadRequest(ApiResponse.ErrorResponse(_localizationService.GetString("Errors.System.InternalServerError", "An error occurred"), HttpContext.TraceIdentifier));
+            : BadRequest(ApiResponse.ErrorResponse(
+                _localizationService.GetString("Errors.System.InternalServerError", "An error occurred"),
+                HttpContext.TraceIdentifier));
     }
 
     /// <summary>
@@ -131,7 +134,9 @@ public abstract class BaseController(
 
         return allErrors.Any()
             ? BadRequest(ApiResponse<T>.ErrorResponse(localizedErrors, HttpContext.TraceIdentifier))
-            : BadRequest(ApiResponse<T>.ErrorResponse(_localizationService.GetString("Errors.System.InternalServerError", "An error occurred"), HttpContext.TraceIdentifier));
+            : BadRequest(ApiResponse<T>.ErrorResponse(
+                _localizationService.GetString("Errors.System.InternalServerError", "An error occurred"),
+                HttpContext.TraceIdentifier));
     }
 
     /// <summary>
@@ -139,18 +144,15 @@ public abstract class BaseController(
     /// </summary>
     private Error LocalizeError(Error error)
     {
-        if (string.IsNullOrWhiteSpace(error.MessageKey))
-        {
-            return error; // No key, return as-is
-        }
+        if (string.IsNullOrWhiteSpace(error.MessageKey)) return error; // No key, return as-is
 
         // Try to extract format arguments from the original message for common patterns
         var formatArgs = ExtractFormatArguments(error.Message, error.MessageKey);
-        
+
         var localizedMessage = formatArgs.Length > 0
             ? _localizationService.GetString(error.MessageKey, error.Message, formatArgs)
             : _localizationService.GetString(error.MessageKey, error.Message);
-        
+
         return Error.Create(error.Code, localizedMessage, error.Field, error.MessageKey);
     }
 
@@ -162,31 +164,23 @@ public abstract class BaseController(
         // Handle ProgressMinNotMet: "Progress must be at least {X}%..."
         if (messageKey == "Errors.Tasks.ProgressMinNotMet")
         {
-            var match = System.Text.RegularExpressions.Regex.Match(originalMessage, @"at least (\d+)%");
+            var match = Regex.Match(originalMessage, @"at least (\d+)%");
             if (match.Success && int.TryParse(match.Groups[1].Value, out var minProgress))
-            {
                 return new object[] { minProgress };
-            }
         }
 
         // Handle NotFoundById: "Task with ID '{X}' not found"
         if (messageKey.Contains(".NotFoundById"))
         {
-            var match = System.Text.RegularExpressions.Regex.Match(originalMessage, @"ID '([^']+)'");
-            if (match.Success)
-            {
-                return new object[] { match.Groups[1].Value };
-            }
+            var match = Regex.Match(originalMessage, @"ID '([^']+)'");
+            if (match.Success) return new object[] { match.Groups[1].Value };
         }
 
         // Handle NotFoundByEmail: "User with email '{X}' not found"
         if (messageKey.Contains(".NotFoundByEmail"))
         {
-            var match = System.Text.RegularExpressions.Regex.Match(originalMessage, @"email '([^']+)'");
-            if (match.Success)
-            {
-                return new object[] { match.Groups[1].Value };
-            }
+            var match = Regex.Match(originalMessage, @"email '([^']+)'");
+            if (match.Success) return new object[] { match.Groups[1].Value };
         }
 
         return Array.Empty<object>();

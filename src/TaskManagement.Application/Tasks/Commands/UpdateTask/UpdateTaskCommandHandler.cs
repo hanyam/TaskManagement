@@ -1,12 +1,12 @@
 using Microsoft.Extensions.Logging;
 using TaskManagement.Application.Common.Interfaces;
 using TaskManagement.Application.Common.Services;
-using TaskManagement.Infrastructure.Data.Repositories;
 using TaskManagement.Domain.Common;
 using TaskManagement.Domain.DTOs;
 using TaskManagement.Domain.Entities;
 using TaskManagement.Domain.Errors.Tasks;
 using TaskManagement.Infrastructure.Data;
+using TaskManagement.Infrastructure.Data.Repositories;
 using Task = TaskManagement.Domain.Entities.Task;
 
 namespace TaskManagement.Application.Tasks.Commands.UpdateTask;
@@ -21,11 +21,11 @@ public class UpdateTaskCommandHandler(
     ILogger<UpdateTaskCommandHandler> logger,
     IAuditLogService auditLogService) : ICommandHandler<UpdateTaskCommand, TaskDto>
 {
+    private readonly IAuditLogService _auditLogService = auditLogService;
     private readonly TaskManagementDbContext _context = context;
+    private readonly ILogger<UpdateTaskCommandHandler> _logger = logger;
     private readonly TaskEfCommandRepository _taskCommandRepository = taskCommandRepository;
     private readonly UserDapperRepository _userQueryRepository = userQueryRepository;
-    private readonly ILogger<UpdateTaskCommandHandler> _logger = logger;
-    private readonly IAuditLogService _auditLogService = auditLogService;
 
     public async Task<Result<TaskDto>> Handle(UpdateTaskCommand request, CancellationToken cancellationToken)
     {
@@ -74,10 +74,7 @@ public class UpdateTaskCommandHandler(
                             request.UpdatedById,
                             request.AssignedUserId.Value,
                             cancellationToken);
-                        if (!isManager)
-                        {
-                            errors.Add(TaskErrors.AssignerMustBeManagerOfAssignee);
-                        }
+                        if (!isManager) errors.Add(TaskErrors.AssignerMustBeManagerOfAssignee);
                     }
                     else
                     {
@@ -89,15 +86,9 @@ public class UpdateTaskCommandHandler(
         }
 
         // Additional validations
-        if (string.IsNullOrWhiteSpace(request.Title))
-        {
-            errors.Add(TaskErrors.TitleRequired);
-        }
+        if (string.IsNullOrWhiteSpace(request.Title)) errors.Add(TaskErrors.TitleRequired);
 
-        if (request.DueDate.HasValue && request.DueDate < DateTime.UtcNow)
-        {
-            errors.Add(TaskErrors.DueDateInPast);
-        }
+        if (request.DueDate.HasValue && request.DueDate < DateTime.UtcNow) errors.Add(TaskErrors.DueDateInPast);
 
         // Check all errors once before database operations
         if (errors.Any())
@@ -119,12 +110,8 @@ public class UpdateTaskCommandHandler(
 
         // Update assignment if changed
         if (request.AssignedUserId.HasValue && request.AssignedUserId.Value != Guid.Empty)
-        {
             if (task.AssignedUserId != request.AssignedUserId.Value)
-            {
                 task.AssignToUser(request.AssignedUserId.Value);
-            }
-        }
         // Note: Unassigning (setting to null) would require a new method in the entity
         // For now, we only allow reassignment, not unassignment
 
@@ -169,4 +156,3 @@ public class UpdateTaskCommandHandler(
         };
     }
 }
-

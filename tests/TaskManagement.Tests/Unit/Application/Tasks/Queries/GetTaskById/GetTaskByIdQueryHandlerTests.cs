@@ -179,7 +179,7 @@ public class GetTaskByIdQueryHandlerTests : InMemoryDatabaseTestBase
         var testTask = CreateTestTask("Test Task", "Description", TaskPriority.High, DateTime.UtcNow.AddDays(7),
             GetAllTestUsers().First().Id);
         var assignedUser = GetAllTestUsers().Skip(1).First();
-        CreateTestAssignment(testTask.Id, assignedUser.Id, isPrimary: true);
+        CreateTestAssignment(testTask.Id, assignedUser.Id, true);
 
         var query = new GetTaskByIdQuery
         {

@@ -1,10 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using TaskManagement.Application.Common.Interfaces;
-using TaskManagement.Infrastructure.Data.Repositories;
 using TaskManagement.Domain.Common;
 using TaskManagement.Domain.Entities;
 using TaskManagement.Domain.Errors.Tasks;
 using TaskManagement.Infrastructure.Data;
+using TaskManagement.Infrastructure.Data.Repositories;
 using Task = TaskManagement.Domain.Entities.Task;
 using TaskStatus = TaskManagement.Domain.Entities.TaskStatus;
 
@@ -39,33 +39,30 @@ public class AcceptTaskProgressCommandHandler(
 
         if (progressHistory == null)
         {
-            errors.Add(Error.NotFound("Progress history entry", "ProgressHistoryId", "Errors.Tasks.ProgressHistoryNotFound"));
+            errors.Add(Error.NotFound("Progress history entry", "ProgressHistoryId",
+                "Errors.Tasks.ProgressHistoryNotFound"));
             return Result.Failure(errors);
         }
 
         // Validate user is the task creator
         if (task.CreatedById != request.AcceptedById)
-        {
-            errors.Add(Error.Forbidden("Only the task creator can accept progress updates", "Errors.Tasks.OnlyCreatorCanAcceptProgress"));
-        }
+            errors.Add(Error.Forbidden("Only the task creator can accept progress updates",
+                "Errors.Tasks.OnlyCreatorCanAcceptProgress"));
 
         // Validate task is in UnderReview status
         if (task.Status != TaskStatus.UnderReview)
-        {
-            errors.Add(Error.Validation("Task must be under review to accept progress", "Status", "Errors.Tasks.TaskMustBeUnderReview"));
-        }
+            errors.Add(Error.Validation("Task must be under review to accept progress", "Status",
+                "Errors.Tasks.TaskMustBeUnderReview"));
 
         // Validate task type supports progress approval
         if (task.Type != TaskType.WithAcceptedProgress)
-        {
-            errors.Add(Error.Validation("This task type does not require progress acceptance", "Type", "Errors.Tasks.TaskTypeNoProgressAcceptance"));
-        }
+            errors.Add(Error.Validation("This task type does not require progress acceptance", "Type",
+                "Errors.Tasks.TaskTypeNoProgressAcceptance"));
 
         // Validate progress history is pending
         if (progressHistory.Status != ProgressStatus.Pending)
-        {
-            errors.Add(Error.Validation("Progress history entry is not pending", "ProgressHistoryId", "Errors.Tasks.ProgressHistoryNotPending"));
-        }
+            errors.Add(Error.Validation("Progress history entry is not pending", "ProgressHistoryId",
+                "Errors.Tasks.ProgressHistoryNotPending"));
 
         // Accept the progress history entry (may throw exceptions)
         try
@@ -73,7 +70,7 @@ public class AcceptTaskProgressCommandHandler(
             // Accept the progress history entry
             progressHistory.Accept(request.AcceptedById);
             progressHistory.SetUpdatedBy(request.AcceptedById.ToString());
-            
+
             // Accept progress - this changes status from UnderReview to Accepted
             // ProgressPercentage is already set to the new value, so we keep it
             task.AcceptProgress();
@@ -85,10 +82,7 @@ public class AcceptTaskProgressCommandHandler(
         }
 
         // Check all errors once before database operations
-        if (errors.Any())
-        {
-            return Result.Failure(errors);
-        }
+        if (errors.Any()) return Result.Failure(errors);
 
         _context.Set<TaskProgressHistory>().Update(progressHistory);
         await _taskCommandRepository.UpdateAsync(task, cancellationToken);

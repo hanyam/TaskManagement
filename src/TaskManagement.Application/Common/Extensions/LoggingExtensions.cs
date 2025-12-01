@@ -84,12 +84,8 @@ public static class LoggingExtensions
         using (LogContext.PushProperty("CorrelationId", correlationId ?? "Unknown"))
         {
             if (additionalProperties != null)
-            {
                 foreach (var prop in additionalProperties)
-                {
                     LogContext.PushProperty(prop.Key, prop.Value);
-                }
-            }
 
             logger.Log(
                 logLevel,
@@ -120,12 +116,8 @@ public static class LoggingExtensions
         using (LogContext.PushProperty("CorrelationId", correlationId ?? "Unknown"))
         {
             if (details != null)
-            {
                 foreach (var detail in details)
-                {
                     LogContext.PushProperty($"AuditDetail_{detail.Key}", detail.Value);
-                }
-            }
 
             logger.LogInformation(
                 "AUDIT: {Action} on {EntityType} {EntityId} by user {UserId}",
@@ -136,4 +128,3 @@ public static class LoggingExtensions
         }
     }
 }
-

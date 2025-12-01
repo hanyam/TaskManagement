@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -11,9 +12,9 @@ namespace TaskManagement.Presentation.Middleware;
 /// </summary>
 public class RequestLoggingMiddleware
 {
-    private readonly RequestDelegate _next;
-    private readonly ILogger<RequestLoggingMiddleware> _logger;
     private static readonly string[] SensitiveHeaders = { "Authorization", "Cookie", "X-Api-Key" };
+    private readonly ILogger<RequestLoggingMiddleware> _logger;
+    private readonly RequestDelegate _next;
 
     public RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggingMiddleware> logger)
     {
@@ -32,8 +33,8 @@ public class RequestLoggingMiddleware
         var queryString = context.Request.QueryString.Value ?? string.Empty;
 
         // Get user context if available
-        var userId = context.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "Anonymous";
-        var userEmail = context.User?.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value ?? "Unknown";
+        var userId = context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "Anonymous";
+        var userEmail = context.User?.FindFirst(ClaimTypes.Email)?.Value ?? "Unknown";
 
         // Enrich log context
         using (LogContext.PushProperty("RequestPath", requestPath))
@@ -61,11 +62,9 @@ public class RequestLoggingMiddleware
 
                 // Log performance warnings for slow requests
                 if (stopwatch.ElapsedMilliseconds > 1000)
-                {
                     _logger.LogWarning(
                         "Slow request detected: {RequestMethod} {RequestPath} took {ElapsedMilliseconds}ms",
                         requestMethod, requestPath, stopwatch.ElapsedMilliseconds);
-                }
             }
             catch (Exception ex)
             {
@@ -93,7 +92,6 @@ public class RequestLoggingMiddleware
     {
         var sb = new StringBuilder();
         foreach (var header in headers)
-        {
             if (SensitiveHeaders.Contains(header.Key, StringComparer.OrdinalIgnoreCase))
             {
                 sb.AppendLine($"{header.Key}: [REDACTED]");
@@ -103,8 +101,7 @@ public class RequestLoggingMiddleware
                 var values = header.Value.Where(v => v != null).ToArray();
                 sb.AppendLine($"{header.Key}: {string.Join(", ", values)}");
             }
-        }
+
         return sb.ToString();
     }
 }
-

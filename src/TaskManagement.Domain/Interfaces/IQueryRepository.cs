@@ -14,12 +14,3 @@ public interface IQueryRepository<T> where T : BaseEntity
     Task<T?> FirstOrDefaultAsync(string sql, object? param = null, CancellationToken cancellationToken = default);
     Task<int> CountAsync(string sql, object? param = null, CancellationToken cancellationToken = default);
 }
-
-
-
-
-
-
-
-
-

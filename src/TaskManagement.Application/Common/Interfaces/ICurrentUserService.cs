@@ -39,4 +39,3 @@ public interface ICurrentUserService
     /// <returns>True if authenticated, otherwise false.</returns>
     bool IsAuthenticated();
 }
-

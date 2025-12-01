@@ -9,20 +9,19 @@ namespace TaskManagement.Application.Common.Services;
 ///     Implementation of IUserSettingsService that retrieves user settings from HttpContext headers
 ///     with support for override via IMemoryCache for testing purposes.
 /// </summary>
-public class UserSettingsService(IHttpContextAccessor httpContextAccessor, IMemoryCache memoryCache) : IUserSettingsService
+public class UserSettingsService(IHttpContextAccessor httpContextAccessor, IMemoryCache memoryCache)
+    : IUserSettingsService
 {
-    private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
-    private readonly IMemoryCache _memoryCache = memoryCache;
     private const string DefaultLanguage = "en";
     private static readonly string[] SupportedLanguages = { "en", "ar" };
+    private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
+    private readonly IMemoryCache _memoryCache = memoryCache;
 
     public string GetLanguage()
     {
         // Check for override first (for testing)
-        if (_memoryCache.TryGetValue(CacheKeys.UserSettingsOverride, out UserSettingsOverride? overrideValue) && overrideValue != null)
-        {
-            return NormalizeLanguage(overrideValue.Language) ?? DefaultLanguage;
-        }
+        if (_memoryCache.TryGetValue(CacheKeys.UserSettingsOverride, out UserSettingsOverride? overrideValue) &&
+            overrideValue != null) return NormalizeLanguage(overrideValue.Language) ?? DefaultLanguage;
 
         // Try to get from X-Locale header first (explicit preference)
         var httpContext = _httpContextAccessor.HttpContext;
@@ -32,10 +31,7 @@ public class UserSettingsService(IHttpContextAccessor httpContextAccessor, IMemo
             if (!string.IsNullOrWhiteSpace(xLocaleHeader))
             {
                 var normalized = NormalizeLanguage(xLocaleHeader);
-                if (normalized != null)
-                {
-                    return normalized;
-                }
+                if (normalized != null) return normalized;
             }
 
             // Fall back to Accept-Language header
@@ -43,10 +39,7 @@ public class UserSettingsService(IHttpContextAccessor httpContextAccessor, IMemo
             if (!string.IsNullOrWhiteSpace(acceptLanguageHeader))
             {
                 var normalized = NormalizeLanguage(acceptLanguageHeader);
-                if (normalized != null)
-                {
-                    return normalized;
-                }
+                if (normalized != null) return normalized;
             }
         }
 
@@ -56,18 +49,12 @@ public class UserSettingsService(IHttpContextAccessor httpContextAccessor, IMemo
 
     private static string? NormalizeLanguage(string? language)
     {
-        if (string.IsNullOrWhiteSpace(language))
-        {
-            return null;
-        }
+        if (string.IsNullOrWhiteSpace(language)) return null;
 
         // Extract language code (e.g., "en-US" -> "en", "ar-SA" -> "ar")
         var languageCode = language.Split('-', ',', ';')[0]?.Trim().ToLowerInvariant();
-        
-        if (string.IsNullOrWhiteSpace(languageCode))
-        {
-            return null;
-        }
+
+        if (string.IsNullOrWhiteSpace(languageCode)) return null;
 
         // Return if supported, otherwise null
         return SupportedLanguages.Contains(languageCode) ? languageCode : null;
@@ -82,4 +69,3 @@ public class UserSettingsOverride
 {
     public string? Language { get; set; }
 }
-

@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Caching.Memory;
 using TaskManagement.Application.Common.Constants;
 using TaskManagement.Application.Common.Interfaces;
-using TaskManagement.Domain.Constants;
 using static TaskManagement.Domain.Constants.CustomClaimTypes;
 
 namespace TaskManagement.Application.Common.Services;
@@ -12,7 +11,8 @@ namespace TaskManagement.Application.Common.Services;
 ///     Implementation of ICurrentUserService that retrieves user information from HttpContext
 ///     with support for override via IMemoryCache for testing purposes.
 /// </summary>
-public class CurrentUserService(IHttpContextAccessor httpContextAccessor, IMemoryCache memoryCache) : ICurrentUserService
+public class CurrentUserService(IHttpContextAccessor httpContextAccessor, IMemoryCache memoryCache)
+    : ICurrentUserService
 {
     private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
     private readonly IMemoryCache _memoryCache = memoryCache;
@@ -20,17 +20,12 @@ public class CurrentUserService(IHttpContextAccessor httpContextAccessor, IMemor
     public Guid? GetUserId()
     {
         // Check for override first (for testing)
-        if (_memoryCache.TryGetValue(CacheKeys.CurrentUserOverride, out CurrentUserOverride? overrideValue) && overrideValue != null)
-        {
-            return overrideValue.UserId;
-        }
+        if (_memoryCache.TryGetValue(CacheKeys.CurrentUserOverride, out CurrentUserOverride? overrideValue) &&
+            overrideValue != null) return overrideValue.UserId;
 
         // Fall back to HttpContext
         var userIdClaim = GetClaimValue(UserId);
-        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-        {
-            return null;
-        }
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId)) return null;
 
         return userId;
     }
@@ -38,10 +33,8 @@ public class CurrentUserService(IHttpContextAccessor httpContextAccessor, IMemor
     public string? GetUserEmail()
     {
         // Check for override first (for testing)
-        if (_memoryCache.TryGetValue(CacheKeys.CurrentUserOverride, out CurrentUserOverride? overrideValue) && overrideValue != null)
-        {
-            return overrideValue.UserEmail;
-        }
+        if (_memoryCache.TryGetValue(CacheKeys.CurrentUserOverride, out CurrentUserOverride? overrideValue) &&
+            overrideValue != null) return overrideValue.UserEmail;
 
         // Fall back to HttpContext
         return GetUserPrincipal()?.Identity?.Name ?? GetClaimValue(Email);
@@ -50,14 +43,12 @@ public class CurrentUserService(IHttpContextAccessor httpContextAccessor, IMemor
     public ClaimsPrincipal? GetUserPrincipal()
     {
         // Check for override first (for testing)
-        if (_memoryCache.TryGetValue(CacheKeys.CurrentUserOverride, out CurrentUserOverride? overrideValue) && overrideValue != null)
+        if (_memoryCache.TryGetValue(CacheKeys.CurrentUserOverride, out CurrentUserOverride? overrideValue) &&
+            overrideValue != null)
         {
             // Create a mock ClaimsPrincipal from override
             var claims = new List<Claim>();
-            if (overrideValue.UserId.HasValue)
-            {
-                claims.Add(new Claim(UserId, overrideValue.UserId.Value.ToString()));
-            }
+            if (overrideValue.UserId.HasValue) claims.Add(new Claim(UserId, overrideValue.UserId.Value.ToString()));
 
             if (!string.IsNullOrEmpty(overrideValue.UserEmail))
             {
@@ -65,10 +56,7 @@ public class CurrentUserService(IHttpContextAccessor httpContextAccessor, IMemor
                 claims.Add(new Claim(Email, overrideValue.UserEmail));
             }
 
-            if (!string.IsNullOrEmpty(overrideValue.Role))
-            {
-                claims.Add(new Claim(ClaimTypes.Role, overrideValue.Role));
-            }
+            if (!string.IsNullOrEmpty(overrideValue.Role)) claims.Add(new Claim(ClaimTypes.Role, overrideValue.Role));
 
             // Create authenticated identity for override (required for IsAuthenticated() to return true)
             var identity = new ClaimsIdentity(claims, "Test", ClaimTypes.Name, ClaimTypes.Role);
@@ -102,4 +90,3 @@ public class CurrentUserOverride
     public string? UserEmail { get; set; }
     public string? Role { get; set; }
 }
-

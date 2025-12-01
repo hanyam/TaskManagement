@@ -197,7 +197,7 @@ public class AssignTaskCommandHandlerTests : InMemoryDatabaseTestBase
             TaskType.Simple, manager.Id);
 
         // Create initial assignment
-        CreateTestAssignment(task.Id, employee1.Id, isPrimary: true);
+        CreateTestAssignment(task.Id, employee1.Id, true);
 
         var command = new AssignTaskCommand
         {

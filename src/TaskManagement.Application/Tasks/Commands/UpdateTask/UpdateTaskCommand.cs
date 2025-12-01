@@ -14,9 +14,10 @@ public record UpdateTaskCommand : ICommand<TaskDto>
     public string? Description { get; init; }
     public TaskPriority Priority { get; init; }
     public DateTime? DueDate { get; init; }
+
     public Guid? AssignedUserId { get; init; }
+
     // Note: Type is read-only and cannot be changed after task creation
     public Guid UpdatedById { get; init; }
     public string UpdatedBy { get; init; } = string.Empty;
 }
-

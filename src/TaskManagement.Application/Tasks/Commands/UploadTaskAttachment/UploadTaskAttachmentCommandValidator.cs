@@ -49,4 +49,3 @@ public class UploadTaskAttachmentCommandValidator : AbstractValidator<UploadTask
             .WithMessage("Uploaded by user email is required");
     }
 }
-

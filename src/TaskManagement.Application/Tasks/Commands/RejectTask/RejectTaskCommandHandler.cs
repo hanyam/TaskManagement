@@ -1,11 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using TaskManagement.Application.Common.Interfaces;
-using TaskManagement.Infrastructure.Data.Repositories;
 using TaskManagement.Domain.Common;
 using TaskManagement.Domain.DTOs;
 using TaskManagement.Domain.Entities;
 using TaskManagement.Domain.Errors.Tasks;
 using TaskManagement.Infrastructure.Data;
+using TaskManagement.Infrastructure.Data.Repositories;
 using Task = TaskManagement.Domain.Entities.Task;
 using TaskStatus = TaskManagement.Domain.Entities.TaskStatus;
 
@@ -15,15 +15,15 @@ namespace TaskManagement.Application.Tasks.Commands.RejectTask;
 ///     Handler for rejecting an assigned task (employee).
 /// </summary>
 public class RejectTaskCommandHandler(
-     ICurrentDateService currentDateService,
+    ICurrentDateService currentDateService,
     TaskEfCommandRepository taskCommandRepository,
     UserDapperRepository userQueryRepository,
     TaskManagementDbContext context) : ICommandHandler<RejectTaskCommand, TaskDto>
 {
     private readonly TaskManagementDbContext _context = context;
+    private readonly ICurrentDateService _currentDateService = currentDateService;
     private readonly TaskEfCommandRepository _taskCommandRepository = taskCommandRepository;
     private readonly UserDapperRepository _userQueryRepository = userQueryRepository;
-    private readonly ICurrentDateService _currentDateService = currentDateService;
 
     public async Task<Result<TaskDto>> Handle(RejectTaskCommand request, CancellationToken cancellationToken)
     {
@@ -46,10 +46,7 @@ public class RejectTaskCommandHandler(
                          assignments.Any(a => a.UserId == request.RejectedById);
 
         // Check if already rejected
-        if (task.Status == TaskStatus.Rejected)
-        {
-            errors.Add(TaskErrors.TaskAlreadyCompleted);
-        }
+        if (task.Status == TaskStatus.Rejected) errors.Add(TaskErrors.TaskAlreadyCompleted);
 
         if (!isAssigned)
             errors.Add(Error.Forbidden("User is not assigned to this task", "Errors.Tasks.UserNotAssigned"));
@@ -69,10 +66,7 @@ public class RejectTaskCommandHandler(
         }
 
         // Check all errors once before database operations
-        if (errors.Any())
-        {
-            return Result<TaskDto>.Failure(errors);
-        }
+        if (errors.Any()) return Result<TaskDto>.Failure(errors);
 
         await _taskCommandRepository.UpdateAsync(task, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);

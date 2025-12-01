@@ -74,4 +74,3 @@ public enum AttachmentType
     ManagerUploaded = 0,
     EmployeeUploaded = 1
 }
-

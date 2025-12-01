@@ -1,8 +1,8 @@
 using TaskManagement.Application.Common.Interfaces;
-using TaskManagement.Infrastructure.Data.Repositories;
 using TaskManagement.Domain.Common;
 using TaskManagement.Domain.DTOs;
 using TaskManagement.Domain.Errors.Tasks;
+using TaskManagement.Infrastructure.Data.Repositories;
 
 namespace TaskManagement.Application.Tasks.Queries.GetExtensionRequests;
 
@@ -10,7 +10,8 @@ namespace TaskManagement.Application.Tasks.Queries.GetExtensionRequests;
 ///     Handler for getting extension requests.
 ///     Follows CQRS pattern: Queries use Dapper only (no EF Core).
 /// </summary>
-public class GetExtensionRequestsQueryHandler(TaskDapperRepository taskRepository) : IRequestHandler<GetExtensionRequestsQuery, List<ExtensionRequestDto>>
+public class GetExtensionRequestsQueryHandler(TaskDapperRepository taskRepository)
+    : IRequestHandler<GetExtensionRequestsQuery, List<ExtensionRequestDto>>
 {
     private readonly TaskDapperRepository _taskRepository = taskRepository;
 

@@ -1,11 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using TaskManagement.Application.Common.Interfaces;
-using TaskManagement.Infrastructure.Data.Repositories;
 using TaskManagement.Domain.Common;
 using TaskManagement.Domain.DTOs;
 using TaskManagement.Domain.Entities;
 using TaskManagement.Domain.Errors.Tasks;
 using TaskManagement.Infrastructure.Data;
+using TaskManagement.Infrastructure.Data.Repositories;
 using Task = TaskManagement.Domain.Entities.Task;
 
 namespace TaskManagement.Application.Tasks.Commands.AssignTask;
@@ -36,20 +36,15 @@ public class AssignTaskCommandHandler(
 
         // Validate user IDs
         if (!request.UserIds.Any())
-        {
-            errors.Add(Error.Validation("At least one user must be assigned", "UserIds", "Errors.Tasks.AtLeastOneUserRequired"));
-        }
+            errors.Add(Error.Validation("At least one user must be assigned", "UserIds",
+                "Errors.Tasks.AtLeastOneUserRequired"));
 
         // Get the assigner to check role and manager relationships
         var assigner = await _userQueryRepository.GetByIdAsync(request.AssignedById, cancellationToken);
-        if (assigner == null)
-        {
-            errors.Add(TaskErrors.CreatedByNotFound);
-        }
+        if (assigner == null) errors.Add(TaskErrors.CreatedByNotFound);
 
         // Validate that all users exist and check manager relationships (only if assigner exists)
         if (assigner != null)
-        {
             foreach (var userId in request.UserIds)
             {
                 var user = await _userQueryRepository.GetByIdAsync(userId, cancellationToken);
@@ -59,10 +54,7 @@ public class AssignTaskCommandHandler(
                 }
                 else
                 {
-                    if (!user.IsActive)
-                    {
-                        errors.Add(TaskErrors.AssignedUserInactive);
-                    }
+                    if (!user.IsActive) errors.Add(TaskErrors.AssignedUserInactive);
 
                     // Check manager-employee relationship (Admin can bypass)
                     if (assigner.Role != UserRole.Admin)
@@ -73,10 +65,7 @@ public class AssignTaskCommandHandler(
                                 request.AssignedById,
                                 userId,
                                 cancellationToken);
-                            if (!isManager)
-                            {
-                                errors.Add(TaskErrors.AssignerMustBeManagerOfAssignee);
-                            }
+                            if (!isManager) errors.Add(TaskErrors.AssignerMustBeManagerOfAssignee);
                         }
                         else
                         {
@@ -86,23 +75,16 @@ public class AssignTaskCommandHandler(
                     }
                 }
             }
-        }
 
         // Check all errors once before database operations
-        if (errors.Any())
-        {
-            return Result<TaskDto>.Failure(errors);
-        }
+        if (errors.Any()) return Result<TaskDto>.Failure(errors);
 
         // Clear existing assignments for this task
         var existingAssignments = await _context.Set<TaskAssignment>()
             .Where(ta => ta.TaskId == request.TaskId)
             .ToListAsync(cancellationToken);
 
-        foreach (var assignment in existingAssignments)
-        {
-            _context.Set<TaskAssignment>().Remove(assignment);
-        }
+        foreach (var assignment in existingAssignments) _context.Set<TaskAssignment>().Remove(assignment);
 
         // Create new assignments
         var primaryAssigned = true;
@@ -131,10 +113,7 @@ public class AssignTaskCommandHandler(
         foreach (var userId in request.UserIds)
         {
             var user = await _userQueryRepository.GetByIdAsync(userId, cancellationToken);
-            if (user != null)
-            {
-                assignedUsers.Add((user.Id, user.Email));
-            }
+            if (user != null) assignedUsers.Add((user.Id, user.Email));
         }
 
         return new TaskDto

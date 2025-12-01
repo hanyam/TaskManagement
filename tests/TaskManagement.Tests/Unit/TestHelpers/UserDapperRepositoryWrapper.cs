@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Configuration;
-using TaskManagement.Infrastructure.Data.Repositories;
 using TaskManagement.Domain.Entities;
+using TaskManagement.Infrastructure.Data.Repositories;
 
 namespace TaskManagement.Tests.Unit.TestHelpers;
 

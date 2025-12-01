@@ -13,4 +13,3 @@ public record SeedDatabaseCommand : ICommand<SeedDatabaseResultDto>
     /// </summary>
     public List<string>? ScriptNames { get; init; }
 }
-

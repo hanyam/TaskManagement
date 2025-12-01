@@ -1,11 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using TaskManagement.Application.Common.Interfaces;
-using TaskManagement.Infrastructure.Data.Repositories;
 using TaskManagement.Domain.Common;
 using TaskManagement.Domain.DTOs;
 using TaskManagement.Domain.Entities;
 using TaskManagement.Domain.Errors.Tasks;
 using TaskManagement.Infrastructure.Data;
+using TaskManagement.Infrastructure.Data.Repositories;
 using Task = TaskManagement.Domain.Entities.Task;
 
 namespace TaskManagement.Application.Tasks.Commands.RequestDeadlineExtension;
@@ -44,26 +44,19 @@ public class RequestDeadlineExtensionCommandHandler(
                          assignments.Any(a => a.UserId == request.RequestedById);
 
         if (!isAssigned)
-        {
             errors.Add(Error.Forbidden("User is not assigned to this task", "Errors.Tasks.UserNotAssigned"));
-        }
 
         // Validate requested due date
         if (request.RequestedDueDate <= DateTime.UtcNow)
-        {
-            errors.Add(Error.Validation("Requested due date must be in the future", "RequestedDueDate", "Errors.Tasks.RequestedDueDateMustBeFuture"));
-        }
+            errors.Add(Error.Validation("Requested due date must be in the future", "RequestedDueDate",
+                "Errors.Tasks.RequestedDueDateMustBeFuture"));
 
         if (task.DueDate.HasValue && request.RequestedDueDate <= task.DueDate.Value)
-        {
-            errors.Add(Error.Validation("Requested due date must be after the current due date", "RequestedDueDate", "Errors.Tasks.RequestedDueDateMustBeAfterCurrent"));
-        }
+            errors.Add(Error.Validation("Requested due date must be after the current due date", "RequestedDueDate",
+                "Errors.Tasks.RequestedDueDateMustBeAfterCurrent"));
 
         // Check all errors once before database operations
-        if (errors.Any())
-        {
-            return Result<ExtensionRequestDto>.Failure(errors);
-        }
+        if (errors.Any()) return Result<ExtensionRequestDto>.Failure(errors);
 
         // Create extension request
         var extensionRequest = new DeadlineExtensionRequest(

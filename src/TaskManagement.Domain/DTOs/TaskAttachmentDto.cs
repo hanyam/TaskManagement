@@ -30,4 +30,3 @@ public class DownloadAttachmentResponse
     public string ContentType { get; init; } = string.Empty;
     public long FileSize { get; init; }
 }
-

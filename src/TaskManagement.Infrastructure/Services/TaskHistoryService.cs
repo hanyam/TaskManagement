@@ -1,8 +1,7 @@
-using Microsoft.EntityFrameworkCore;
 using TaskManagement.Domain.Entities;
 using TaskManagement.Domain.Interfaces;
 using TaskManagement.Infrastructure.Data;
-using Task = TaskManagement.Domain.Entities.Task;
+using Task = System.Threading.Tasks.Task;
 using TaskStatus = TaskManagement.Domain.Entities.TaskStatus;
 
 namespace TaskManagement.Infrastructure.Services;
@@ -14,7 +13,7 @@ public class TaskHistoryService(TaskManagementDbContext context) : ITaskHistoryS
 {
     private readonly TaskManagementDbContext _context = context;
 
-    public async System.Threading.Tasks.Task RecordStatusChangeAsync(
+    public async Task RecordStatusChangeAsync(
         Guid taskId,
         TaskStatus fromStatus,
         TaskStatus toStatus,
@@ -28,4 +27,3 @@ public class TaskHistoryService(TaskManagementDbContext context) : ITaskHistoryS
         // Note: Don't call SaveChangesAsync here - let the caller handle it in a transaction
     }
 }
-

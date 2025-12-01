@@ -18,4 +18,3 @@ public record UploadTaskAttachmentCommand : ICommand<TaskAttachmentDto>
     public Guid UploadedById { get; init; }
     public string UploadedBy { get; init; } = string.Empty;
 }
-

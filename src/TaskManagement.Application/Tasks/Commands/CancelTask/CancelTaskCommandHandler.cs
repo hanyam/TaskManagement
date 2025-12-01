@@ -9,6 +9,7 @@ using TaskManagement.Domain.Interfaces;
 using TaskManagement.Infrastructure.Data;
 using TaskManagement.Infrastructure.Data.Repositories;
 using DomainTask = TaskManagement.Domain.Entities.Task;
+using Task = System.Threading.Tasks.Task;
 using TaskStatus = TaskManagement.Domain.Entities.TaskStatus;
 
 namespace TaskManagement.Application.Tasks.Commands.CancelTask;
@@ -21,7 +22,7 @@ public class CancelTaskCommandHandler(
     TaskEfCommandRepository taskCommandRepository,
     IFileStorageService fileStorageService,
     ILogger<CancelTaskCommandHandler> logger,
-    Domain.Interfaces.ITaskHistoryService taskHistoryService) : ICommandHandler<CancelTaskCommand>
+    ITaskHistoryService taskHistoryService) : ICommandHandler<CancelTaskCommand>
 {
     private static readonly TaskStatus[] PreAcceptanceStatuses =
     {
@@ -41,7 +42,7 @@ public class CancelTaskCommandHandler(
     private readonly IFileStorageService _fileStorageService = fileStorageService;
     private readonly ILogger<CancelTaskCommandHandler> _logger = logger;
     private readonly TaskEfCommandRepository _taskCommandRepository = taskCommandRepository;
-    private readonly Domain.Interfaces.ITaskHistoryService _taskHistoryService = taskHistoryService;
+    private readonly ITaskHistoryService _taskHistoryService = taskHistoryService;
 
     public async Task<Result> Handle(CancelTaskCommand request, CancellationToken cancellationToken)
     {
@@ -87,10 +88,7 @@ public class CancelTaskCommandHandler(
         }
 
         // Check all errors once before database operations
-        if (errors.Any())
-        {
-            return Result.Failure(errors);
-        }
+        if (errors.Any()) return Result.Failure(errors);
 
         if (PreAcceptanceStatuses.Contains(task.Status))
         {
@@ -145,14 +143,13 @@ public class CancelTaskCommandHandler(
                || task.ManagerRating.HasValue;
     }
 
-    private async System.Threading.Tasks.Task DeleteTaskWithAttachments(DomainTask task, CancellationToken cancellationToken)
+    private async Task DeleteTaskWithAttachments(DomainTask task, CancellationToken cancellationToken)
     {
         var attachments = await _context.Set<TaskAttachment>()
             .Where(a => a.TaskId == task.Id)
             .ToListAsync(cancellationToken);
 
         foreach (var attachment in attachments)
-        {
             try
             {
                 await _fileStorageService.DeleteFileAsync(attachment.StoragePath, cancellationToken);
@@ -165,12 +162,9 @@ public class CancelTaskCommandHandler(
                     attachment.StoragePath,
                     attachment.Id);
             }
-        }
 
         _context.Set<TaskAttachment>().RemoveRange(attachments);
         _context.Set<DomainTask>().Remove(task);
         await _context.SaveChangesAsync(cancellationToken);
     }
 }
-
-

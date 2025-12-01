@@ -1,8 +1,8 @@
 using TaskManagement.Application.Common.Interfaces;
-using TaskManagement.Infrastructure.Data.Repositories;
 using TaskManagement.Domain.Common;
 using TaskManagement.Domain.DTOs;
 using TaskManagement.Domain.Errors.Tasks;
+using TaskManagement.Infrastructure.Data.Repositories;
 
 namespace TaskManagement.Application.Tasks.Queries.GetTaskById;
 
@@ -51,15 +51,15 @@ public class GetTaskByIdQueryHandler(TaskDapperRepository taskRepository) : IReq
 
         // Set IsManager property: true if current user is the creator of the task
         taskDto.IsManager = taskDto.CreatedById == request.UserId;
-        
+
         // Set CurrentUserId property: current user's ID from backend (supports impersonation)
         taskDto.CurrentUserId = request.UserId;
 
         // Populate RecentProgressHistory - get the most recent 10 entries (includes pending entries needed for progress approval)
         var progressHistory = await _taskRepository.GetTaskProgressHistoryAsync(
             request.Id,
-            page: 1,
-            pageSize: 10,
+            1,
+            10,
             cancellationToken);
         taskDto.RecentProgressHistory = progressHistory.ToList();
 

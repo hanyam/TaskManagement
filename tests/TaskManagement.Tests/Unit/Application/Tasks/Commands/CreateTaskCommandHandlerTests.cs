@@ -3,11 +3,12 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 using TaskManagement.Application.Common.Services;
-using TaskManagement.Infrastructure.Data.Repositories;
 using TaskManagement.Application.Tasks.Commands.CreateTask;
 using TaskManagement.Domain.Entities;
 using TaskManagement.Domain.Errors.Tasks;
+using TaskManagement.Domain.Interfaces;
 using TaskManagement.Infrastructure.Data;
+using TaskManagement.Infrastructure.Data.Repositories;
 using TaskManagement.Tests.TestHelpers;
 using TaskManagement.Tests.Unit.TestHelpers;
 using Xunit;
@@ -39,7 +40,7 @@ public class CreateTaskCommandHandlerTests
         _mockUserQueryRepository = new Mock<UserDapperRepository>(configuration);
         var mockLogger = new Mock<ILogger<CreateTaskCommandHandler>>();
         var mockAuditLogService = new Mock<IAuditLogService>();
-        var mockTaskHistoryService = new Mock<TaskManagement.Domain.Interfaces.ITaskHistoryService>();
+        var mockTaskHistoryService = new Mock<ITaskHistoryService>();
         _handler = new CreateTaskCommandHandler(
             _mockTaskCommandRepository.Object,
             _mockUserQueryRepository.Object,
