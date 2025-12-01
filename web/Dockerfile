@@ -5,8 +5,11 @@ WORKDIR /app
 
 FROM base AS deps
 # Copy package files from web/ directory (context is root)
-COPY web/package.json web/package-lock.json* ./
-RUN npm ci
+COPY web/package.json web/package-lock.json ./
+# Install dependencies with npm ci for reproducible builds
+# Fallback to npm install if package-lock.json is incompatible
+RUN npm ci --prefer-offline --no-audit || \
+    (echo "Warning: npm ci failed, falling back to npm install" && npm install --prefer-offline --no-audit)
 
 FROM base AS build
 # Accept build arguments for NEXT_PUBLIC_* variables
