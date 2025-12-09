@@ -33,7 +33,7 @@ public static class DependencyInjection
 
         if (!dbContextRegistered)
             services.AddDbContext<TaskManagementDbContext>(options =>
-                options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
+                options.UseSqlServer(configuration.GetConnectionString("TaskManagement")));
 
         // Register repositories
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));

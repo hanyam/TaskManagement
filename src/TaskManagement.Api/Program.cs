@@ -1,3 +1,4 @@
+using Azure.Identity;
 using Serilog;
 using TaskManagement.Application;
 using TaskManagement.Infrastructure;
@@ -28,6 +29,18 @@ builder.Services.AddInfrastructure(builder.Configuration); // Infrastructure lay
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<TaskManagementDbContext>();
 
+var keyVaultUrl = builder.Configuration["AzureKeyVault:VaultUrl"];
+if (!string.IsNullOrEmpty(keyVaultUrl))
+{
+    builder.Configuration.AddAzureKeyVault(
+        new Uri(keyVaultUrl),
+        new DefaultAzureCredential());
+
+    // Note: The secret name in Azure Key Vault must be "ConnectionStrings--DefaultConnection"
+    // The "--" maps to ":" in configuration, so Configuration.GetConnectionString("DefaultConnection") works.
+    // Local development uses developer identity via DefaultAzureCredential (VS/Azure CLI login).
+    // For production, use a managed identity.
+}
 var app = builder.Build();
 
 // Configure the HTTP request pipeline

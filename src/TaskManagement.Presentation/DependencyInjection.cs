@@ -9,7 +9,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Graph;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
+using Swashbuckle.AspNetCore.SwaggerGen;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
@@ -90,19 +91,14 @@ public static class DependencyInjection
                     "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\""
             });
 
-            c.AddSecurityRequirement(new OpenApiSecurityRequirement
+            c.AddSecurityRequirement(document =>
             {
+                OpenApiSecuritySchemeReference? schemeRef = new("Bearer");
+                OpenApiSecurityRequirement? requirement = new()
                 {
-                    new OpenApiSecurityScheme
-                    {
-                        Reference = new OpenApiReference
-                        {
-                            Type = ReferenceType.SecurityScheme,
-                            Id = "Bearer"
-                        }
-                    },
-                    Array.Empty<string>()
-                }
+                    [schemeRef] = []
+                };
+                return requirement;
             });
         });
 
